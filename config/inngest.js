@@ -4,7 +4,7 @@ import User from "@/models/User";
 import Order from "@/models/Order";
 
 // Create a client to send and receive events
-export const inngest = new Inngest({ id: "blissful-next" });
+export const inngest = new Inngest({ id: "babybear-next" });
 
 //  Inngest funcyion to save user data to a db
 export const syncUserCreation = inngest.createFunction(
