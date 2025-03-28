@@ -3,7 +3,7 @@ import React from "react";
 const NewsLetter = () => {
   return (
     <div className="flex flex-col items-center justify-center text-center space-y-2 pt-8 pb-14">
-      <h1 className="md:text-4xl text-2xl font-medium">
+      <h1 className="md:text-4xl text-2xl font-medium text-black">
         Subscribe now & get 20% off
       </h1>
       <p className="md:text-base text-gray-500/80 pb-8">
@@ -16,7 +16,7 @@ const NewsLetter = () => {
           type="text"
           placeholder="Enter your email id"
         />
-        <button className="md:px-12 px-8 h-full text-white bg-[#706D54] rounded-md rounded-l-none">
+        <button className="md:px-12 px-8 h-full text-white bg-black rounded-md rounded-l-none">
           Subscribe
         </button>
       </div>

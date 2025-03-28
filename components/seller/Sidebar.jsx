@@ -23,7 +23,7 @@ const SideBar = () => {
                         <div
                             className={
                                 `flex items-center py-3 px-4 gap-3 ${isActive
-                                    ? "border-r-4 md:border-r-[6px] bg-yellow-800/5 border-yellow-800/30"
+                                    ? "border-r-4 md:border-r-[6px] bg-gray-400/5 border-black"
                                     : "hover:bg-gray-100/90 border-white"
                                 }`
                             }

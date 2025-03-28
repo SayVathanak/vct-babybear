@@ -55,18 +55,18 @@ const HeaderSlider = () => {
           <div
             key={slide.id}
             // className="flex flex-col-reverse md:flex-row items-center justify-between bg-[#E6E9F2] py-8 md:px-14 px-5 mt-6 rounded-xl min-w-full"
-            className="flex flex-col-reverse md:flex-row items-center justify-between bg-[#FAF9F6] py-8 md:px-14 px-5 mt-6 rounded-xl min-w-full"
+            className="flex flex-col-reverse md:flex-row items-center justify-between bg-white py-8 md:px-14 px-5 mt-6 rounded-xl min-w-full"
           >
             <div className="md:pl-8 mt-10 md:mt-0">
-              <p className="md:text-base text-[#706D54] pb-1">{slide.offer}</p>
-              <h1 className="max-w-lg text-[#4B5945] md:text-[40px] md:leading-[48px] text-2xl font-semibold">
+              <p className="md:text-base text-black pb-1">{slide.offer}</p>
+              <h1 className="max-w-lg text-black md:text-[40px] md:leading-[48px] text-2xl font-semibold">
                 {slide.title}
               </h1>
               <div className="flex items-center mt-4 md:mt-6 ">
-                <button className="md:px-10 px-7 md:py-2.5 py-2 border border-[#706D54] rounded-full text-[#706D54] font-medium">
+                <button className="md:px-10 px-7 md:py-2.5 py-2 border rounded-full text-black font-medium">
                   {slide.buttonText1}
                 </button>
-                <button className="group flex items-center gap-2 px-6 py-2.5 font-medium text-[#706D54]">
+                <button className="group flex items-center gap-2 px-6 py-2.5 font-medium text-black">
                   {slide.buttonText2}
                   <Image className="group-hover:translate-x-1 transition" src={assets.arrow_icon} alt="arrow_icon" />
                 </button>
@@ -88,7 +88,7 @@ const HeaderSlider = () => {
           <div
             key={index}
             onClick={() => handleSlideChange(index)}
-            className={`h-2 w-2 rounded-full cursor-pointer ${currentSlide === index ? "bg-yellow-800/30" : "bg-gray-500/30"
+            className={`h-2 w-2 rounded-full cursor-pointer ${currentSlide === index ? "bg-gray-700" : "bg-gray-500/30"
               }`}
           ></div>
         ))}

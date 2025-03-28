@@ -12,14 +12,14 @@ const Navbar = () => {
   const { openSignIn } = useClerk()
 
   return (
-    <nav className="flex items-center justify-between px-6 md:px-16 lg:px-32 py-3 border-b border-gray-300 text-gray-700">
+    <nav className="flex items-center justify-between px-6 md:px-16 lg:px-32 py-3 border-b border-gray-300 text-black">
       <Image
         className="cursor-pointer w-28 md:w-32"
         onClick={() => router.push('/')}
-        src={assets.blissful_logo}
+        src={assets.logo}
         alt="logo"
       />
-      <div className="flex items-center gap-4 lg:gap-8 max-md:hidden text-[#706D54]">
+      <div className="flex items-center gap-4 lg:gap-8 max-md:hidden text-black">
         <Link href="/" className="hover:text-gray-900 transition">
           Home
         </Link>
