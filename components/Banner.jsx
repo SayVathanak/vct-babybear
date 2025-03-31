@@ -11,7 +11,7 @@ const Banner = () => {
         alt="jbl_soundbox_image"
       />
       <div className="flex flex-col items-center justify-center text-center space-y-2 px-4 md:px-0">
-        <h2 className="text-2xl md:text-3xl font-semibold max-w-[290px] text-black">
+        <h2 className="text-2xl md:text-3xl max-w-[290px] font-prata font-medium">
           Level Up Your Gaming Experience
         </h2>
         <p className="max-w-[343px] font-medium text-gray-500">

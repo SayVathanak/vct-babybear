@@ -20,7 +20,8 @@ export async function POST(request) {
             return await acc + product.offerPrice * item.quantity;
         }, 0)
 
-        const finalAmount = Number((amount + Math.floor(amount * 0.02)).toFixed(2));
+        // const finalAmount = Number((amount + Math.floor(amount * 0.02)).toFixed(2));
+        const finalAmount = Number(amount.toFixed(2));
 
         await inngest.send({
             name: 'order/created',

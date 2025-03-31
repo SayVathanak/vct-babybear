@@ -9,8 +9,9 @@ const Footer = () => {
         <div className="w-4/5">
           <Image className="w-28 md:w-32" src={assets.logo} alt="logo" />
           <p className="mt-6 text-sm">
-            Blissful Beauty brings you high-quality skincare and beauty essentials for a radiant, healthy glow.
-            Shop with confidence, enjoy fast delivery, and embrace effortless beauty every day!
+          Baby Bear is dedicated to providing high-quality, safe, and reliable products for your little one. 
+          Since 2020, we’ve been committed to supporting parents with essentials that promote healthy growth and happiness. 
+          Trust us to be there for every step of your baby's journey.
           </p>
         </div>
 
@@ -38,8 +39,8 @@ const Footer = () => {
           <div>
             <h2 className="font-medium text-gray-900 mb-5">Get in touch</h2>
             <div className="text-sm space-y-2">
-              <p>098 355 333</p>
-              <p>contact@blissfulbeauty.com</p>
+              <p className="">078 223 444</p>
+              <p>contact@babybear.com</p>
             </div>
           </div>
         </div>

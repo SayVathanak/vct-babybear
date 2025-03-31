@@ -9,15 +9,22 @@ import { useParams } from "next/navigation";
 import Loading from "@/components/Loading";
 import { useAppContext } from "@/context/AppContext";
 import React from "react";
+import { useClerk } from "@clerk/nextjs";
+import toast from "react-hot-toast";
+import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 
 const Product = () => {
 
     const { id } = useParams();
 
-    const { products, router, addToCart } = useAppContext()
+    const { products, router, addToCart, user } = useAppContext()
 
     const [mainImage, setMainImage] = useState(null);
     const [productData, setProductData] = useState(null);
+
+    const { openSignIn } = useClerk()
+
+    const [showDirections, setShowDirections] = useState(false);
 
     const fetchProductData = async () => {
         const product = products.find(product => product._id === id);
@@ -64,7 +71,7 @@ const Product = () => {
                 </div>
 
                 <div className="flex flex-col">
-                    <h1 className="text-3xl font-medium text-gray-800/90 mb-4">
+                    <h1 className="text-xl md:text-3xl font-medium text-gray-800/90 mb-4">
                         {productData.name}
                     </h1>
                     <div className="flex items-center gap-2">
@@ -81,17 +88,15 @@ const Product = () => {
                         </div>
                         <p>(4.5)</p>
                     </div>
-                    <p className="text-gray-600 mt-3">
-                        {productData.description}
-                    </p>
                     <p className="text-3xl font-medium mt-6">
                         ${productData.offerPrice}
-                        <span className="text-base font-normal text-gray-800/60 line-through ml-2">
+                        {/* <span className="text-base font-normal text-gray-800/60 line-through ml-2"> */}
+                        <span className="text-base font-normal text-red-400 line-through ml-2">
                             ${productData.price}
                         </span>
                     </p>
-                    <hr className="bg-gray-600 my-6" />
-                    <div className="overflow-x-auto">
+                    {/* <hr className="bg-gray-600 my-6" /> */}
+                    {/* <div className="overflow-x-auto">
                         <table className="table-auto border-collapse w-full max-w-72">
                             <tbody>
                                 <tr>
@@ -110,20 +115,56 @@ const Product = () => {
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
+                    </div> */}
 
                     <div className="flex items-center mt-10 gap-4">
-                        <button onClick={() => addToCart(productData._id)} className="w-full py-3.5 bg-gray-100 text-gray-800/80 hover:bg-gray-200 transition">
+                        <button onClick={() => addToCart(productData._id)} className="w-full py-3.5 bg-gray-100 rounded-md md:rounded-sm text-gray-800/80 hover:bg-gray-200 transition">
                             Add to Cart
                         </button>
-                        <button onClick={() => { addToCart(productData._id); router.push('/cart') }} className="w-full py-3.5 bg-black text-white hover:bg-green-500 transition duration-300">
+                        {/* <button onClick={() => { addToCart(productData._id); router.push('/cart') }} className="w-full py-3.5 bg-black text-white hover:bg-green-500 transition duration-300">
+                            Buy now
+                        </button> */}
+                        <button 
+                            onClick={() => { 
+                                if (user) {
+                                    addToCart(productData._id); 
+                                    router.push('/cart');
+                                } else {
+                                    toast.error("Please login to continue purchasing");
+                                    openSignIn();
+                                }
+                            }} 
+                            className="w-full py-3.5 bg-black rounded-md md:rounded-sm text-white hover:bg-green-500 transition duration-300">
                             Buy now
                         </button>
                     </div>
+                    <hr className="bg-gray-600 my-6" />
+                    {/* <p className="text-gray-600 mt-3">
+                        <h1 className="text-black mb-3">Directions for Use :</h1>
+                        {productData.description}
+                    </p> */}
+
+                      {/* Toggle Directions for Use */}
+  
+                    <div>
+                        <button
+                            onClick={() => setShowDirections(!showDirections)}
+                            className="flex items-center justify-between w-full text-left text-gray-800 font-medium py-2"
+                        >
+                            <span>How to use</span>
+                            {showDirections ? <FaChevronUp /> : <FaChevronDown />}
+                        </button>
+                        {showDirections && (
+                            <p className="text-gray-600 mt-3">
+                            {productData.description}
+                            </p>
+                        )}
+                    </div>
+
                 </div>
             </div>
             <div className="flex flex-col items-center">
-                <div className="flex flex-col items-center mb-4 mt-16">
+                <div className="flex flex-col items-center mb-4">
                     <p className="text-3xl font-medium">Featured <span className="font-medium text-black">Products</span></p>
                     <div className="w-28 h-0.5 bg-black mt-2"></div>
                 </div>

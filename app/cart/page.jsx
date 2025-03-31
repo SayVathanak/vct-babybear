@@ -16,8 +16,8 @@ const Cart = () => {
       <div className="flex flex-col md:flex-row gap-10 px-6 md:px-16 lg:px-32 pt-14 mb-20">
         <div className="flex-1">
           <div className="flex items-center justify-between mb-8 border-b border-gray-500/30 pb-6">
-            <p className="text-2xl md:text-3xl text-gray-500">
-              Your <span className="font-medium text-black">Cart</span>
+            <p className="text-2xl md:text-3xl text-gray-500 font-prata font-medium">
+              Your <span className="text-black">Cart</span>
             </p>
             <p className="text-lg md:text-xl text-gray-500/80">{getCartCount()} Items</p>
           </div>
@@ -59,7 +59,7 @@ const Cart = () => {
                             />
                           </div>
                           <button
-                            className="md:hidden text-xs text-gray-500 mt-1"
+                            className="md:hidden text-xs text-red-500 mt-1"
                             onClick={() => updateCartQuantity(product._id, 0)}
                           >
                             Remove
@@ -68,7 +68,7 @@ const Cart = () => {
                         <div className="text-sm hidden md:block">
                           <p className="text-gray-800">{product.name}</p>
                           <button
-                            className="text-xs text-gray-500 mt-1"
+                            className="text-xs text-red-500 mt-1"
                             onClick={() => updateCartQuantity(product._id, 0)}
                           >
                             Remove
@@ -108,7 +108,7 @@ const Cart = () => {
               src={assets.arrow_right_icon_colored}
               alt="arrow_right_icon_colored"
             />
-            Continue Shopping
+            <span>Continue Shopping</span>
           </button>
         </div>
         <OrderSummary />

@@ -82,7 +82,7 @@ const OrderSummary = () => {
 
   return (
     <div className="w-full md:w-96 bg-gray-500/5 p-5">
-      <h2 className="text-xl md:text-2xl font-medium text-gray-700">
+      <h2 className="text-xl md:text-2xl font-medium text-gray-700 font-prata">
         Order Summary
       </h2>
       <hr className="border-gray-500/30 my-5" />
@@ -138,7 +138,7 @@ const OrderSummary = () => {
             <input
               type="text"
               placeholder="Enter promo code"
-              className="flex-grow w-full outline-none p-2.5 text-gray-600 border"
+              className="flex-grow w-full outline-none p-2.5 text-gray-600 border cursor-not-allowed"
             />
             <button className="bg-black text-white px-9 py-2 hover:bg-black">
               Apply
