@@ -10,7 +10,8 @@ const HeaderSlider = () => {
       offer: "Limited Time Offer 30% Off",
       buttonText1: "Buy now",
       buttonText2: "Find more",
-      imgSrc: assets.header_headphone_image,
+      imgSrcSm: assets.header_headphone_image_sm,
+      imgSrcMd: assets.header_headphone_image_md,
     },
     {
       id: 2,
@@ -18,7 +19,8 @@ const HeaderSlider = () => {
       offer: "Hurry up only few lefts!",
       buttonText1: "Shop Now",
       buttonText2: "Explore Deals",
-      imgSrc: assets.header_playstation_image,
+      imgSrcSm: assets.header_playstation_image_sm,
+      imgSrcMd: assets.header_playstation_image_md,
     },
     {
       id: 3,
@@ -26,7 +28,8 @@ const HeaderSlider = () => {
       offer: "Exclusive Deal 40% Off",
       buttonText1: "Order Now",
       buttonText2: "Learn More",
-      imgSrc: assets.header_macbook_image,
+      imgSrcSm: assets.header_macbook_image_sm,
+      imgSrcMd: assets.header_macbook_image_md,
     },
   ];
 
@@ -54,7 +57,7 @@ const HeaderSlider = () => {
         {sliderData.map((slide, index) => (
           <div
             key={slide.id}
-            className="flex flex-col-reverse md:flex-row items-center justify-between bg-sky-50 py-8 md:px-14 px-5 mt-6 rounded-xl min-w-full"
+            className="flex flex-col-reverse md:flex-row items-center justify-between bg-sky-50 md:py-8 md:px-14 mt-6 rounded-xl min-w-full"
           >
             {/* Hide this text content on mobile */}
             <div className="hidden md:block md:pl-8 mt-10 md:mt-0">
@@ -74,13 +77,36 @@ const HeaderSlider = () => {
             </div>
 
             {/* Image is always visible */}
-            <div className="flex items-center flex-1 justify-center">
+            {/* <div className="flex items-center flex-1 justify-center">
               <Image
                 className="md:w-72 w-48"
-                src={slide.imgSrc}
+                src={slide.imgSrcSm}
                 alt={`Slide ${index + 1}`}
               />
+            </div> */}
+            {/* <div className="relative w-full h-full overflow-hidden rounded-md"> */}
+            <div className="relative w-full h-full rounded-md md:flex md:items-center md:flex-1 md:justify-center">
+              {/* <Image
+                className="w-full h-full object-cover"
+                src={slide.imgSrcSm}
+                alt={`Slide ${index + 1}`}
+              /> */}
+
+              {/* Image A (shown on md and larger) */}
+              <Image
+                className="hidden md:block w-72 object-cover rounded-md"
+                src={slide.imgSrcMd}
+                alt={`Slide ${index + 1} - Desktop`}
+              />
+
+              {/* Image B (shown on small screens) */}
+              <Image
+                className="block md:hidden w-full object-cover rounded-md"
+                src={slide.imgSrcSm}
+                alt={`Slide ${index + 1} - Mobile`}
+              />
             </div>
+
           </div>
         ))}
       </div>
