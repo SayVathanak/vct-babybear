@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { assets } from "@/assets/assets";
 import Image from "next/image";
 import { useAppContext } from "@/context/AppContext";
-import { FaShoppingCart, FaChevronLeft } from "react-icons/fa";
+import { FaShoppingCart, FaChevronLeft, FaPlus, FaMinus } from "react-icons/fa";
 
 // Create a global state to manage cart popup visibility and items
 // This should be moved to your AppContext or a separate CartContext
@@ -181,28 +181,20 @@ const ProductCard = ({ product }) => {
                     ) : (
                         // Show quantity selector without Add button
                         <div className="quantity-selector w-full flex items-center justify-between border rounded-md">
-                            <button 
-                                onClick={decreaseQty} 
-                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 flex-1 text-center"
-                            >
-                                <Image
-                                    src={assets.decrease_arrow}
-                                    alt="decrease_arrow"
-                                    className="w-3 h-3 inline-block"
-                                />
-                            </button>
-                            <span className="px-4 py-2 flex-1 text-center">{quantity}</span>
-                            <button 
-                                onClick={increaseQty} 
-                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 flex-1 text-center"
-                            >
-                                <Image
-                                    src={assets.increase_arrow}
-                                    alt="increase_arrow"
-                                    className="w-3 h-3 inline-block"
-                                />
-                            </button>
-                        </div>
+    <button 
+        onClick={decreaseQty} 
+        className="px-4 py-2 text-gray-600 hover:bg-gray-100 flex-1 text-center"
+    >
+        <FaMinus className="w-3 h-3 inline-block" />
+    </button>
+    <span className="px-4 py-2 flex-1 text-center">{quantity}</span>
+    <button 
+        onClick={increaseQty} 
+        className="px-4 py-2 text-gray-600 hover:bg-gray-100 flex-1 text-center"
+    >
+        <FaPlus className="w-3 h-3 inline-block" />
+    </button>
+</div>
                     )}
                 </div>
             </div>
