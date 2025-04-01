@@ -5,6 +5,7 @@ import OrderSummary from "@/components/OrderSummary";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import { useAppContext } from "@/context/AppContext";
+import { FaChevronLeft } from "react-icons/fa";
 
 const Cart = () => {
 
@@ -103,11 +104,12 @@ const Cart = () => {
             </table>
           </div>
           <button onClick={()=> router.push('/all-products')} className="group flex items-center mt-6 text-black">
-            <Image
+            <FaChevronLeft className="mr-1" size={12} />
+            {/* <Image
               className="group-hover:-translate-x-1 transition"
               src={assets.arrow_right_icon_colored}
               alt="arrow_right_icon_colored"
-            />
+            /> */}
             <span>Continue Shopping</span>
           </button>
         </div>

@@ -3,16 +3,45 @@ import ProductCard from "./ProductCard";
 import { useAppContext } from "@/context/AppContext";
 
 const HomeProducts = () => {
-
-  const { products, router } = useAppContext()
+  const { products, router } = useAppContext();
 
   return (
-    <div className="flex flex-col items-center pt-7 md:pt-14">
-      <p className="text-3xl font-semibold text-center w-full font-prata text-pink-200">Baby Bear</p>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 flex-col items-center gap-6 mt-6 pb-14 w-full">
-        {products.map((product, index) => <ProductCard key={index} product={product} />)}
+    <div className="flex flex-col items-center pt-6 md:pt-14 w-full overflow-hidden">
+      {/* Scrolling Text Animation */}
+      <div className="w-full overflow-hidden">
+        <div className="marquee-container">
+          <div className="animate-marquee">
+            <p className="whitespace-nowrap pr-10 text-xl text-sky-200 font-prata font-medium">
+              Baby Bear - Premium Imported Milk from the USA. Pure, Nutritious, and Safe for Your Little One.
+            </p>
+            <p className="whitespace-nowrap pr-10 text-xl text-sky-200 font-prata font-medium">
+              Baby Bear - Premium Imported Milk from the USA. Pure, Nutritious, and Safe for Your Little One.
+            </p>
+            <p className="whitespace-nowrap pr-10 text-xl text-sky-200 font-prata font-medium">
+              Baby Bear - Premium Imported Milk from the USA. Pure, Nutritious, and Safe for Your Little One.
+            </p>
+            <p className="whitespace-nowrap pr-10 text-xl text-sky-200 font-prata font-medium">
+              Baby Bear - Premium Imported Milk from the USA. Pure, Nutritious, and Safe for Your Little One.
+            </p>
+            <p className="whitespace-nowrap pr-10 text-xl text-sky-200 font-prata font-medium">
+              Baby Bear - Premium Imported Milk from the USA. Pure, Nutritious, and Safe for Your Little One.
+            </p>
+          </div>
+        </div>
       </div>
-      <button onClick={() => { router.push('/all-products') }} className="px-12 py-2.5 border rounded text-gray-500/70 hover:bg-slate-50/90 transition">
+
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 flex-col items-center gap-6 mt-6 pb-14 w-full">
+        {products.map((product, index) => (
+          <ProductCard key={index} product={product} />
+        ))}
+      </div>
+
+      <button
+        onClick={() => {
+          router.push("/all-products");
+        }}
+        className="px-12 py-2.5 border rounded text-gray-500/70 hover:bg-slate-50/90 transition"
+      >
         See more
       </button>
     </div>
