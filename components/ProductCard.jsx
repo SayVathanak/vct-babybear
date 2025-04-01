@@ -200,42 +200,42 @@ const ProductCard = ({ product }) => {
             </div>
 
             {/* Global Cart popup at bottom of screen - shared across all products */}
-            {showGlobalCart && totalItems > 0 && (
-                <div className="cart-popup fixed left-0 right-0 bottom-0 bg-white shadow-lg z-50 border-t border-gray-200">
-                    <div className="p-4 max-w-md mx-auto">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                                <div className="bg-sky-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2">
-                                    <span className="text-xs font-semibold">{totalItems}</span>
-                                </div>
-                                <span className="text-sm font-medium">Items</span>
-                            </div>
-                            
-                            <div className="text-sm font-medium">
-                                Total: {currency}{totalPrice.toFixed(2)}
-                            </div>
-                        </div>
-                        
-                        <div className="mt-3 flex gap-2">
-                            <button 
-                                onClick={() => setGlobalCartVisibility(false)}
-                                className="flex-1 px-4 py-2 border border-sky-200 text-sky-500 rounded-md hover:bg-sky-50 text-sm font-medium flex items-center justify-center"
-                            >
-                                <FaChevronLeft className="mr-2" size={12} />
-                                Continue
-                            </button>
-                            
-                            <button 
-                                onClick={handlePayClick} 
-                                className="flex-1 px-4 py-2 bg-sky-200/70 text-white rounded-md hover:bg-sky-300/70 text-sm font-medium flex items-center justify-center"
-                            >
-                                <FaShoppingCart className="mr-2" size={12} />
-                                Pay
-                            </button>
-                        </div>
+{showGlobalCart && totalItems > 0 && (
+    <div className="cart-popup fixed left-0 right-0 bottom-0 bg-white shadow-lg z-50 border-t border-gray-200">
+        <div className="p-4 max-w-md mx-auto">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                    <div className="bg-sky-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2">
+                        <span className="text-xs font-semibold">{totalItems}</span>
                     </div>
+                    <span className="text-sm font-medium">Quantity: {totalItems} items</span>
                 </div>
-            )}
+                
+                <div className="text-sm font-medium">
+                    Total: {currency}{totalPrice.toFixed(2)}
+                </div>
+            </div>
+            
+            <div className="mt-3 flex gap-2">
+                <button 
+                    onClick={() => setGlobalCartVisibility(false)}
+                    className="flex-1 px-4 py-2 border border-sky-200 text-sky-500 rounded-md hover:bg-sky-50 text-sm font-medium flex items-center justify-center"
+                >
+                    <FaChevronLeft className="mr-2" size={12} />
+                    Continue
+                </button>
+                
+                <button 
+                    onClick={handlePayClick} 
+                    className="flex-1 px-4 py-2 bg-sky-200/70 text-white rounded-md hover:bg-sky-300/70 text-sm font-medium flex items-center justify-center"
+                >
+                    <FaShoppingCart className="mr-2" size={12} />
+                    Checkout
+                </button>
+            </div>
+        </div>
+    </div>
+)}
         </>
     );
 };
