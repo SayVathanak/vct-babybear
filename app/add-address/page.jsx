@@ -135,7 +135,7 @@ const AddAddress = () => {
                                 <FaMapMarkerAlt /> អាស័យដ្ឋាន:*
                             </label>
                             <input
-                                className="w-full px-3 py-2 border rounded font-light text-sm"
+                                className="w-full px-3 py-2 border rounded font-light text-[16px]"
                                 placeholder="Ex: Toul Kork"
                                 onChange={(e) => setAddress({ ...address, area: e.target.value })}
                                 value={address.area}
