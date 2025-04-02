@@ -86,15 +86,24 @@ const AddAddress = () => {
                             ></input>
                             <label className="font-kantumruy flex items-center gap-2"><FaLocationArrow /> ខេត្ត:*</label>
                             <select
-                                className="font-kantumruy w-full px-3 py-2 border rounded text-sm"
-                                onChange={(e) => setAddress({ ...address, state: e.target.value })}
-                                value={address.state}
-                            >
-                                <option value="">ជ្រើសរើសខេត្ដមួយ</option>
-                                {provinces.map((province, index) => (
-                                    <option key={index} value={province}>{province}</option>
-                                ))}
-                            </select>
+    className="font-kantumruy w-full px-3 py-2 border rounded text-sm"
+    onChange={(e) => setAddress({ ...address, state: e.target.value })}
+    value={address.state}
+>
+    <option value="">ជ្រើសរើសខេត្ដមួយ</option>
+
+    {/* Display first 6 provinces */}
+    {provinces.slice(0, 6).map((province, index) => (
+        <option key={index} value={province}>{province}</option>
+    ))}
+
+    {/* Add remaining provinces inside optgroup for scrolling */}
+    <optgroup label="ខេត្ដផ្សេងទៀត">
+        {provinces.slice(6).map((province, index) => (
+            <option key={index + 6} value={province}>{province}</option>
+        ))}
+    </optgroup>
+</select>
                             <label className="font-kantumruy flex items-center gap-2">សារបន្ថែម:*</label>
                             <textarea
                                 className="w-full px-3 py-2 border rounded"
