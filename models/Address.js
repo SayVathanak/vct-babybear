@@ -6,8 +6,8 @@ const addressSchema = new mongoose.Schema({
     phoneNumber: {type: Number, required:true},
     pincode: {type: String},
     area: {type: String, required:true},
-    city: {type: String},
     state: {type: String, required:true},
+    city: {type: String},
 })
 
 const Address = mongoose.models.address || mongoose.model('address', addressSchema)
