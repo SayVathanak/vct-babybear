@@ -4,25 +4,29 @@ import { assets } from "@/assets/assets";
 import Image from "next/image";
 import { useAppContext } from "@/context/AppContext";
 import { FaShoppingCart, FaChevronLeft, FaPlus, FaMinus } from "react-icons/fa";
+import { useClerk } from "@clerk/nextjs";
+import toast from "react-hot-toast";
 
 const ProductCard = ({ product }) => {
-  const { 
-    currency, 
-    router, 
-    addToCart, 
-    cartItems, 
+  const {
+    currency,
+    router,
+    addToCart,
+    cartItems,
     updateCartQuantity,
     getCartCount,
-    getCartAmount 
+    getCartAmount,
+    user
   } = useAppContext();
-  
+
   const [showCartPopup, setShowCartPopup] = useState(false);
-  
+  const { openSignIn } = useClerk();
+
   if (!product) return null;
-  
+
   const currentQuantity = cartItems[product._id] || 0;
   const isInCart = currentQuantity > 0;
-  
+
   const handleAddToCart = () => {
     addToCart(product._id);
     setShowCartPopup(true);
@@ -37,7 +41,12 @@ const ProductCard = ({ product }) => {
   };
 
   const handlePayClick = () => {
-    router.push("/cart");
+    if (user) {
+      router.push("/cart");
+    } else {
+      toast.error("Please login to continue purchasing");
+      openSignIn();
+    }
   };
 
   return (
@@ -116,7 +125,7 @@ const ProductCard = ({ product }) => {
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <span className="text-sm">
-                Quantity: {getCartCount()} Items
+                  Quantity: {getCartCount()} Items
                 </span>
               </div>
 

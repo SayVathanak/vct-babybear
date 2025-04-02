@@ -6,7 +6,6 @@ import { NextResponse } from "next/server";
 
 export async function POST(request) {
     try {
-
         const { userId } = getAuth(request)
         const { address, items } = await request.json();
 
@@ -20,8 +19,12 @@ export async function POST(request) {
             return await acc + product.offerPrice * item.quantity;
         }, 0)
 
+        // Calculate delivery fee - free for more than 1 item, otherwise $1.5
+        const itemCount = items.reduce((count, item) => count + item.quantity, 0);
+        const deliveryFee = itemCount > 1 ? 0 : 1.5;
+
         // const finalAmount = Number((amount + Math.floor(amount * 0.02)).toFixed(2));
-        const finalAmount = Number(amount.toFixed(2));
+        const finalAmount = Number((amount + deliveryFee).toFixed(2));
 
         await inngest.send({
             name: 'order/created',
@@ -29,6 +32,7 @@ export async function POST(request) {
                 userId,
                 address,
                 items,
+                deliveryFee,
                 // amount: amount + Math.floor(amount * 0.02),
                 amount: finalAmount,
                 date: Date.now()

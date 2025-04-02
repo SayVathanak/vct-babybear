@@ -11,11 +11,12 @@ export default {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
-      gridTemplateColumns:{
+      gridTemplateColumns: {
         'auto': 'repeat(auto-fit, minmax(200px, 1fr))'
       },
       fontFamily: {
         prata: ["Prata", "serif"],
+        kantumruy: ["Kantumruy Pro", "sans serif"]
       },
     },
   },
