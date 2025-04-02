@@ -92,17 +92,10 @@ const AddAddress = () => {
 >
     <option value="">ជ្រើសរើសខេត្ដមួយ</option>
 
-    {/* Display first 6 provinces */}
+    {/* Display only the first 6 provinces */}
     {provinces.slice(0, 6).map((province, index) => (
         <option key={index} value={province}>{province}</option>
     ))}
-
-    {/* Add remaining provinces inside optgroup for scrolling */}
-    <optgroup label="ខេត្ដផ្សេងទៀត">
-        {provinces.slice(6).map((province, index) => (
-            <option key={index + 6} value={province}>{province}</option>
-        ))}
-    </optgroup>
 </select>
                             <label className="font-kantumruy flex items-center gap-2">សារបន្ថែម:*</label>
                             <textarea
