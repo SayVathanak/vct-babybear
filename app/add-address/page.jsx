@@ -108,7 +108,7 @@ const AddAddress = () => {
                                 <FaUser /> ឈ្មោះ:*
                             </label>
                             <input
-                                className="w-full px-3 py-2 border rounded font-light"
+                                className="w-full px-3 py-2 border rounded font-light text-[16px]"
                                 type="text"
                                 placeholder="Ex: John Doe"
                                 onChange={(e) => setAddress({ ...address, fullName: e.target.value })}
@@ -118,7 +118,7 @@ const AddAddress = () => {
                                 <FaPhoneAlt /> លេខទូរស័ព្ទ:*
                             </label>
                             <input
-                                className="w-full px-3 py-2 border rounded font-light"
+                                className="w-full px-3 py-2 border rounded font-light text-[16px]"
                                 type="text"
                                 placeholder="Ex: 0xx xxx xxx"
                                 onChange={(e) => setAddress({ ...address, phoneNumber: e.target.value })}
@@ -148,7 +148,7 @@ const AddAddress = () => {
 
                             <label className="font-kantumruy flex items-center gap-2">សារបន្ថែម:*</label>
                             <textarea
-                                className="w-full px-3 py-2 border rounded"
+                                className="w-full px-3 py-2 border rounded text-[16px]"
                                 type="text"
                                 rows={2}
                                 onChange={(e) => setAddress({ ...address, city: e.target.value })}
