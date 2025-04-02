@@ -15,9 +15,9 @@ const Home = () => {
       <div className="px-6 md:px-16 lg:px-32">
         <HeaderSlider />
         <HomeProducts />
-        <FeaturedProduct />
-        <Banner />
-        <NewsLetter />
+        {/* <FeaturedProduct /> */}
+        {/* <Banner /> */}
+        {/* <NewsLetter /> */}
       </div>
       <Footer />
     </>

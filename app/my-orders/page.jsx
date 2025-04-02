@@ -68,7 +68,7 @@ const MyOrders = () => {
                                         <br />
                                         <span >{order.address.area}</span>
                                         <br />
-                                        <span>{`${order.address.city}, ${order.address.state}`}</span>
+                                        <span>{`${order.address.state}, ${order.address.city}`}</span>
                                         <br />
                                         <span>{order.address.phoneNumber}</span>
                                     </p>

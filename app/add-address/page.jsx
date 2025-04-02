@@ -27,13 +27,22 @@ const ProvinceSelector = ({ provinces, address, setAddress }) => {
 
     return (
         <div className="relative w-full" ref={dropdownRef}>
-            {/* Dropdown Toggle */}
-            <div
-                className="font-kantumruy w-full px-3 py-2 border rounded text-sm bg-white cursor-pointer"
+            {/* Dropdown Toggle with SVG arrow */}
+            <button
+                className="peer w-full text-left px-3 py-2 border rounded text-sm bg-white cursor-pointer font-kantumruy focus:outline-none"
                 onClick={() => setIsOpen(!isOpen)}
             >
-                {address.state || "ជ្រើសរើសខេត្ដមួយ"}
-            </div>
+                <span>{address.state || "ជ្រើសរើសខេត្ដមួយ"}</span>
+                <svg 
+                    className={`w-5 h-5 inline float-right transition-transform duration-200 ${isOpen ? "rotate-0" : "-rotate-90"}`}
+                    xmlns="http://www.w3.org/2000/svg" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="#6B7280"
+                >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
 
             {/* Scrollable Province List */}
             {isOpen && (
@@ -74,9 +83,26 @@ const AddAddress = () => {
         city: "",
         state: "",
     });
-
+    // Add this new state for validation errors
+    const [errors, setErrors] = useState({});
+    
+    // Updated onSubmitHandler with validation
     const onSubmitHandler = async (e) => {
         e.preventDefault();
+        
+        // Validate form only when submitting
+        const validationErrors = {};
+        if (!address.fullName) validationErrors.fullName = "Full name is required";
+        if (!address.phoneNumber) validationErrors.phoneNumber = "Phone number is required";
+        if (!address.area) validationErrors.area = "Address is required";
+        if (!address.state) validationErrors.state = "Province is required";
+        
+        // If there are validation errors, show them and stop submission
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors);
+            return;
+        }
+        
         try {
             const token = await getToken();
             const { data } = await axios.post("/api/user/add-address", { address }, { headers: { Authorization: `Bearer ${token}` } });
@@ -94,11 +120,11 @@ const AddAddress = () => {
     return (
         <>
             <Navbar />
-            <div className="px-6 md:px-16 lg:px-32 py-16 flex flex-col md:flex-row justify-between">
+            <div className="px-6 md:px-16 lg:px-32 py-6 flex flex-col md:flex-row justify-between">
                 <form onSubmit={onSubmitHandler} className="w-full md:w-1/2 space-y-6">
-                    <p className="font-prata text-2xl md:text-3xl text-gray-500">
+                    {/* <p className="font-prata text-2xl md:text-3xl text-gray-500">
                         Add Delivery <span className="font-medium text-black">Address</span>
-                    </p>
+                    </p> */}
 
                     {/* User Information */}
                     <div className="p-6 rounded-lg shadow-md">
@@ -125,11 +151,11 @@ const AddAddress = () => {
                                 value={address.phoneNumber}
                             />
                         </div>
-                    </div>
+                    {/* </div> */}
 
                     {/* Delivery Information */}
-                    <div className="p-6 rounded-lg shadow-md">
-                        <h3 className="font-kantumruy text-md font-semibold mb-4">ព័ត៌មានដឹកជញ្ជូន</h3>
+                    {/* <div className="p-6 rounded-lg shadow-md"> */}
+                        <h3 className="font-kantumruy text-md font-semibold pt-6 mb-4">ព័ត៌មានដឹកជញ្ជូន</h3>
                         <div className="space-y-3 text-sm">
                             <label className="font-kantumruy flex items-center gap-2">
                                 <FaMapMarkerAlt /> អាស័យដ្ឋាន:*
@@ -145,8 +171,11 @@ const AddAddress = () => {
                                 <FaLocationArrow /> ខេត្ត:*
                             </label>
                             <ProvinceSelector provinces={provinces} address={address} setAddress={setAddress} />
+                            {errors.state && (
+                                <p className="text-red-500 text-xs mt-1">{errors.state}</p>
+                            )}
 
-                            <label className="font-kantumruy flex items-center gap-2">សារបន្ថែម:*</label>
+                            <label className="font-kantumruy flex items-center gap-2">សារបន្ថែម:</label>
                             <textarea
                                 className="w-full px-3 py-2 border rounded text-[16px]"
                                 type="text"
@@ -162,7 +191,7 @@ const AddAddress = () => {
                     </button>
                 </form>
 
-                <Image className="md:ml-16 mt-16 md:mt-0" src={assets.my_location_image} alt="my_location_image" />
+                <Image className="hidden md:block md:ml-16 mt-16 md:mt-0" src={assets.my_location_image} alt="my_location_image" />
             </div>
             <Footer />
         </>
