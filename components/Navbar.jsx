@@ -112,7 +112,7 @@ const Navbar = () => {
             Account
           </button>}
           <div className="relative cursor-pointer" onClick={handleCartClick}>
-              <BsHandbag size={20} />
+              <BsHandbag size={24} />
               {cartCount > 0 && (
                 <span className="absolute -bottom-2 -right-2 bg-black text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {cartCount}
