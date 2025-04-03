@@ -62,7 +62,7 @@ const CartPopup = () => {
   };
 
   return (
-    <div className="cart-popup fixed bottom-0 bg-white shadow-lg z-50 border-t-2 border-dashed border-transparent animate-slideUp rounded-t-md w-full max-w-md mx-auto left-0 right-0">
+    <div className="cart-popup fixed bottom-0 bg-white shadow-lg z-50 border-t-2 border-dashed animate-slideUp rounded-t-md w-full max-w-md mx-auto left-0 right-0">
       <div className="p-4 bg-white text-gray-800 font-mono text-sm relative">
         <div className="border-b border-dashed border-gray-400 pb-2 flex justify-between items-center">
           <h3 className="font-playfair text-center flex-1">RECEIPT</h3>
