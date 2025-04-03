@@ -16,7 +16,8 @@ export default {
       },
       fontFamily: {
         prata: ["Prata", "serif"],
-        kantumruy: ["Kantumruy Pro", "sans serif"]
+        kantumruy: ["Kantumruy Pro", "sans serif"],
+        playfair: ["Playfair", "serif"],
       },
     },
   },

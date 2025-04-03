@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Prata&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,100..700;1,100..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair:ital,opsz,wght@0,5..1200,300..900;1,5..1200,300..900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -37,4 +38,25 @@
 .animate-marquee {
   display: flex;
   animation: marquee 20s linear infinite;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s ease-out forwards;
+  /* Keep the animation final state */
+  animation-fill-mode: forwards;
+}
+
+/* Add these classes to ensure the cart popup stays at the bottom */
+.cart-popup {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
 }

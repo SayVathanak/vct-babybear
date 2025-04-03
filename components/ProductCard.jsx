@@ -1,10 +1,9 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { assets } from "@/assets/assets";
 import Image from "next/image";
 import { useAppContext } from "@/context/AppContext";
 import { FaShoppingCart, FaChevronLeft, FaPlus, FaMinus } from "react-icons/fa";
-import { useClerk } from "@clerk/nextjs";
 import toast from "react-hot-toast";
 
 const ProductCard = ({ product }) => {
@@ -13,26 +12,15 @@ const ProductCard = ({ product }) => {
     router,
     addToCart,
     cartItems,
-    updateCartQuantity,
+    showCartPopup,
+    setShowCartPopup,
+    isAddingToCart,
+    increaseQty,
+    decreaseQty,
+    handlePayClick,
     getCartCount,
-    getCartAmount,
-    user
+    getCartAmount
   } = useAppContext();
-
-  const [showCartPopup, setShowCartPopup] = useState(false);
-  const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const { openSignIn } = useClerk();
-
-  // Close cart popup after certain time
-  useEffect(() => {
-    let timer;
-    if (showCartPopup) {
-      timer = setTimeout(() => {
-        setShowCartPopup(false);
-      }, 5000); // Auto close after 5 seconds
-    }
-    return () => clearTimeout(timer);
-  }, [showCartPopup]);
 
   if (!product) return null;
 
@@ -42,36 +30,7 @@ const ProductCard = ({ product }) => {
   const handleAddToCart = (e) => {
     e.stopPropagation(); // Prevent event bubbling
     e.preventDefault(); // Prevent default behavior
-    
-    setIsAddingToCart(true);
-    
-    // Show loading state briefly
-    setTimeout(() => {
-      addToCart(product._id);
-      setShowCartPopup(true);
-      setIsAddingToCart(false);
-    }, 300);
-  };
-
-  const increaseQty = (e) => {
-    e.stopPropagation(); // Prevent event bubbling
-    e.preventDefault(); // Prevent default behavior
     addToCart(product._id);
-  };
-
-  const decreaseQty = (e) => {
-    e.stopPropagation(); // Prevent event bubbling
-    e.preventDefault(); // Prevent default behavior
-    updateCartQuantity(product._id, currentQuantity - 1);
-  };
-
-  const handlePayClick = () => {
-    if (user) {
-      router.push("/cart");
-    } else {
-      toast.error("Please login to continue purchasing");
-      openSignIn();
-    }
   };
 
   // Handle card click to navigate to product detail
@@ -124,11 +83,12 @@ const ProductCard = ({ product }) => {
             </span>
           </p>
 
+          <div className="w-full h-[38px]"> {/* Set a fixed height that matches your button height */}
           {!isInCart ? (
             <button
               onClick={handleAddToCart}
               disabled={isAddingToCart}
-              className={`add-to-cart-btn w-full px-4 py-2 text-white bg-sky-300/70 rounded-sm text-sm flex items-center justify-center transition-all ${
+              className={`add-to-cart-btn w-full px-4 py-2 text-white bg-sky-300/70 rounded-md text-sm flex items-center justify-center transition-all ${
                 isAddingToCart ? "opacity-70" : "hover:bg-sky-400/70"
               }`}
             >
@@ -148,73 +108,25 @@ const ProductCard = ({ product }) => {
               )}
             </button>
           ) : (
-            <div className="quantity-selector w-full flex items-center justify-between border rounded-md">
-              <button
-                onClick={decreaseQty}
-                className="px-4 py-2 text-gray-600 flex-1 text-center hover:bg-gray-100"
+            <div className="quantity-selector w-full h-full flex items-center justify-between border rounded-md">
+              <button 
+                onClick={(e) => decreaseQty(product._id, currentQuantity, e)}
+                className="px-4 py-2 text-gray-600 flex-1 text-center"
               >
                 <FaMinus className="w-2.5 h-2.5 inline-block" />
               </button>
               <span className="px-4 py-2 flex-1 text-center">{currentQuantity}</span>
               <button
-                onClick={increaseQty}
-                className="px-4 py-2 text-gray-600 flex-1 text-center hover:bg-gray-100"
+                onClick={(e) => increaseQty(product._id, e)}
+                className="px-4 py-2 text-gray-600 flex-1 text-center"
               >
                 <FaPlus className="w-2.5 h-2.5 inline-block" />
               </button>
             </div>
           )}
         </div>
-      </div>
-
-      {/* Cart popup - now using context data */}
-      {showCartPopup && getCartCount() > 0 && (
-        <div className="cart-popup fixed left-0 right-0 bottom-0 bg-white shadow-lg z-50 border-t-2 border-dashed border-gray-200 animate-slideUp">
-          <div className="p-4 max-w-md mx-auto">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <span className="text-sm">
-                  Quantity: {getCartCount()} Items
-                </span>
-              </div>
-
-              <div className="text-sm">
-                Total: {currency}
-                {getCartAmount().toFixed(2)}
-              </div>
-            </div>
-
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={() => setShowCartPopup(false)}
-                className="flex-1 px-4 py-2 border border-sky-200 text-sky-500 rounded-md hover:bg-sky-50 text-sm font-medium flex items-center justify-center"
-              >
-                <FaChevronLeft className="mr-2" size={12} />
-                Continue
-              </button>
-
-              <button
-                onClick={handlePayClick}
-                className="flex-1 px-4 py-2 bg-sky-300/70 text-white rounded-md hover:bg-sky-200/70 text-sm font-medium flex items-center justify-center"
-              >
-                <FaShoppingCart className="mr-2" size={12} />
-                Checkout
-              </button>
-            </div>
-          </div>
         </div>
-      )}
-
-      {/* Add animation styles */}
-      <style jsx global>{`
-        @keyframes slideUp {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
-        }
-        .animate-slideUp {
-          animation: slideUp 0.3s ease-out forwards;
-        }
-      `}</style>
+      </div>
     </>
   );
 };

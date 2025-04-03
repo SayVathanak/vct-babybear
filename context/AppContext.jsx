@@ -18,12 +18,17 @@ export const AppContextProvider = (props) => {
     const router = useRouter()
 
     const { user } = useUser()
-    const { getToken } = useAuth()
+    const { getToken, openSignIn } = useAuth()
 
     const [products, setProducts] = useState([])
     const [userData, setUserData] = useState(false)
     const [isSeller, setIsSeller] = useState(false)
     const [cartItems, setCartItems] = useState({})
+    const [showCartPopup, setShowCartPopup] = useState(false)
+    const [isAddingToCart, setIsAddingToCart] = useState(false)
+
+    // Removed the auto-close timeout for the cart popup
+    // This will make the popup stay visible until manually closed
 
     const fetchProductData = async () => {
         
@@ -66,26 +71,37 @@ export const AppContextProvider = (props) => {
         }
     }
 
-    const addToCart = async (itemId) => {
-
-        let cartData = structuredClone(cartItems);
-        if (cartData[itemId]) {
-            cartData[itemId] += 1;
-        }
-        else {
-            cartData[itemId] = 1;
-        }
-        setCartItems(cartData);
-
-        if (user) {
-            try {
-                const token = await getToken()
-                await axios.post('/api/cart/update', {cartData}, {headers:{Authorization:`Bearer ${token}`}})
-                toast.success('Item added to cart')
-            } catch (error) {
-                toast.error(error.message)
+    const addToCart = async (productId, showPopup = true) => {
+        setIsAddingToCart(true);
+        
+        // Show loading state briefly
+        setTimeout(async () => {
+            let cartData = structuredClone(cartItems);
+            if (cartData[productId]) {
+                cartData[productId] += 1;
             }
-        }
+            else {
+                cartData[productId] = 1;
+            }
+            setCartItems(cartData);
+
+            if (user) {
+                try {
+                    const token = await getToken()
+                    await axios.post('/api/cart/update', {cartData}, {headers:{Authorization:`Bearer ${token}`}})
+                    if (showPopup) {
+                        setShowCartPopup(true);
+                        toast.success('Item added to cart');
+                    }
+                } catch (error) {
+                    toast.error(error.message)
+                }
+            } else if (showPopup) {
+                setShowCartPopup(true);
+            }
+            
+            setIsAddingToCart(false);
+        }, 300);
     }
 
     const updateCartQuantity = async (itemId, quantity) => {
@@ -108,6 +124,31 @@ export const AppContextProvider = (props) => {
         }
     }
 
+    const increaseQty = (productId, e) => {
+        if (e) {
+            e.stopPropagation(); // Prevent event bubbling
+            e.preventDefault(); // Prevent default behavior
+        }
+        addToCart(productId, false);
+    };
+
+    const decreaseQty = (productId, currentQuantity, e) => {
+        if (e) {
+            e.stopPropagation(); // Prevent event bubbling
+            e.preventDefault(); // Prevent default behavior
+        }
+        updateCartQuantity(productId, currentQuantity - 1);
+    };
+
+    const handlePayClick = () => {
+        if (user) {
+            router.push("/cart");
+        } else {
+            toast.error("Please login to continue purchasing");
+            openSignIn();
+        }
+    };
+
     const getCartCount = () => {
         let totalCount = 0;
         for (const items in cartItems) {
@@ -122,8 +163,8 @@ export const AppContextProvider = (props) => {
         let totalAmount = 0;
         for (const items in cartItems) {
             let itemInfo = products.find((product) => product._id === items);
-            if (cartItems[items] > 0) {
-                totalAmount += itemInfo.offerPrice * cartItems[items];
+            if (itemInfo && cartItems[items] > 0) {
+                totalAmount += (itemInfo.offerPrice || itemInfo.price) * cartItems[items];
             }
         }
         return Math.floor(totalAmount * 100) / 100;
@@ -147,7 +188,12 @@ export const AppContextProvider = (props) => {
         products, fetchProductData,
         cartItems, setCartItems,
         addToCart, updateCartQuantity,
-        getCartCount, getCartAmount
+        getCartCount, getCartAmount,
+        // Cart popup and quantity functions
+        showCartPopup, setShowCartPopup,
+        isAddingToCart, setIsAddingToCart,
+        increaseQty, decreaseQty,
+        handlePayClick
     }
 
     return (
