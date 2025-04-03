@@ -47,7 +47,7 @@ const OrderSummary = () => {
         `${orderDetails.address.fullName}\n` +
         `${orderDetails.address.phoneNumber}\n` +
         `${orderDetails.address.area}\n` +
-        `${orderDetails.address.city}, ${orderDetails.address.state}\n\n` +
+        `${orderDetails.address.state}, ${orderDetails.address.city}\n\n` +
         `*Order Items:*\n${itemsList}\n\n` +
         `*Subtotal:* ${orderDetails.currency}${orderDetails.subtotal}\n` +
         `*Delivery:* ${orderDetails.deliveryFee === 0 ? 'Free' : `${orderDetails.currency}${orderDetails.deliveryFee}`}\n` +

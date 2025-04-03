@@ -183,14 +183,14 @@ const AllProducts = () => {
                 {/* Main Content */}
                 <div className="flex-1 px-4 md:px-8 lg:px-12 py-6">
                     {/* Header with Title, Search Icon and Menu Icon */}
-                    <div className="flex justify-between items-center mb-6">
+                    <div className="flex justify-between items-center mb-2 md:mb-4">
                         <h1 className="text-2xl font-prata">{categoryDisplayNames[selectedCategory] || selectedCategory}</h1>
                         
                         <div className="flex items-center space-x-3">
                             {/* Search Icon Button */}
                             <button
                                 onClick={toggleSearch}
-                                className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+                                className="p-2 rounded-md transition-colors"
                                 aria-label="Toggle search"
                             >
                                 <svg 
@@ -226,7 +226,7 @@ const AllProducts = () => {
                     
                     {/* Animated Search Box - shows/hides based on isSearchVisible */}
                     <div 
-                        className={`transition-all duration-300 ease-in-out overflow-hidden mb-6 ${
+                        className={`transition-all duration-300 ease-in-out overflow-hidden mb-4 md:mb-6 ${
                             isSearchVisible ? 'max-h-16 opacity-100' : 'max-h-0 opacity-0'
                         }`}
                     >
