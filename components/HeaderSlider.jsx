@@ -112,12 +112,12 @@ const HeaderSlider = () => {
       </div>
 
       {/* Pagination Dots */}
-      <div className="flex items-center justify-center gap-2 mt-8">
+      <div className="flex items-center justify-center gap-2 mt-6">
         {sliderData.map((_, index) => (
           <div
             key={index}
             onClick={() => handleSlideChange(index)}
-            className={`h-2 w-2 rounded-full cursor-pointer ${currentSlide === index ? "bg-gray-700" : "bg-gray-500/30"
+            className={`h-1.5 w-1.5 rounded-full cursor-pointer ${currentSlide === index ? "bg-sky-300/70" : "bg-gray-300/30"
               }`}
           ></div>
         ))}
