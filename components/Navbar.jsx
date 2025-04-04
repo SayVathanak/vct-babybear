@@ -80,7 +80,6 @@ const Navbar = () => {
             onClick={() => router.push('/seller')}
             className="flex items-center gap-2 text-xs border px-4 py-1.5 rounded-full"
           >
-            <BoxIcon />
             <span>Seller Dashboard</span>
           </button>
         )}
@@ -114,7 +113,7 @@ const Navbar = () => {
         <div className="relative cursor-pointer" onClick={handleCartClick}>
           <FiShoppingBag size={20} className="text-gray-700" />
           {cartCount > 0 && (
-            <span className="absolute -bottom-2 -right-2 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            <span className="absolute -bottom-2 -right-2 bg-black text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
               {cartCount}
             </span>
           )}
@@ -175,7 +174,7 @@ const Navbar = () => {
                 <Link
                   href="/"
                   onClick={toggleMobileMenu}
-                  className="flex items-center gap-2 text-lg font-medium hover:text-gray-900 transition"
+                  className="flex items-center gap-4 text-lg hover:text-gray-900 transition"
                 >
                   <BsHouseDoor />
                   Home
@@ -184,7 +183,7 @@ const Navbar = () => {
                 <Link
                   href="/all-products"
                   onClick={toggleMobileMenu}
-                  className="flex items-center gap-2 text-lg font-medium hover:text-gray-900 transition"
+                  className="flex items-center gap-4 text-lg hover:text-gray-900 transition"
                 >
                   <BsBoxSeam />
                   Shop
@@ -193,7 +192,7 @@ const Navbar = () => {
                 <Link
                   href="/"
                   onClick={toggleMobileMenu}
-                  className="flex items-center gap-2 text-lg font-medium hover:text-gray-900 transition"
+                  className="flex items-center gap-4 text-lg hover:text-gray-900 transition"
                 >
                   <BsInfoCircle />
                   About Us
@@ -202,11 +201,25 @@ const Navbar = () => {
                 <Link
                   href="/"
                   onClick={toggleMobileMenu}
-                  className="flex items-center gap-2 text-lg font-medium hover:text-gray-900 transition"
+                  className="flex items-center gap-4 text-lg hover:text-gray-900 transition"
                 >
                   <BsEnvelope />
                   Contact
                 </Link>
+
+                {/* Added Seller Dashboard for mobile */}
+                {isSeller && (
+                  <button
+                    onClick={() => {
+                      router.push('/seller');
+                      toggleMobileMenu();
+                    }}
+                    className="flex items-center gap-4 text-lg hover:text-gray-900 transition"
+                  >
+                    <BoxIcon />
+                    Seller Dashboard
+                  </button>
+                )}
 
                 {!user && (
                   <button
@@ -216,7 +229,6 @@ const Navbar = () => {
                     }}
                     className="flex items-center gap-2 text-lg font-medium hover:text-gray-900 transition"
                   >
-                    {/* {assets.user_icon ? <Image src={assets.user_icon} alt="user icon" width={24} height={24} /> : <span className="w-6 h-6 flex items-center justify-center">👤</span>} */}
                     {assets.user_icon ? (
                       <Image src={assets.user_icon} alt="user icon" width={20} height={20} />
                     ) : (
