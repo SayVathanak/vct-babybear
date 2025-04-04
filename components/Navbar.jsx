@@ -34,8 +34,8 @@ const Navbar = () => {
 
   return (
     <nav className="flex items-center justify-between px-6 md:px-16 lg:px-32 py-3 border-b border-gray-300">
-      {/* Left section with logo and shopping bag */}
-      <div className="flex items-center gap-3">
+      {/* Left section with logo */}
+      <div className="flex items-center">
         {/* Logo now opens the sidebar menu on mobile */}
         {assets.logo ? (
           <Image
@@ -54,16 +54,6 @@ const Navbar = () => {
             YourStore
           </div>
         )}
-        
-        {/* Shopping Bag moved to left section */}
-        <div className="relative cursor-pointer" onClick={handleCartClick}>
-        <BagIcon2/>
-          {cartCount > 0 && (
-            <span className="absolute -bottom-2 -right-2 bg-sky-300/90 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {cartCount}
-            </span>
-          )}
-        </div>
       </div>
 
       {/* Centered navigation items for desktop */}
@@ -95,8 +85,19 @@ const Navbar = () => {
         )}
       </div>
 
-      {/* Right section: Account button (moved to right) */}
-      <div>
+      {/* Right section: BagIcon2 + Account button */}
+      <div className="flex items-center gap-4">
+        {/* Shopping Bag */}
+        <div className="relative cursor-pointer" onClick={handleCartClick}>
+          <BagIcon2/>
+            {cartCount > 0 && (
+              <span className="absolute -bottom-2 -right-2 bg-sky-300/90 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {cartCount}
+              </span>
+            )}
+        </div>
+
+        {/* User Button */}
         {user ? (
           <UserButton>
             <UserButton.MenuItems>
@@ -203,6 +204,25 @@ const Navbar = () => {
                   <BsEnvelope />
                   Contact
                 </Link>
+
+                {/* Cart link for mobile view */}
+                <button
+                  onClick={() => {
+                    handleCartClick();
+                    toggleMobileMenu();
+                  }}
+                  className="flex items-center gap-4 text-lg hover:text-gray-900 transition"
+                >
+                  <div className="relative">
+                    <BagIcon2 />
+                    {cartCount > 0 && (
+                      <span className="absolute -bottom-2 -right-2 bg-sky-300/90 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {cartCount}
+                      </span>
+                    )}
+                  </div>
+                  Cart
+                </button>
 
                 {/* Added Seller Dashboard for mobile */}
                 {isSeller && (
