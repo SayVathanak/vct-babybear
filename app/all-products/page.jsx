@@ -18,38 +18,94 @@ const AllProducts = () => {
     // Category mapping for display names and icons
     const categoryDisplayNames = {
         "All": "All Products",
-        "FacialFoam": "Facial Foam",
-        "Cleansers": "Cleansers & Face Wash",
-        "Serums": "Serums & Treatments",
-        "Moisturizers": "Moisturizers & Creams",
-        "Sunscreen": "Sunscreens & Sun Protection",
-        "Toners": "Toners & Mists",
-        "Masks": "Face Masks & Exfoliators"
+        "PowderedMilk": "Formula & Powdered Milk",
+        "LiquidMilk": "Ready-to-Feed Milk",
+        "Bottles": "Bottles & Sippy Cups",
+        "Tumblers": "Toddler Tumblers & Cups",
+        "FeedingTools": "Feeding Sets & Utensils",
+        "Accessories": "Baby Essentials & Accessories",
+        "Vitamins": "Nutrition & Supplements",
+        "Diapers": "Diapers & Wipes",
+        "NurseryItems": "Nursery & Sleep Essentials"
     };
     
     const categoryIcons = {
-        "All": (
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
-            </svg>
-        ),
-        "FacialFoam": (
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M7 21h10a2 2 0 0 0 2-2V11H5v8a2 2 0 0 0 2 2Z"></path>
-                <path d="M2 11h20"></path>
-                <path d="M6 11V8c0-2.8 2.2-5 5-5h2c2.8 0 5 2.2 5 5v3"></path>
-            </svg>
-        ),
-        "Cleansers": (
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 5v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H10a2 2 0 0 0-2 2Z"></path>
-                <path d="M4 9v10a2 2 0 0 0 2 2h10"></path>
-            </svg>
-        )
-    };
+            "All": (
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+            ),
+            "PowderedMilk": (
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 8h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2Z"></path>
+                    <path d="M5 8V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2"></path>
+                    <path d="M8 12h8"></path>
+                    <path d="M10 16h4"></path>
+                </svg>
+            ),
+            "LiquidMilk": (
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 2h8"></path>
+                    <path d="M9 2v2.789a4 4 0 0 1-.672 2.219l-.656.984A4 4 0 0 0 7 10.212V20a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-9.789a4 4 0 0 0-.672-2.219l-.656-.984A4 4 0 0 1 15 4.788V2"></path>
+                    <path d="M7 15a6.472 6.472 0 0 1 5 0 6.47 6.47 0 0 0 5 0"></path>
+                </svg>
+            ),
+            "Bottles": (
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 2h6"></path>
+                    <path d="M12 2v4"></path>
+                    <path d="M8 8h8l-1 13a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1L8 8Z"></path>
+                    <path d="M7 11h10"></path>
+                </svg>
+            ),
+            "Tumblers": (
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 8h8"></path>
+                    <path d="M8 8v11a3 3 0 0 0 3 3h2a3 3 0 0 0 3-3V8"></path>
+                    <path d="M8 8a4 4 0 0 1 8 0"></path>
+                    <path d="M14 3.5c0 1.5-.7 2.5-2 2.5s-2-1-2-2.5.7-2.5 2-2.5 2 1 2 2.5z"></path>
+                </svg>
+            ),
+            "FeedingTools": (
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 2v20l3-2 3 2 3-2 3 2V2"></path>
+                    <path d="M4 11h16"></path>
+                    <path d="M4 15h16"></path>
+                </svg>
+            ),
+            "Accessories": (
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <path d="M9.5 9a2.5 2.5 0 0 1 5 0v4.5"></path>
+                </svg>
+            ),
+            "Vitamins": (
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="7"></circle>
+                    <path d="M12 9v6"></path>
+                    <path d="M9 12h6"></path>
+                </svg>
+            ),
+            "Diapers": (
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s-8-2-8-16h16c0 14-8 16-8 16z"></path>
+                    <path d="M8 6h8"></path>
+                    <path d="M8 10h8"></path>
+                    <path d="M8 14h8"></path>
+                </svg>
+            ),
+            "NurseryItems": (
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2 6c0-1.1.9-2 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6z"></path>
+                    <path d="M4 10h16"></path>
+                    <path d="M12 10v8"></path>
+                    <path d="M8 14h8"></path>
+                </svg>
+            )
+        };
     
     // Get unique categories from products and add "All" option
     const allCategories = ["All", ...new Set(products.map(product => product.category))];
@@ -142,8 +198,8 @@ const AllProducts = () => {
                 >
                     <div className="p-6 h-full overflow-y-auto flex flex-col">
                         {/* Sidebar Header */}
-                        <div className="flex justify-between items-center mt-4">
-                            <h3 className="text-3xl font-playfair">Categories</h3>
+                        <div className="flex justify-between items-center mt-6 md:mt-0">
+                            <h3 className="text-3xl md:text-4xl md:mt-0 font-playfair">Categories</h3>
                             <button onClick={toggleSidebar} className="md:hidden">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -183,7 +239,7 @@ const AllProducts = () => {
                 {/* Main Content */}
                 <div className="flex-1 px-4 md:px-8 lg:px-12 py-6">
                     {/* Header with Title, Search Icon and Menu Icon */}
-                    <div className="flex justify-between items-center mb-2 md:mb-4">
+                    <div className="flex justify-between items-center md:mb-4">
                         <h1 className="text-2xl font-prata">{categoryDisplayNames[selectedCategory] || selectedCategory}</h1>
                         
                         <div className="flex items-center space-x-3">
@@ -220,7 +276,7 @@ const AllProducts = () => {
                         </div>
                     </div>
                     {/* Product Count */}
-                    <p className="text-gray-500 text-sm mb-6">
+                    <p className="text-gray-500 text-xs md:text-sm mb-2">
                         Showing {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
                     </p>
                     
@@ -292,7 +348,7 @@ const AllProducts = () => {
                                     <path d="M15 9h.01"></path>
                                 </svg>
                                 <h3 className="text-lg font-medium text-gray-600 mb-2">No products found</h3>
-                                <p className="text-gray-500">Try changing your category filter or search query</p>
+                                <p className="text-gray-500">Try changing the filter or search keyword.</p>
                             </div>
                         )}
                     </div>

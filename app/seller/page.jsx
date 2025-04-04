@@ -125,13 +125,15 @@ const AddProduct = () => {
               onChange={(e) => setCategory(e.target.value)}
               defaultValue={category}
             >
-              <option value="FacialFoam">Facial Foam</option>
-              <option value="Cleansers">Cleansers & Face Wash</option>
-              <option value="Serums">Serums & Treatments</option>
-              <option value="Moisturizers">Moisturizers & Creams</option>
-              <option value="Sunscreen">Sunscreens & Sun Protection</option>
-              <option value="Toners">Toners & Mists</option>
-              <option value="Masks">Face Masks & Exfoliators</option>
+              <option value="PowderedMilk">Formula & Powdered Milk</option>
+              <option value="LiquidMilk">Ready-to-Feed Milk</option>
+              <option value="Bottles">Bottles & Sippy Cups</option>
+              <option value="Tumblers">Toddler Tumblers & Cups</option>
+              <option value="FeedingTools">Feeding Sets & Utensils</option>
+              <option value="Accessories">Baby Essentials & Accessories</option>
+              <option value="Vitamins">Nutrition & Supplements</option>
+              <option value="Diapers">Diapers & Wipes</option>
+              <option value="NurseryItems">Nursery & Sleep Essentials</option>
             </select>
           </div>
           <div className="flex flex-col gap-1 w-32">
