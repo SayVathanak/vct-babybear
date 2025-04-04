@@ -11,6 +11,14 @@ const Cart = () => {
 
   const { products, router, cartItems, addToCart, updateCartQuantity, getCartCount } = useAppContext();
 
+  // Function to safely decrease quantity without going below 1
+  const decreaseQuantity = (productId, currentQuantity) => {
+    // Only decrease if current quantity is greater than 1
+    if (currentQuantity > 1) {
+      updateCartQuantity(productId, currentQuantity - 1);
+    }
+  };
+
   return (
     <>
       <Navbar />
@@ -79,14 +87,27 @@ const Cart = () => {
                       <td className="py-4 md:px-4 px-1 text-gray-600">${product.offerPrice}</td>
                       <td className="py-4 md:px-4 px-1">
                         <div className="flex items-center md:gap-2 gap-1">
-                          <button onClick={() => updateCartQuantity(product._id, cartItems[itemId] - 1)}>
+                          <button 
+                            onClick={() => decreaseQuantity(product._id, cartItems[itemId])}
+                            className={cartItems[itemId] <= 1 ? "opacity-50 cursor-not-allowed" : ""}
+                          >
                             <Image
                               src={assets.decrease_arrow}
                               alt="decrease_arrow"
                               className="w-4 h-4"
                             />
                           </button>
-                          <input onChange={e => updateCartQuantity(product._id, Number(e.target.value))} type="number" value={cartItems[itemId]} className="w-8 border text-center appearance-none"></input>
+                          <input 
+                            onChange={e => {
+                              const value = Number(e.target.value);
+                              // Ensure value is at least 1
+                              updateCartQuantity(product._id, value < 1 ? 1 : value);
+                            }} 
+                            type="number" 
+                            value={cartItems[itemId]} 
+                            min="1"
+                            className="w-8 border text-center appearance-none"
+                          />
                           <button onClick={() => addToCart(product._id)}>
                             <Image
                               src={assets.increase_arrow}
@@ -105,11 +126,6 @@ const Cart = () => {
           </div>
           <button onClick={()=> router.push('/all-products')} className="group flex items-center mt-6 text-black">
             <FaChevronLeft className="mr-1" size={12} />
-            {/* <Image
-              className="group-hover:-translate-x-1 transition"
-              src={assets.arrow_right_icon_colored}
-              alt="arrow_right_icon_colored"
-            /> */}
             <span>Continue Shopping</span>
           </button>
         </div>

@@ -10,7 +10,7 @@ import toast from "react-hot-toast";
 import { FaUser, FaPhoneAlt, FaMapMarkerAlt, FaLocationArrow } from "react-icons/fa";
 
 // ProvinceSelector Component
-const ProvinceSelector = ({ provinces, address, setAddress }) => {
+const ProvinceSelector = ({ provinces, address, setAddress, errors, setErrors }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
 
@@ -25,12 +25,33 @@ const ProvinceSelector = ({ provinces, address, setAddress }) => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    // Toggle dropdown with explicit prevention of form submission
+    const toggleDropdown = (e) => {
+        e.preventDefault(); // Prevent form submission
+        e.stopPropagation(); // Stop event propagation
+        setIsOpen(!isOpen);
+    };
+
+    // Handle province selection with explicit prevention of form submission
+    const handleProvinceSelect = (e, province) => {
+        e.preventDefault(); // Prevent form submission
+        e.stopPropagation(); // Stop event propagation
+        
+        setAddress({ ...address, state: province });
+        // Clear the state error when a province is selected
+        if (errors && setErrors && errors.state) {
+            setErrors({ ...errors, state: null });
+        }
+        setIsOpen(false);
+    };
+
     return (
         <div className="relative w-full" ref={dropdownRef}>
             {/* Dropdown Toggle with SVG arrow */}
             <button
+                type="button" // Important: specify button type to prevent form submission
                 className="peer w-full text-left px-3 py-2 border rounded text-sm bg-white cursor-pointer font-kantumruy focus:outline-none"
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={toggleDropdown}
             >
                 <span>{address.state || "ជ្រើសរើសខេត្ដមួយ"}</span>
                 <svg 
@@ -51,10 +72,7 @@ const ProvinceSelector = ({ provinces, address, setAddress }) => {
                         <div
                             key={index}
                             className="px-3 py-2 cursor-pointer hover:bg-gray-200"
-                            onClick={() => {
-                                setAddress({ ...address, state: province });
-                                setIsOpen(false);
-                            }}
+                            onClick={(e) => handleProvinceSelect(e, province)}
                         >
                             {province}
                         </div>
@@ -140,6 +158,10 @@ const AddAddress = () => {
                                 onChange={(e) => setAddress({ ...address, fullName: e.target.value })}
                                 value={address.fullName}
                             />
+                            {errors.fullName && (
+                                <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>
+                            )}
+                            
                             <label className="font-kantumruy flex items-center gap-2">
                                 <FaPhoneAlt /> លេខទូរស័ព្ទ:*
                             </label>
@@ -150,6 +172,9 @@ const AddAddress = () => {
                                 onChange={(e) => setAddress({ ...address, phoneNumber: e.target.value })}
                                 value={address.phoneNumber}
                             />
+                            {errors.phoneNumber && (
+                                <p className="text-red-500 text-xs mt-1">{errors.phoneNumber}</p>
+                            )}
                         </div>
                     {/* </div> */}
 
@@ -166,11 +191,20 @@ const AddAddress = () => {
                                 onChange={(e) => setAddress({ ...address, area: e.target.value })}
                                 value={address.area}
                             />
+                            {errors.area && (
+                                <p className="text-red-500 text-xs mt-1">{errors.area}</p>
+                            )}
 
                             <label className="font-kantumruy flex items-center gap-2">
                                 <FaLocationArrow /> ខេត្ត:*
                             </label>
-                            <ProvinceSelector provinces={provinces} address={address} setAddress={setAddress} />
+                            <ProvinceSelector 
+                                provinces={provinces} 
+                                address={address} 
+                                setAddress={setAddress}
+                                errors={errors}
+                                setErrors={setErrors} 
+                            />
                             {errors.state && (
                                 <p className="text-red-500 text-xs mt-1">{errors.state}</p>
                             )}

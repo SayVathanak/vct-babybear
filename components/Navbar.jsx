@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { assets, BagIcon, BoxIcon, CartIcon, HomeIcon } from "@/assets/assets";
+import { assets, BagIcon, BagIcon2, BoxIcon, CartIcon, HomeIcon } from "@/assets/assets";
 // Ensure all assets are properly loaded and not empty strings
 import Link from "next/link";
 import { useAppContext } from "@/context/AppContext";
@@ -56,10 +56,10 @@ const Navbar = () => {
         )}
         
         {/* Shopping Bag moved to left section */}
-        <div className="relative cursor-pointer ml-3" onClick={handleCartClick}>
-          <FiShoppingBag size={20} className="text-gray-700" />
+        <div className="relative cursor-pointer" onClick={handleCartClick}>
+        <BagIcon2/>
           {cartCount > 0 && (
-            <span className="absolute -bottom-2 -right-2 bg-black text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            <span className="absolute -bottom-2 -right-2 bg-sky-300/90 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
               {cartCount}
             </span>
           )}
