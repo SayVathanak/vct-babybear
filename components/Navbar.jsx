@@ -78,6 +78,9 @@ const Navbar = () => {
   const { openSignIn, signOut } = useClerk();
 
   const cartCount = getCartCount();
+  
+  const router = useRouter();
+  const isAllProductsPage = router.pathname === '/all-products';
 
   // Category data for sidebar menu
   const categories = [
@@ -243,6 +246,18 @@ const Navbar = () => {
           <FiMenu size={24} />
         </button>
       </div>
+      
+      <div className="flex items-center gap-4">
+      {!isAllProductsPage && (
+        <button
+          onClick={toggleMobileMenu}
+          aria-label="Toggle menu"
+          className="bg-transparent focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors hover:bg-gray-100"
+        >
+          <FiMenu size={24} />
+        </button>
+      )}
+    </div>
 
       {/* Centered Logo */}
       <div className="flex-1 flex justify-center">
