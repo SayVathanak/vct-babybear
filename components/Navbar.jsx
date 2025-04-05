@@ -50,10 +50,6 @@ const Navbar = () => {
   const [showAllResults, setShowAllResults] = useState(false);
   const [showCartPanel, setShowCartPanel] = useState(false);
 
-  const pathname = usePathname();
-  const isAllProductsPage =
-    pathname === "/all-products" || pathname.startsWith("/all-products?");
-
   const searchInputRef = useRef(null);
   const cartPanelRef = useRef(null);
   const searchResultsRef = useRef(null);
@@ -246,18 +242,6 @@ const Navbar = () => {
           <FiMenu size={24} />
         </button>
       </div>
-      
-      <div className="flex items-center gap-4">
-      {!isAllProductsPage && (
-        <button
-          onClick={toggleMobileMenu}
-          aria-label="Toggle menu"
-          className="bg-transparent focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors hover:bg-gray-100"
-        >
-          <FiMenu size={24} />
-        </button>
-      )}
-    </div>
 
       {/* Centered Logo */}
       <div className="flex-1 flex justify-center">
