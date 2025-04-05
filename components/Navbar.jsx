@@ -1,10 +1,13 @@
+I see the issue in your code. You have duplicate router imports and variable declarations causing conflicts. Let me clean up your Navbar component code:
+
+```jsx
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { assets, BagIcon2, BoxIcon, CartIcon } from "@/assets/assets";
 import Link from "next/link";
 import { useAppContext } from "@/context/AppContext";
 import Image from "next/image";
-import { useClerk, UserButton } from "@clerk/nextjs"; // Make sure UserButton is imported
+import { useClerk, UserButton } from "@clerk/nextjs";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -78,9 +81,6 @@ const Navbar = () => {
   const { openSignIn, signOut } = useClerk();
 
   const cartCount = getCartCount();
-  
-  const router = useRouter();
-  const isAllProductsPage = router.pathname === '/all-products';
 
   // Category data for sidebar menu
   const categories = [
@@ -238,26 +238,16 @@ const Navbar = () => {
     <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm px-4 py-2 md:px-12 flex items-center justify-between">
       {/* Mobile Menu Icon */}
       <div className="flex items-center gap-4">
-        <button
-          onClick={toggleMobileMenu}
-          aria-label="Toggle menu"
-          className="focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors hover:bg-gray-100"
-        >
-          <FiMenu size={24} />
-        </button>
+        {!isAllProductsPage && (
+          <button
+            onClick={toggleMobileMenu}
+            aria-label="Toggle menu"
+            className="bg-transparent focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors hover:bg-gray-100"
+          >
+            <FiMenu size={24} />
+          </button>
+        )}
       </div>
-      
-      <div className="flex items-center gap-4">
-      {!isAllProductsPage && (
-        <button
-          onClick={toggleMobileMenu}
-          aria-label="Toggle menu"
-          className="bg-transparent focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors hover:bg-gray-100"
-        >
-          <FiMenu size={24} />
-        </button>
-      )}
-    </div>
 
       {/* Centered Logo */}
       <div className="flex-1 flex justify-center">
@@ -305,6 +295,7 @@ const Navbar = () => {
             </span>
           )}
         </div>
+      </div>
 
         {/* Sign in button or UserButton */}
         {/* Replace the UserButton implementation with this corrected version */}
