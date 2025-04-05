@@ -1,49 +1,30 @@
-I see the issue in your code. You have duplicate router imports and variable declarations causing conflicts. Let me clean up your Navbar component code:
-
-```jsx
 "use client";
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { assets, BagIcon2, BoxIcon, CartIcon } from "@/assets/assets";
+
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
 import Link from "next/link";
-import { useAppContext } from "@/context/AppContext";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useClerk, UserButton } from "@clerk/nextjs";
 import {
-  AlertDialog,
-  AlertDialogTrigger,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogFooter,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from "@/components/ui/alert-dialog";
-import {
-  BsHouseDoor,
-  BsBoxSeam,
-  BsInfoCircle,
-  BsEnvelope,
-  BsShop,
-  BsPersonFill,
-  BsBoxArrowInRight,
-  BsBoxArrowRight,
-} from "react-icons/bs";
-import {
-  FiUser,
   FiMenu,
   FiSearch,
   FiShoppingCart,
   FiX,
-  FiChevronRight,
-  FiPlus,
-  FiMinus,
 } from "react-icons/fi";
-import { CiShop } from "react-icons/ci";
+import {
+  BsBoxArrowInRight,
+} from "react-icons/bs";
 import { AnimatePresence, motion } from "framer-motion";
-import ProductCard from "@/components/ProductCard";
 import toast from "react-hot-toast";
-import { usePathname } from "next/navigation";
+
+import ProductCard from "@/components/ProductCard";
+import { useAppContext } from "@/context/AppContext";
+import { assets } from "@/assets/assets";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -53,13 +34,13 @@ const Navbar = () => {
   const [showAllResults, setShowAllResults] = useState(false);
   const [showCartPanel, setShowCartPanel] = useState(false);
 
-  const pathname = usePathname();
-  const isAllProductsPage =
-    pathname === "/all-products" || pathname.startsWith("/all-products?");
-
   const searchInputRef = useRef(null);
   const cartPanelRef = useRef(null);
   const searchResultsRef = useRef(null);
+
+  const pathname = usePathname();
+  const isAllProductsPage =
+    pathname === "/all-products" || pathname.startsWith("/all-products?");
 
   const {
     isSeller,
@@ -68,7 +49,6 @@ const Navbar = () => {
     currency,
     getCartCount,
     products,
-    cart,
     cartItems,
     addToCart,
     increaseQty,
@@ -79,143 +59,55 @@ const Navbar = () => {
   } = useAppContext();
 
   const { openSignIn, signOut } = useClerk();
-
   const cartCount = getCartCount();
 
-  // Category data for sidebar menu
-  const categories = [
-    { id: "All", name: "All Products" },
-    { id: "PowderedMilk", name: "Formula & Powdered Milk" },
-    { id: "LiquidMilk", name: "Ready-to-Feed Milk" },
-    { id: "Bottles", name: "Bottles & Sippy Cups" },
-    { id: "Tumblers", name: "Toddler Tumblers & Cups" },
-    { id: "FeedingTools", name: "Feeding Sets & Utensils" },
-    { id: "Accessories", name: "Baby Essentials & Accessories" },
-    { id: "Vitamins", name: "Nutrition & Supplements" },
-    { id: "Diapers", name: "Diapers & Wipes" },
-    { id: "NurseryItems", name: "Nursery & Sleep Essentials" },
-  ];
-
-  // Calculate cart total - using cart items directly from context
   const calculateCartTotal = useCallback(() => {
     if (!cartItems) return 0;
 
-    return Object.entries(cartItems).reduce((sum, [productId, quantity]) => {
-      const product = products.find((p) => p._id === productId);
-      return (
-        sum + (product ? (product.offerPrice || product.price) * quantity : 0)
-      );
+    return Object.entries(cartItems).reduce((sum, [id, qty]) => {
+      const product = products.find((p) => p._id === id);
+      return sum + (product ? (product.offerPrice || product.price) * qty : 0);
     }, 0);
   }, [cartItems, products]);
 
-  // Get cart items with product details
   const getCartItemsWithDetails = useCallback(() => {
-    if (!cartItems || !products || products.length === 0) return [];
+    if (!cartItems || !products?.length) return [];
 
     return Object.entries(cartItems)
-      .map(([productId, quantity]) => {
-        const product = products.find((p) => p._id === productId);
-        return product ? { product, quantity } : null;
+      .map(([id, qty]) => {
+        const product = products.find((p) => p._id === id);
+        return product ? { product, quantity: qty } : null;
       })
       .filter(Boolean);
   }, [cartItems, products]);
 
-  const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
+  const toggleMobileMenu = () => setMobileMenuOpen((prev) => !prev);
 
   const toggleSearch = () => {
-    setSearchOpen(!searchOpen);
-    if (searchOpen) {
-      setSearchTerm("");
-      setFilteredProducts([]);
-      setShowAllResults(false);
-    } else {
-      // Focus the search input after opening
-      setTimeout(() => {
-        searchInputRef.current?.focus();
-      }, 100);
+    setSearchOpen((prev) => !prev);
+    setSearchTerm("");
+    setFilteredProducts([]);
+    setShowAllResults(false);
+
+    if (!searchOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 100);
     }
   };
 
-  // Enhanced debounce search with useCallback for better performance
   const debouncedSearch = useCallback(
     (value) => {
-      if (value.trim()) {
-        const filtered = products.filter(
-          (p) =>
-            p.name.toLowerCase().includes(value.toLowerCase()) ||
-            (p.description &&
-              p.description.toLowerCase().includes(value.toLowerCase()))
-        );
-        setFilteredProducts(filtered);
-      } else {
-        setFilteredProducts([]);
-      }
+      if (!value.trim()) return setFilteredProducts([]);
+
+      const filtered = products.filter(
+        (p) =>
+          p.name.toLowerCase().includes(value.toLowerCase()) ||
+          p.description?.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredProducts(filtered);
     },
     [products]
   );
 
-  // Handle search input change with debounce
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      debouncedSearch(searchTerm);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchTerm, debouncedSearch]);
-
-  // Close mobile menu on window resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768) {
-        setMobileMenuOpen(false);
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [mobileMenuOpen]);
-
-  // Handle click outside to close search and cart panel
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      // Close search when clicking outside
-      if (
-        searchResultsRef.current &&
-        !searchResultsRef.current.contains(event.target) &&
-        !event.target.closest('button[aria-label="Search"]')
-      ) {
-        setSearchOpen(false);
-      }
-
-      // Close cart panel when clicking outside
-      if (
-        cartPanelRef.current &&
-        !cartPanelRef.current.contains(event.target) &&
-        !event.target.closest('div[aria-label="Shopping cart"]')
-      ) {
-        setShowCartPanel(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Handle keyboard events for accessibility
-  useEffect(() => {
-    const handleEscKeyPress = (e) => {
-      if (e.key === "Escape") {
-        if (searchOpen) toggleSearch();
-        if (showCartPanel) setShowCartPanel(false);
-        if (mobileMenuOpen) toggleMobileMenu();
-      }
-    };
-
-    window.addEventListener("keydown", handleEscKeyPress);
-    return () => window.removeEventListener("keydown", handleEscKeyPress);
-  }, [searchOpen, showCartPanel, mobileMenuOpen]);
-
-  // Proceed to checkout - integrated from CartPopup component
   const handleCheckout = () => {
     if (user) {
       setShowCartPanel(false);
@@ -225,18 +117,68 @@ const Navbar = () => {
     }
   };
 
-  // Navigate to product page and close search
-  const handleProductClick = (productId) => {
-    router.push(`/product/${productId}`);
+  const handleProductClick = (id) => {
+    router.push(`/product/${id}`);
     toggleSearch();
   };
 
-  // Get cart items for display
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      debouncedSearch(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, debouncedSearch]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) setMobileMenuOpen(false);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        searchResultsRef.current &&
+        !searchResultsRef.current.contains(e.target) &&
+        !e.target.closest('button[aria-label="Search"]')
+      ) {
+        setSearchOpen(false);
+      }
+
+      if (
+        cartPanelRef.current &&
+        !cartPanelRef.current.contains(e.target) &&
+        !e.target.closest('div[aria-label="Shopping cart"]')
+      ) {
+        setShowCartPanel(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key !== "Escape") return;
+      if (searchOpen) toggleSearch();
+      if (showCartPanel) setShowCartPanel(false);
+      if (mobileMenuOpen) setMobileMenuOpen(false);
+    };
+
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [searchOpen, showCartPanel, mobileMenuOpen]);
+
   const cartItemsWithDetails = getCartItemsWithDetails();
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm px-4 py-2 md:px-12 flex items-center justify-between">
-      {/* Mobile Menu Icon */}
+      {/* Menu Toggle (Mobile) */}
       <div className="flex items-center gap-4">
         {!isAllProductsPage && (
           <button
@@ -249,31 +191,30 @@ const Navbar = () => {
         )}
       </div>
 
-      {/* Centered Logo */}
+      {/* Center Logo */}
       <div className="flex-1 flex justify-center">
         {assets.logo ? (
           <Image
-            className="cursor-pointer w-28 md:w-32 transition-transform hover:scale-105"
-            onClick={() => router.push("/")}
             src={assets.logo}
             alt="logo"
             width={128}
             height={40}
             priority
+            onClick={() => router.push("/")}
+            className="cursor-pointer w-28 md:w-32 transition-transform hover:scale-105"
           />
         ) : (
           <div
-            className="text-xl font-bold cursor-pointer transition-colors hover:text-sky-600"
             onClick={() => router.push("/")}
+            className="text-xl font-bold cursor-pointer transition-colors hover:text-sky-600"
           >
             Baby Bear Store
           </div>
         )}
       </div>
 
-      {/* Icons */}
+      {/* Right Side Icons */}
       <div className="flex items-center gap-5">
-        {/* Only show search on non-all-products pages */}
         {!isAllProductsPage && (
           <button
             onClick={toggleSearch}
@@ -283,10 +224,11 @@ const Navbar = () => {
             {searchOpen ? <FiX size={22} /> : <FiSearch size={22} />}
           </button>
         )}
+
         <div
-          className="relative cursor-pointer transition-transform hover:scale-110"
           onClick={() => setShowCartPanel(true)}
           aria-label="Shopping cart"
+          className="relative cursor-pointer transition-transform hover:scale-110"
         >
           <FiShoppingCart size={22} />
           {cartCount > 0 && (
@@ -295,24 +237,22 @@ const Navbar = () => {
             </span>
           )}
         </div>
-      </div>
 
-        {/* Sign in button or UserButton */}
-        {/* Replace the UserButton implementation with this corrected version */}
-        {/* {user ? (
+        {/* Auth Button */}
+        {user ? (
           <UserButton afterSignOutUrl="/" />
         ) : (
           <button
-            onClick={() => openSignIn()}
+            onClick={openSignIn}
             aria-label="Sign In"
             className="flex items-center gap-1 bg-sky-300/70 hover:bg-sky-600 text-white px-3 py-1.5 rounded-md transition-colors font-medium text-sm"
           >
             <BsBoxArrowInRight size={16} />
             <span className="hidden sm:inline">Sign In</span>
           </button>
-        )} */}
+        )}
       </div>
-
+      
       {/* Search Results - Improved for better responsiveness */}
       <AnimatePresence>
   {searchOpen && (
