@@ -11,6 +11,9 @@ import {
   BsInfoCircle,
   BsEnvelope,
   BsShop,
+  BsPersonFill,
+  BsBoxArrowInRight,
+  BsBoxArrowRight
 } from "react-icons/bs";
 import {
   FiUser,
@@ -26,6 +29,7 @@ import { CiShop } from "react-icons/ci";
 import { AnimatePresence, motion } from "framer-motion";
 import ProductCard from "@/components/ProductCard";
 import toast from "react-hot-toast";
+import { usePathname } from "next/navigation";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -34,6 +38,9 @@ const Navbar = () => {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [showAllResults, setShowAllResults] = useState(false);
   const [showCartPanel, setShowCartPanel] = useState(false);
+  
+  const pathname = usePathname();
+  const isAllProductsPage = pathname === "/all-products" || pathname.startsWith("/all-products?");
 
   const searchInputRef = useRef(null);
   const cartPanelRef = useRef(null);
@@ -238,13 +245,16 @@ const Navbar = () => {
 
       {/* Icons */}
       <div className="flex items-center gap-5">
-        <button
-          onClick={toggleSearch}
-          aria-label="Search"
-          className="focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors hover:bg-gray-100"
-        >
-          {searchOpen ? <FiX size={22} /> : <FiSearch size={22} />}
-        </button>
+        {/* Only show search on non-all-products pages */}
+        {!isAllProductsPage && (
+          <button
+            onClick={toggleSearch}
+            aria-label="Search"
+            className="focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors hover:bg-gray-100"
+          >
+            {searchOpen ? <FiX size={22} /> : <FiSearch size={22} />}
+          </button>
+        )}
         <div
           className="relative cursor-pointer transition-transform hover:scale-110"
           onClick={() => setShowCartPanel(true)}
@@ -257,6 +267,31 @@ const Navbar = () => {
             </span>
           )}
         </div>
+        
+        {/* Sign in button or UserButton */}
+        {user ? (
+          <UserButton afterSignOutUrl="/" defaultOpen={true}>
+            <UserButton.MenuItems>
+              <UserButton.Profile afterCreateOrganizationUrl="/dashboard" />
+              <UserButton.Action label="Manage Account" onClick={() => {}} />
+              <UserButton.Action label="Cart" labelIcon={<CartIcon />} onClick={() => {
+                router.push('/cart');
+              }} />
+              <UserButton.Action label="My Orders" labelIcon={<BagIcon2 />} onClick={() => {
+                router.push('/my-orders');
+              }} />
+            </UserButton.MenuItems>
+          </UserButton>
+        ) : (
+          <button
+            onClick={() => openSignIn()}
+            aria-label="Sign In"
+            className="flex items-center gap-1 bg-sky-300/70 hover:bg-sky-600 text-white px-3 py-1.5 rounded-md transition-colors font-medium text-sm"
+          >
+            <BsBoxArrowInRight size={16} />
+            <span className="hidden sm:inline">Sign In</span>
+          </button>
+        )}
       </div>
 
       {/* Search Results - Improved for better responsiveness */}
@@ -467,7 +502,7 @@ const Navbar = () => {
                 </div>
               </div>
 
-              {/* Account Section - Updated with UserButton */}
+              {/* Account Section - Updated with UserButton and Bootstrap icons */}
               <div className="p-5 mt-auto border-t border-gray-100 bg-gray-50">
                 {isSeller && (
                   <button
@@ -483,16 +518,16 @@ const Navbar = () => {
 
                 {user ? (
                   <div className="space-y-3">
-                    {/* New UserButton integration */}
+                    {/* UserButton integration - automatically opens account management */}
                     <div className="flex items-center gap-3 mb-3">
-                      <UserButton>
+                      <UserButton afterSignOutUrl="/" defaultOpen={true}>
                         <UserButton.MenuItems>
+                          <UserButton.Profile afterCreateOrganizationUrl="/dashboard" />
+                          <UserButton.Action label="Manage Account" onClick={() => {}} />
                           <UserButton.Action label="Cart" labelIcon={<CartIcon />} onClick={() => {
                             router.push('/cart');
                             toggleMobileMenu();
                           }} />
-                        </UserButton.MenuItems>
-                        <UserButton.MenuItems>
                           <UserButton.Action label="My Orders" labelIcon={<BagIcon2 />} onClick={() => {
                             router.push('/my-orders');
                             toggleMobileMenu();
@@ -506,16 +541,18 @@ const Navbar = () => {
                     </div>
                     <button
                       onClick={() => signOut()}
-                      className="w-full py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md transition-colors text-center font-medium"
+                      className="w-full py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md transition-colors text-center font-medium flex items-center justify-center gap-2"
                     >
+                      <BsBoxArrowRight size={16} />
                       Sign Out
                     </button>
                   </div>
                 ) : (
                   <button
                     onClick={() => openSignIn()}
-                    className="w-full py-2.5 bg-sky-300/70 hover:bg-sky-600 text-white rounded-md transition-colors text-center font-medium"
+                    className="w-full py-2.5 bg-sky-300/70 hover:bg-sky-600 text-white rounded-md transition-colors text-center font-medium flex items-center justify-center gap-2"
                   >
+                    <BsBoxArrowInRight size={16} />
                     Sign In
                   </button>
                 )}
@@ -647,28 +684,4 @@ const Navbar = () => {
                   <div className="mt-4 flex gap-2">
                     <button
                       onClick={() => setShowCartPanel(false)}
-                      className="flex-1 px-4 py-2 border border-sky-200 text-sky-300/70 rounded-md flex items-center justify-center"
-                    >
-                      <FiChevronRight className="mr-2 transform rotate-180" size={12} />
-                      Continue
-                    </button>
-
-                    <button
-                      onClick={handleCheckout}
-                      className="flex-1 px-4 py-2 bg-sky-300/70 text-white rounded-md hover:bg-sky-400/70 flex items-center justify-center"
-                    >
-                      <FiShoppingCart className="mr-2" size={12} />
-                      Checkout
-                    </button>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </nav>
-  );
-};
-
-export default Navbar;
+                      className="flex-1 px-4 py-2 border
