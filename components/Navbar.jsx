@@ -6,6 +6,17 @@ import { useAppContext } from "@/context/AppContext";
 import Image from "next/image";
 import { useClerk, UserButton } from "@clerk/nextjs"; // Make sure UserButton is imported
 import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import {
   BsHouseDoor,
   BsBoxSeam,
   BsInfoCircle,
@@ -13,7 +24,7 @@ import {
   BsShop,
   BsPersonFill,
   BsBoxArrowInRight,
-  BsBoxArrowRight
+  BsBoxArrowRight,
 } from "react-icons/bs";
 import {
   FiUser,
@@ -23,7 +34,7 @@ import {
   FiX,
   FiChevronRight,
   FiPlus,
-  FiMinus
+  FiMinus,
 } from "react-icons/fi";
 import { CiShop } from "react-icons/ci";
 import { AnimatePresence, motion } from "framer-motion";
@@ -38,9 +49,10 @@ const Navbar = () => {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [showAllResults, setShowAllResults] = useState(false);
   const [showCartPanel, setShowCartPanel] = useState(false);
-  
+
   const pathname = usePathname();
-  const isAllProductsPage = pathname === "/all-products" || pathname.startsWith("/all-products?");
+  const isAllProductsPage =
+    pathname === "/all-products" || pathname.startsWith("/all-products?");
 
   const searchInputRef = useRef(null);
   const cartPanelRef = useRef(null);
@@ -60,7 +72,7 @@ const Navbar = () => {
     decreaseQty,
     handlePayClick,
     showCartPopup,
-    setShowCartPopup
+    setShowCartPopup,
   } = useAppContext();
 
   const { openSignIn, signOut } = useClerk();
@@ -78,7 +90,7 @@ const Navbar = () => {
     { id: "Accessories", name: "Baby Essentials & Accessories" },
     { id: "Vitamins", name: "Nutrition & Supplements" },
     { id: "Diapers", name: "Diapers & Wipes" },
-    { id: "NurseryItems", name: "Nursery & Sleep Essentials" }
+    { id: "NurseryItems", name: "Nursery & Sleep Essentials" },
   ];
 
   // Calculate cart total - using cart items directly from context
@@ -86,8 +98,10 @@ const Navbar = () => {
     if (!cartItems) return 0;
 
     return Object.entries(cartItems).reduce((sum, [productId, quantity]) => {
-      const product = products.find(p => p._id === productId);
-      return sum + (product ? (product.offerPrice || product.price) * quantity : 0);
+      const product = products.find((p) => p._id === productId);
+      return (
+        sum + (product ? (product.offerPrice || product.price) * quantity : 0)
+      );
     }, 0);
   }, [cartItems, products]);
 
@@ -95,10 +109,12 @@ const Navbar = () => {
   const getCartItemsWithDetails = useCallback(() => {
     if (!cartItems || !products || products.length === 0) return [];
 
-    return Object.entries(cartItems).map(([productId, quantity]) => {
-      const product = products.find(p => p._id === productId);
-      return product ? { product, quantity } : null;
-    }).filter(Boolean);
+    return Object.entries(cartItems)
+      .map(([productId, quantity]) => {
+        const product = products.find((p) => p._id === productId);
+        return product ? { product, quantity } : null;
+      })
+      .filter(Boolean);
   }, [cartItems, products]);
 
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
@@ -124,7 +140,8 @@ const Navbar = () => {
         const filtered = products.filter(
           (p) =>
             p.name.toLowerCase().includes(value.toLowerCase()) ||
-            (p.description && p.description.toLowerCase().includes(value.toLowerCase()))
+            (p.description &&
+              p.description.toLowerCase().includes(value.toLowerCase()))
         );
         setFilteredProducts(filtered);
       } else {
@@ -159,14 +176,20 @@ const Navbar = () => {
   useEffect(() => {
     const handleClickOutside = (event) => {
       // Close search when clicking outside
-      if (searchResultsRef.current && !searchResultsRef.current.contains(event.target) &&
-        !event.target.closest('button[aria-label="Search"]')) {
+      if (
+        searchResultsRef.current &&
+        !searchResultsRef.current.contains(event.target) &&
+        !event.target.closest('button[aria-label="Search"]')
+      ) {
         setSearchOpen(false);
       }
 
       // Close cart panel when clicking outside
-      if (cartPanelRef.current && !cartPanelRef.current.contains(event.target) &&
-        !event.target.closest('div[aria-label="Shopping cart"]')) {
+      if (
+        cartPanelRef.current &&
+        !cartPanelRef.current.contains(event.target) &&
+        !event.target.closest('div[aria-label="Shopping cart"]')
+      ) {
         setShowCartPanel(false);
       }
     };
@@ -178,15 +201,15 @@ const Navbar = () => {
   // Handle keyboard events for accessibility
   useEffect(() => {
     const handleEscKeyPress = (e) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         if (searchOpen) toggleSearch();
         if (showCartPanel) setShowCartPanel(false);
         if (mobileMenuOpen) toggleMobileMenu();
       }
     };
 
-    window.addEventListener('keydown', handleEscKeyPress);
-    return () => window.removeEventListener('keydown', handleEscKeyPress);
+    window.addEventListener("keydown", handleEscKeyPress);
+    return () => window.removeEventListener("keydown", handleEscKeyPress);
   }, [searchOpen, showCartPanel, mobileMenuOpen]);
 
   // Proceed to checkout - integrated from CartPopup component
@@ -238,7 +261,7 @@ const Navbar = () => {
             className="text-xl font-bold cursor-pointer transition-colors hover:text-sky-600"
             onClick={() => router.push("/")}
           >
-            YourStore
+            Baby Bear Store
           </div>
         )}
       </div>
@@ -267,21 +290,11 @@ const Navbar = () => {
             </span>
           )}
         </div>
-        
+
         {/* Sign in button or UserButton */}
-        {user ? (
-          <UserButton afterSignOutUrl="/" defaultOpen={true}>
-            <UserButton.MenuItems>
-              <UserButton.Profile afterCreateOrganizationUrl="/dashboard" />
-              <UserButton.Action label="Manage Account" onClick={() => {}} />
-              <UserButton.Action label="Cart" labelIcon={<CartIcon />} onClick={() => {
-                router.push('/cart');
-              }} />
-              <UserButton.Action label="My Orders" labelIcon={<BagIcon2 />} onClick={() => {
-                router.push('/my-orders');
-              }} />
-            </UserButton.MenuItems>
-          </UserButton>
+        {/* Replace the UserButton implementation with this corrected version */}
+        {/* {user ? (
+          <UserButton afterSignOutUrl="/" />
         ) : (
           <button
             onClick={() => openSignIn()}
@@ -291,7 +304,7 @@ const Navbar = () => {
             <BsBoxArrowInRight size={16} />
             <span className="hidden sm:inline">Sign In</span>
           </button>
-        )}
+        )} */}
       </div>
 
       {/* Search Results - Improved for better responsiveness */}
@@ -316,13 +329,19 @@ const Navbar = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   autoComplete="off"
                 />
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <FiSearch
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
               </div>
 
               {filteredProducts.length > 0 ? (
                 <>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-[60vh] overflow-y-auto pt-2 pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                    {(showAllResults ? filteredProducts : filteredProducts.slice(0, 10)).map((product) => (
+                    {(showAllResults
+                      ? filteredProducts
+                      : filteredProducts.slice(0, 10)
+                    ).map((product) => (
                       <div
                         key={product._id}
                         className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer border border-gray-100"
@@ -345,16 +364,23 @@ const Navbar = () => {
                               </div>
                             )}
                           </div>
-                          <h3 className="text-sm font-medium line-clamp-2 h-10">{product.name}</h3>
+                          <h3 className="text-sm font-medium line-clamp-2 h-10">
+                            {product.name}
+                          </h3>
                           <div className="flex items-center mt-1">
                             <span className="text-sm font-semibold text-sky-700">
-                              {currency}{product.offerPrice?.toFixed(2) || product.price?.toFixed(2)}
+                              {currency}
+                              {product.offerPrice?.toFixed(2) ||
+                                product.price?.toFixed(2)}
                             </span>
-                            {product.price && product.offerPrice && product.price > product.offerPrice && (
-                              <span className="text-xs text-gray-400 line-through ml-2">
-                                {currency}{product.price?.toFixed(2)}
-                              </span>
-                            )}
+                            {product.price &&
+                              product.offerPrice &&
+                              product.price > product.offerPrice && (
+                                <span className="text-xs text-gray-400 line-through ml-2">
+                                  {currency}
+                                  {product.price?.toFixed(2)}
+                                </span>
+                              )}
                           </div>
                         </div>
                       </div>
@@ -377,14 +403,18 @@ const Navbar = () => {
                   <div className="mb-3 text-gray-400">
                     <FiSearch size={36} className="mx-auto" />
                   </div>
-                  <p className="text-gray-600 mb-1">No products found for "{searchTerm}"</p>
-                  <p className="text-gray-500 text-sm">Try different keywords or browse categories</p>
+                  <p className="text-gray-600 mb-1">
+                    No products found for "{searchTerm}"
+                  </p>
+                  <p className="text-gray-500 text-sm">
+                    Try different keywords or browse categories
+                  </p>
                 </div>
               ) : (
                 <div className="text-center py-12 text-gray-500">
                   <p className="mb-2">Start typing to search products</p>
                   <div className="mt-4 flex flex-wrap justify-center gap-2">
-                    {categories.slice(0, 5).map(category => (
+                    {categories.slice(0, 5).map((category) => (
                       <button
                         key={category.id}
                         onClick={() => {
@@ -465,19 +495,39 @@ const Navbar = () => {
                 <div className="p-5 border-b border-gray-100">
                   {/* <h3 className="text-xs uppercase text-gray-500 font-semibold mb-3">Main Navigation</h3> */}
                   <div className="flex flex-col space-y-2">
-                    <Link href="/" onClick={toggleMobileMenu} className="flex items-center gap-5 text-gray-700 hover:text-sky-600 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors">
+                    <Link
+                      href="/"
+                      onClick={toggleMobileMenu}
+                      className="flex items-center gap-5 text-gray-700 hover:text-sky-600 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors"
+                    >
                       <BsHouseDoor size={18} /> <span>Home</span>
                     </Link>
-                    <Link href="/all-products" onClick={toggleMobileMenu} className="flex items-center gap-5 text-gray-700 hover:text-sky-600 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors">
+                    <Link
+                      href="/all-products"
+                      onClick={toggleMobileMenu}
+                      className="flex items-center gap-5 text-gray-700 hover:text-sky-600 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors"
+                    >
                       <BsShop size={18} /> <span>Shop</span>
                     </Link>
-                    <Link href="/my-orders" onClick={toggleMobileMenu} className="flex items-center gap-5 text-gray-700 hover:text-sky-600 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors">
+                    <Link
+                      href="/my-orders"
+                      onClick={toggleMobileMenu}
+                      className="flex items-center gap-5 text-gray-700 hover:text-sky-600 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors"
+                    >
                       <BsBoxSeam size={18} /> <span>Orders</span>
                     </Link>
-                    <Link href="/" onClick={toggleMobileMenu} className="flex items-center gap-5 text-gray-700 hover:text-sky-600 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors">
+                    <Link
+                      href="/"
+                      onClick={toggleMobileMenu}
+                      className="flex items-center gap-5 text-gray-700 hover:text-sky-600 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors"
+                    >
                       <BsInfoCircle size={18} /> <span>About Us</span>
                     </Link>
-                    <Link href="/" onClick={toggleMobileMenu} className="flex items-center gap-5 text-gray-700 hover:text-sky-600 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors">
+                    <Link
+                      href="/"
+                      onClick={toggleMobileMenu}
+                      className="flex items-center gap-5 text-gray-700 hover:text-sky-600 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors"
+                    >
                       <BsEnvelope size={18} /> <span>Contact</span>
                     </Link>
                   </div>
@@ -516,46 +566,56 @@ const Navbar = () => {
                   </button>
                 )}
 
+                {/* User information section */}
                 {user ? (
-                  <div className="space-y-3">
-                    {/* UserButton integration - automatically opens account management */}
-                    <div className="flex items-center gap-3 mb-3">
-                      <UserButton afterSignOutUrl="/" defaultOpen={true}>
-                        <UserButton.MenuItems>
-                          <UserButton.Profile afterCreateOrganizationUrl="/dashboard" />
-                          <UserButton.Action label="Manage Account" onClick={() => {}} />
-                          <UserButton.Action label="Cart" labelIcon={<CartIcon />} onClick={() => {
-                            router.push('/cart');
-                            toggleMobileMenu();
-                          }} />
-                          <UserButton.Action label="My Orders" labelIcon={<BagIcon2 />} onClick={() => {
-                            router.push('/my-orders');
-                            toggleMobileMenu();
-                          }} />
-                        </UserButton.MenuItems>
-                      </UserButton>
-                      <div>
-                        <div className="text-sm font-medium">{user.firstName || "User"}</div>
-                        <div className="text-xs text-gray-500 truncate max-w-[180px]">{user.email}</div>
-                      </div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 mb-3">
+                    <UserButton afterSignOutUrl="/" />
+                    <div>
+                      <div className="text-sm font-medium">{user.firstName || "User"}</div>
+                      <div className="text-xs text-gray-500 truncate max-w-[180px]">{user.email}</div>
                     </div>
-                    <button
-                      onClick={() => signOut()}
-                      className="w-full py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md transition-colors text-center font-medium flex items-center justify-center gap-2"
-                    >
-                      <BsBoxArrowRight size={16} />
-                      Sign Out
-                    </button>
                   </div>
-                ) : (
-                  <button
-                    onClick={() => openSignIn()}
-                    className="w-full py-2.5 bg-sky-300/70 hover:bg-sky-600 text-white rounded-md transition-colors text-center font-medium flex items-center justify-center gap-2"
-                  >
-                    <BsBoxArrowInRight size={16} />
-                    Sign In
-                  </button>
-                )}
+
+                  {/* Sign Out with Confirmation */}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button className="flex items-center justify-center gap-2 w-full bg-sky-300/70 hover:bg-white text-white hover:text-sky-400 px-3 py-2 rounded-md transition-colors font-medium">
+                        <BsBoxArrowRight size={18} /> <span>Sign Out</span>
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure you want to sign out?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will log you out and return you to the homepage.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => {
+                            signOut();
+                            toggleMobileMenu();
+                          }}
+                        >
+                          Yes, sign out
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    openSignIn();
+                    toggleMobileMenu();
+                  }}
+                  className="flex items-center justify-center gap-2 w-full bg-sky-300/70 hover:bg-white text-white hover:text-sky-400 px-3 py-2 rounded-md transition-colors font-medium"
+                >
+                  <BsBoxArrowInRight size={18} /> <span>Sign In</span>
+                </button>
+              )}
               </div>
             </motion.div>
           </motion.div>
@@ -584,7 +644,9 @@ const Navbar = () => {
             >
               {/* Cart Header */}
               <div className="p-4 border-b border-dashed border-gray-300 flex justify-between items-center">
-                <h2 className="text-lg font-medium font-playfair flex-1 text-center">RECEIPT</h2>
+                <h2 className="text-lg font-medium font-playfair flex-1 text-center">
+                  RECEIPT
+                </h2>
                 <button
                   onClick={() => setShowCartPanel(false)}
                   className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
@@ -608,22 +670,33 @@ const Navbar = () => {
                           >
                             <div className="flex-1">
                               <div className="flex justify-between mb-1">
-                                <span className="truncate max-w-[180px]">{item.product.name}</span>
+                                <span className="truncate max-w-[180px]">
+                                  {item.product.name}
+                                </span>
                                 <span className="ml-2">
-                                  {currency}{((item.product.offerPrice || item.product.price) * item.quantity).toFixed(2)}
+                                  {currency}
+                                  {(
+                                    (item.product.offerPrice ||
+                                      item.product.price) * item.quantity
+                                  ).toFixed(2)}
                                 </span>
                               </div>
                               <div className="flex items-center">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    decreaseQty(item.product._id, item.quantity);
+                                    decreaseQty(
+                                      item.product._id,
+                                      item.quantity
+                                    );
                                   }}
                                   className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
                                 >
                                   <FiMinus size={12} />
                                 </button>
-                                <span className="mx-2 min-w-[20px] text-center">{item.quantity}</span>
+                                <span className="mx-2 min-w-[20px] text-center">
+                                  {item.quantity}
+                                </span>
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -634,7 +707,11 @@ const Navbar = () => {
                                   <FiPlus size={12} />
                                 </button>
                                 <span className="ml-2 text-gray-500">
-                                  @ {currency}{(item.product.offerPrice || item.product.price).toFixed(2)}
+                                  @ {currency}
+                                  {(
+                                    item.product.offerPrice ||
+                                    item.product.price
+                                  ).toFixed(2)}
                                 </span>
                               </div>
                             </div>
@@ -651,7 +728,10 @@ const Navbar = () => {
                     <div className="mt-4 border-t border-dashed border-gray-300 pt-3 pb-1">
                       <div className="flex justify-between font-medium">
                         <span>Total:</span>
-                        <span>{currency}{calculateCartTotal().toFixed(2)}</span>
+                        <span>
+                          {currency}
+                          {calculateCartTotal().toFixed(2)}
+                        </span>
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
                         <p>Delivery calculated at checkout</p>
@@ -663,8 +743,12 @@ const Navbar = () => {
                     <div className="mb-4 text-gray-300">
                       <FiShoppingCart size={48} />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-800 mb-1">Your cart is empty</h3>
-                    <p className="text-gray-500 mb-4 text-xs">Discover our quality products for your little ones</p>
+                    <h3 className="text-lg font-medium text-gray-800 mb-1">
+                      Your cart is empty
+                    </h3>
+                    <p className="text-gray-500 mb-4 text-xs">
+                      Discover our quality products for your little ones
+                    </p>
                     <button
                       onClick={() => {
                         router.push("/all-products");
@@ -684,4 +768,73 @@ const Navbar = () => {
                   <div className="mt-4 flex gap-2">
                     <button
                       onClick={() => setShowCartPanel(false)}
-                      className="flex-1 px-4 py-2 border
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors text-center"
+                    >
+                      View Cart
+                    </button>
+                    <button
+                      onClick={handleCheckout}
+                      className="flex-1 px-4 py-2 bg-sky-300/70 text-white rounded-md hover:bg-sky-600 transition-colors text-center"
+                    >
+                      Checkout
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Cart Popup Notification - Simplified version of CartPopup component */}
+      <AnimatePresence>
+        {showCartPopup && (
+          <motion.div
+            className="fixed bottom-4 right-4 md:bottom-8 md:right-8 bg-white rounded-lg shadow-lg p-4 max-w-xs w-full z-50 border border-gray-200"
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 50, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          >
+            <div className="flex items-start gap-3">
+              <div className="bg-green-50 rounded-full p-2 text-green-500">
+                <FiShoppingCart size={18} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-sm">Added to cart!</h3>
+                <p className="text-gray-500 text-xs mt-0.5 mb-2">
+                  Item successfully added to your cart
+                </p>
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => setShowCartPopup(false)}
+                    className="flex-1 px-3 py-1.5 text-xs border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Continue
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowCartPopup(false);
+                      setShowCartPanel(true);
+                    }}
+                    className="flex-1 px-3 py-1.5 text-xs bg-sky-300/70 text-white rounded hover:bg-sky-600 transition-colors"
+                  >
+                    View Cart
+                  </button>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCartPopup(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <FiX size={16} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </nav>
+  );
+};
+
+export default Navbar;

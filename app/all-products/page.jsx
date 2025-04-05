@@ -219,11 +219,11 @@ const AllProducts = () => {
                                             setSelectedCategory(category);
                                             setIsSidebarOpen(false);
                                         }}
-                                        className={`flex items-center text-left px-3 py-2.5 rounded-md transition-all ${
-                                            selectedCategory === category 
-                                                ? 'bg-white shadow-md' 
-                                                : 'hover:bg-gray-100'
-                                        }`}
+                                        className={`flex items-center text-left px-4 py-3 rounded-md transition-all duration-300 ease-in-out cursor-pointer
+                                            ${selectedCategory === category
+                                                ? 'bg-white text-blue-600 shadow-lg transform scale-105'
+                                                : 'hover:bg-sky-100 hover:text-sky-600'}
+                                        `}
                                     >
                                         <span className="mr-3">
                                             {categoryIcons[category] || categoryIcons["All"]}
