@@ -1,12 +1,11 @@
-import { addressDummyData } from "@/assets/assets";
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
-// Telegram bot configuration
-const TELEGRAM_BOT_TOKEN = "8036566068:AAHGH_Bv6IhRyq6BeH2vLaOFh8R-qlWSDu4";
-const TELEGRAM_CHAT_ID = "653719559";
+// Telegram bot configuration should be moved to environment variables
+const TELEGRAM_BOT_TOKEN = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || "8036566068:AAHGH_Bv6IhRyq6BeH2vLaOFh8R-qlWSDu4";
+const TELEGRAM_CHAT_ID = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID || "653719559";
 
 const OrderSummary = () => {
   const {
@@ -18,7 +17,7 @@ const OrderSummary = () => {
     user,
     cartItems,
     setCartItems,
-    products  // Make sure this is included in the destructuring
+    products
   } = useAppContext();
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -29,16 +28,16 @@ const OrderSummary = () => {
   const isFreeDelivery = getCartCount() > 1;
   const deliveryFee = isFreeDelivery ? 0 : 1.5;
 
-  // Function to send order notification to Telegram
-  // const sendOrderNotificationToTelegram = async (orderDetails) => {
+  // const sendOrderNotifications = async (orderDetails) => {
   //   try {
+  //     // TELEGRAM NOTIFICATION
   //     const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-
+    
   //     // Format the order items for better readability
   //     const itemsList = orderDetails.items
   //       .map(item => `- ${item.productName} x${item.quantity} (${orderDetails.currency}${item.price} each)`)
   //       .join('\n');
-
+    
   //     // Create a well-formatted message
   //     const message = `🐻 *BABY BEAR*\n\n` +
   //       `*Order ID:* ${orderDetails.orderId}\n` +
@@ -47,39 +46,78 @@ const OrderSummary = () => {
   //       `${orderDetails.address.fullName}\n` +
   //       `${orderDetails.address.phoneNumber}\n` +
   //       `${orderDetails.address.area}\n` +
-  //       `${orderDetails.address.state}, ${orderDetails.address.city}\n\n` +
+  //       `${orderDetails.address.state}${orderDetails.address.city ? ', ' + orderDetails.address.city : ''}\n\n` +
   //       `*Order Items:*\n${itemsList}\n\n` +
   //       `*Subtotal:* ${orderDetails.currency}${orderDetails.subtotal}\n` +
   //       `*Delivery:* ${orderDetails.deliveryFee === 0 ? 'Free' : `${orderDetails.currency}${orderDetails.deliveryFee}`}\n` +
-  //       // `*Tax (2%):* ${orderDetails.currency}${orderDetails.tax}\n` +
   //       `*Total Amount:* ${orderDetails.currency}${orderDetails.total}\n` +
   //       `*Thanks for shopping with us! 📦*`;
-
+    
   //     // Send message to Telegram
-  //     const response = await axios.post(telegramApiUrl, {
+  //     const telegramResponse = await axios.post(telegramApiUrl, {
   //       chat_id: TELEGRAM_CHAT_ID,
   //       text: message,
   //       parse_mode: 'Markdown'
   //     });
-
-  //     console.log("Telegram notification sent successfully:", response.data);
-  //     return response.data;
+    
+  //     console.log("Telegram notification sent successfully:", telegramResponse.data);
+    
+  //     // EMAIL NOTIFICATION - Only if user email exists
+  //     if (user?.email) {
+  //       try {
+  //         console.log("Attempting to send email notification to:", user.email);
+  //         const token = await getToken();
+          
+  //         const emailResponse = await axios.post('/api/send-order-email', {
+  //           user: {
+  //             name: user?.name || 'Customer',
+  //             email: user.email // This is critical - make sure email exists
+  //           },
+  //           orderDetails: {
+  //             orderId: orderDetails.orderId,
+  //             address: orderDetails.address,
+  //             items: orderDetails.items,
+  //             currency: orderDetails.currency,
+  //             subtotal: orderDetails.subtotal,
+  //             deliveryFee: orderDetails.deliveryFee,
+  //             total: orderDetails.total
+  //           }
+  //         }, {
+  //           headers: { Authorization: `Bearer ${token}` }
+  //         });
+          
+  //         console.log("Email notification response:", emailResponse.data);
+  //         if (emailResponse.data.message === 'Email sent successfully') {
+  //           console.log("Email notification sent successfully");
+  //         } else {
+  //           console.error("Email notification failed:", emailResponse.data);
+  //         }
+  //       } catch (emailError) {
+  //         console.error("Error sending email notification:", emailError.response?.data || emailError.message);
+  //         // Don't throw the error so the order process can continue
+  //       }
+  //     } else {
+  //       console.log("No user email found, skipping email notification");
+  //     }
+    
+  //     return { success: true };
   //   } catch (error) {
-  //     console.error("Error sending Telegram notification:", error);
-  //     throw error;
+  //     console.error("Error sending notifications:", error);
+  //     // Don't throw the error so the order process can continue even if notifications fail
+  //     return { success: false, error };
   //   }
   // };
 
   const sendOrderNotifications = async (orderDetails) => {
     try {
-      // TELEGRAM NOTIFICATION (existing code)
+      // TELEGRAM NOTIFICATION
       const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-  
+    
       // Format the order items for better readability
       const itemsList = orderDetails.items
         .map(item => `- ${item.productName} x${item.quantity} (${orderDetails.currency}${item.price} each)`)
         .join('\n');
-  
+    
       // Create a well-formatted message
       const message = `🐻 *BABY BEAR*\n\n` +
         `*Order ID:* ${orderDetails.orderId}\n` +
@@ -88,48 +126,64 @@ const OrderSummary = () => {
         `${orderDetails.address.fullName}\n` +
         `${orderDetails.address.phoneNumber}\n` +
         `${orderDetails.address.area}\n` +
-        `${orderDetails.address.state}, ${orderDetails.address.city}\n\n` +
+        `${orderDetails.address.state}${orderDetails.address.city ? ', ' + orderDetails.address.city : ''}\n\n` +
         `*Order Items:*\n${itemsList}\n\n` +
         `*Subtotal:* ${orderDetails.currency}${orderDetails.subtotal}\n` +
         `*Delivery:* ${orderDetails.deliveryFee === 0 ? 'Free' : `${orderDetails.currency}${orderDetails.deliveryFee}`}\n` +
         `*Total Amount:* ${orderDetails.currency}${orderDetails.total}\n` +
         `*Thanks for shopping with us! 📦*`;
-  
+    
       // Send message to Telegram
-      const telegramResponse = await axios.post(telegramApiUrl, {
-        chat_id: TELEGRAM_CHAT_ID,
-        text: message,
-        parse_mode: 'Markdown'
-      });
-  
-      console.log("Telegram notification sent successfully:", telegramResponse.data);
-  
-      // EMAIL NOTIFICATION (new code)
-      // Only attempt to send email if customer email exists
-      if (orderDetails.customer?.email) {
-        const token = await getToken();
-        
-        const emailResponse = await axios.post('/api/send-order-email', {
-          user: {
-            name: orderDetails.customer || '',
-            email: orderDetails.customer?.email || ''
-          },
-          orderDetails: {
-            orderId: orderDetails.orderId,
-            address: orderDetails.address,
-            items: orderDetails.items,
-            currency: orderDetails.currency,
-            subtotal: orderDetails.subtotal,
-            deliveryFee: orderDetails.deliveryFee,
-            total: orderDetails.total
-          }
-        }, {
-          headers: { Authorization: `Bearer ${token}` }
+      try {
+        const telegramResponse = await axios.post(telegramApiUrl, {
+          chat_id: TELEGRAM_CHAT_ID,
+          text: message,
+          parse_mode: 'Markdown'
         });
-        
-        console.log("Email notification sent successfully:", emailResponse.data);
+      
+        console.log("Telegram notification sent successfully");
+      } catch (telegramError) {
+        console.error("Failed to send Telegram notification:", telegramError);
+        // Continue with other notifications
       }
-  
+    
+      // EMAIL NOTIFICATION - Only if user email exists
+      if (user?.email) {
+        try {
+          console.log("Attempting to send email notification to:", user.email);
+          const token = await getToken();
+          
+          const emailResponse = await axios.post('/api/send-order-email', {
+            user: {
+              name: user?.name || 'Customer',
+              email: user.email
+            },
+            orderDetails: {
+              orderId: orderDetails.orderId,
+              address: orderDetails.address,
+              items: orderDetails.items,
+              currency: orderDetails.currency,
+              subtotal: orderDetails.subtotal,
+              deliveryFee: orderDetails.deliveryFee,
+              total: orderDetails.total
+            }
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (emailResponse.data.success) {
+            console.log("Email notification sent successfully");
+          } else {
+            console.error("Email notification failed:", emailResponse.data.message);
+          }
+        } catch (emailError) {
+          console.error("Error sending email notification:", emailError.response?.data?.message || emailError.message);
+          // Don't throw the error so the order process can continue
+        }
+      } else {
+        console.log("No user email found, skipping email notification");
+      }
+    
       return { success: true };
     } catch (error) {
       console.error("Error sending notifications:", error);
@@ -154,7 +208,7 @@ const OrderSummary = () => {
         toast.error(data.message);
       }
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.message || "Failed to fetch addresses");
     }
   };
 
@@ -223,26 +277,21 @@ const OrderSummary = () => {
 
           // Calculate totals
           const subtotal = getCartAmount();
-          // const tax = Math.floor(subtotal * 0.02);
-          // const total = subtotal + tax + deliveryFee;
           const total = subtotal + deliveryFee;
 
-          // Send notification to Telegram
-          // await sendOrderNotificationToTelegram({
-          await sendOrderNotifications ({
+          // Send notifications
+          await sendOrderNotifications({
             orderId: data.orderId || `ORD-${Date.now()}`,
-            customer: user?.name || user?.email || "Customer",
             address: selectedAddress,
             items: productsDetails,
             currency,
             subtotal,
-            // tax,
             deliveryFee,
             total
           });
-        } catch (telegramError) {
+        } catch (notificationError) {
           // Log the error but don't fail the order process
-          console.error("Failed to send Telegram notification:", telegramError);
+          console.error("Failed to send notifications:", notificationError);
         }
 
         toast.success(data.message || "Order placed successfully!");
@@ -273,8 +322,7 @@ const OrderSummary = () => {
 
   // Calculate total amount
   const subtotal = getCartAmount();
-  // const tax = Math.floor(subtotal * 0.02);
-  const totalAmount = subtotal + deliveryFee; // + tax;
+  const totalAmount = subtotal + deliveryFee;
 
   return (
     <div className="w-full md:w-96 bg-gray-500/5 p-5">
@@ -291,10 +339,11 @@ const OrderSummary = () => {
             <button
               className="peer w-full text-left px-4 pr-2 py-2 bg-white text-gray-700 focus:outline-none"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              type="button"
             >
               <span>
                 {selectedAddress
-                  ? `${selectedAddress.fullName}, ${selectedAddress.area}, ${selectedAddress.city}, ${selectedAddress.state}`
+                  ? `${selectedAddress.fullName}, ${selectedAddress.area}, ${selectedAddress.city || ''}, ${selectedAddress.state}`
                   : "Select Address"}
               </span>
               <svg className={`w-5 h-5 inline float-right transition-transform duration-200 ${isDropdownOpen ? "rotate-0" : "-rotate-90"}`}
@@ -306,15 +355,17 @@ const OrderSummary = () => {
 
             {isDropdownOpen && (
               <ul className="absolute w-full bg-white border shadow-md mt-1 z-10 py-1.5">
-                {userAddresses.map((address, index) => (
+                {userAddresses.length > 0 ? userAddresses.map((address, index) => (
                   <li
                     key={index}
                     className="px-4 py-2 hover:bg-gray-500/10 cursor-pointer"
                     onClick={() => handleAddressSelect(address)}
                   >
-                    {address.fullName}, {address.area}, {address.city}, {address.state}
+                    {address.fullName}, {address.area}, {address.city || ''}, {address.state}
                   </li>
-                ))}
+                )) : (
+                  <li className="px-4 py-2 text-gray-500">No addresses found</li>
+                )}
                 <li
                   onClick={() => router.push("/add-address")}
                   className="px-4 py-2 hover:bg-gray-500/10 cursor-pointer text-center"
@@ -335,8 +386,13 @@ const OrderSummary = () => {
               type="text"
               placeholder="Enter promo code"
               className="flex-grow w-full outline-none p-2.5 text-gray-600 border cursor-not-allowed"
+              disabled
             />
-            <button className="bg-black text-white px-9 py-2 hover:bg-black">
+            <button 
+              className="bg-black text-white px-9 py-2 hover:bg-black cursor-not-allowed"
+              disabled
+              type="button"
+            >
               Apply
             </button>
           </div>
@@ -360,10 +416,6 @@ const OrderSummary = () => {
               <p className="font-medium text-gray-800">{currency}1.5</p>
             )}
           </div>
-          {/* <div className="flex justify-between">
-            <p className="text-gray-600">Tax (2%)</p>
-            <p className="font-medium text-gray-800">{currency}{Math.floor(getCartAmount() * 0.02)}</p>
-          </div> */}
           <div className="flex justify-between text-lg md:text-xl font-medium border-t pt-3">
             <p>Total</p>
             <p>{currency}{totalAmount}</p>
@@ -375,6 +427,7 @@ const OrderSummary = () => {
         onClick={validateOrderForm() ? createOrder : () => toast.error("Please complete all required fields")}
         className={buttonClassName}
         disabled={!validateOrderForm() || loading}
+        type="button"
       >
         {loading ? "Processing..." : "Place Order"}
       </button>

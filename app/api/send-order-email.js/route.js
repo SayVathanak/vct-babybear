@@ -1,25 +1,33 @@
-import { sendOrderConfirmationEmail } from '../../services/emailService';
-import { getAuth } from '@clerk/nextjs/server';
+import connectDB from "@/config/db";
+import { sendOrderConfirmationEmail } from '@/lib/emailService';
+import { getAuth } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
-
+export async function POST(request) {
   try {
-    // Verify authentication with Clerk
-    const { userId } = getAuth(req);
+    // Authenticate the user with Clerk
+    const { userId } = getAuth(request);
     
     if (!userId) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return NextResponse.json({
+        success: false,
+        message: "Unauthorized access"
+      }, { status: 401 });
     }
 
-    const { user, orderDetails } = req.body;
+    // Parse the request body
+    const { user, orderDetails } = await request.json();
 
     // Validate required data
-    if (!user.email || !orderDetails || !orderDetails.orderId) {
-      return res.status(400).json({ message: 'Missing required data' });
+    if (!user?.email || !orderDetails || !orderDetails.orderId) {
+      return NextResponse.json({
+        success: false,
+        message: "Missing required data"
+      }, { status: 400 });
     }
+
+    // Connect to the database if needed
+    await connectDB();
 
     // Send the email
     const result = await sendOrderConfirmationEmail({
@@ -28,21 +36,24 @@ export default async function handler(req, res) {
     });
 
     if (!result.success) {
-      return res.status(500).json({ 
-        message: 'Failed to send email',
+      console.error("Email sending failed:", result.error);
+      return NextResponse.json({
+        success: false,
+        message: "Failed to send email",
         error: result.error
-      });
+      }, { status: 500 });
     }
 
-    return res.status(200).json({ 
-      message: 'Email sent successfully',
-      emailId: result.data?.id 
+    return NextResponse.json({
+      success: true,
+      message: "Email sent successfully",
+      emailId: result.data?.id
     });
   } catch (error) {
-    console.error('Error in send-order-email API:', error);
-    return res.status(500).json({ 
-      message: 'Internal server error',
-      error: error instanceof Error ? error.message : String(error)
-    });
+    console.error("Error in send-order-email API:", error);
+    return NextResponse.json({
+      success: false,
+      message: error.message || "Internal server error"
+    }, { status: 500 });
   }
 }
