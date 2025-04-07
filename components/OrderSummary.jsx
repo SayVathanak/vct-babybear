@@ -30,15 +30,56 @@ const OrderSummary = () => {
   const deliveryFee = isFreeDelivery ? 0 : 1.5;
 
   // Function to send order notification to Telegram
-  const sendOrderNotificationToTelegram = async (orderDetails) => {
-    try {
-      const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+  // const sendOrderNotificationToTelegram = async (orderDetails) => {
+  //   try {
+  //     const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
 
+  //     // Format the order items for better readability
+  //     const itemsList = orderDetails.items
+  //       .map(item => `- ${item.productName} x${item.quantity} (${orderDetails.currency}${item.price} each)`)
+  //       .join('\n');
+
+  //     // Create a well-formatted message
+  //     const message = `🐻 *BABY BEAR*\n\n` +
+  //       `*Order ID:* ${orderDetails.orderId}\n` +
+  //       `*Date:* ${new Date().toLocaleString()}\n\n` +
+  //       `*Delivery Address:*\n` +
+  //       `${orderDetails.address.fullName}\n` +
+  //       `${orderDetails.address.phoneNumber}\n` +
+  //       `${orderDetails.address.area}\n` +
+  //       `${orderDetails.address.state}, ${orderDetails.address.city}\n\n` +
+  //       `*Order Items:*\n${itemsList}\n\n` +
+  //       `*Subtotal:* ${orderDetails.currency}${orderDetails.subtotal}\n` +
+  //       `*Delivery:* ${orderDetails.deliveryFee === 0 ? 'Free' : `${orderDetails.currency}${orderDetails.deliveryFee}`}\n` +
+  //       // `*Tax (2%):* ${orderDetails.currency}${orderDetails.tax}\n` +
+  //       `*Total Amount:* ${orderDetails.currency}${orderDetails.total}\n` +
+  //       `*Thanks for shopping with us! 📦*`;
+
+  //     // Send message to Telegram
+  //     const response = await axios.post(telegramApiUrl, {
+  //       chat_id: TELEGRAM_CHAT_ID,
+  //       text: message,
+  //       parse_mode: 'Markdown'
+  //     });
+
+  //     console.log("Telegram notification sent successfully:", response.data);
+  //     return response.data;
+  //   } catch (error) {
+  //     console.error("Error sending Telegram notification:", error);
+  //     throw error;
+  //   }
+  // };
+
+  const sendOrderNotifications = async (orderDetails) => {
+    try {
+      // TELEGRAM NOTIFICATION (existing code)
+      const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+  
       // Format the order items for better readability
       const itemsList = orderDetails.items
         .map(item => `- ${item.productName} x${item.quantity} (${orderDetails.currency}${item.price} each)`)
         .join('\n');
-
+  
       // Create a well-formatted message
       const message = `🐻 *BABY BEAR*\n\n` +
         `*Order ID:* ${orderDetails.orderId}\n` +
@@ -51,22 +92,49 @@ const OrderSummary = () => {
         `*Order Items:*\n${itemsList}\n\n` +
         `*Subtotal:* ${orderDetails.currency}${orderDetails.subtotal}\n` +
         `*Delivery:* ${orderDetails.deliveryFee === 0 ? 'Free' : `${orderDetails.currency}${orderDetails.deliveryFee}`}\n` +
-        // `*Tax (2%):* ${orderDetails.currency}${orderDetails.tax}\n` +
         `*Total Amount:* ${orderDetails.currency}${orderDetails.total}\n` +
         `*Thanks for shopping with us! 📦*`;
-
+  
       // Send message to Telegram
-      const response = await axios.post(telegramApiUrl, {
+      const telegramResponse = await axios.post(telegramApiUrl, {
         chat_id: TELEGRAM_CHAT_ID,
         text: message,
         parse_mode: 'Markdown'
       });
-
-      console.log("Telegram notification sent successfully:", response.data);
-      return response.data;
+  
+      console.log("Telegram notification sent successfully:", telegramResponse.data);
+  
+      // EMAIL NOTIFICATION (new code)
+      // Only attempt to send email if customer email exists
+      if (orderDetails.customer?.email) {
+        const token = await getToken();
+        
+        const emailResponse = await axios.post('/api/send-order-email', {
+          user: {
+            name: orderDetails.customer || '',
+            email: orderDetails.customer?.email || ''
+          },
+          orderDetails: {
+            orderId: orderDetails.orderId,
+            address: orderDetails.address,
+            items: orderDetails.items,
+            currency: orderDetails.currency,
+            subtotal: orderDetails.subtotal,
+            deliveryFee: orderDetails.deliveryFee,
+            total: orderDetails.total
+          }
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        console.log("Email notification sent successfully:", emailResponse.data);
+      }
+  
+      return { success: true };
     } catch (error) {
-      console.error("Error sending Telegram notification:", error);
-      throw error;
+      console.error("Error sending notifications:", error);
+      // Don't throw the error so the order process can continue even if notifications fail
+      return { success: false, error };
     }
   };
 
@@ -160,7 +228,8 @@ const OrderSummary = () => {
           const total = subtotal + deliveryFee;
 
           // Send notification to Telegram
-          await sendOrderNotificationToTelegram({
+          // await sendOrderNotificationToTelegram({
+          await sendOrderNotifications ({
             orderId: data.orderId || `ORD-${Date.now()}`,
             customer: user?.name || user?.email || "Customer",
             address: selectedAddress,

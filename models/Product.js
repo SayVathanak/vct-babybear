@@ -9,6 +9,7 @@ const productSchema = new mongoose.Schema({
     image: { type: Array, required: true },
     category: { type: String, required: true },
     date: { type: Number, required: true },
+    isAvailable: { type: Boolean, default: true }, // New field with default value of true
 })
 
 const Product = mongoose.models.product || mongoose.model('product', productSchema)

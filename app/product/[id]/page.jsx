@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import { useEffect, useState } from "react";
 import { assets } from "@/assets/assets";
 import ProductCard from "@/components/ProductCard";
@@ -12,173 +12,238 @@ import React from "react";
 import { useClerk } from "@clerk/nextjs";
 import toast from "react-hot-toast";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { IoMdCheckmarkCircleOutline } from "react-icons/io";
+import { MdOutlineError } from "react-icons/md";
 
 const Product = () => {
-
     const { id } = useParams();
-
-    const { products, router, addToCart, user } = useAppContext()
+    const { products, router, addToCart, user } = useAppContext();
 
     const [mainImage, setMainImage] = useState(null);
     const [productData, setProductData] = useState(null);
-
-    const { openSignIn } = useClerk()
-
     const [showDirections, setShowDirections] = useState(false);
+    const [selectedThumbnailIndex, setSelectedThumbnailIndex] = useState(0);
+
+    const { openSignIn } = useClerk();
 
     const fetchProductData = async () => {
         const product = products.find(product => product._id === id);
         setProductData(product);
-    }
+        if (product?.image?.length > 0) {
+            setMainImage(product.image[0]);
+        }
+    };
 
     useEffect(() => {
         fetchProductData();
-    }, [id, products.length])
+    }, [id, products.length]);
 
-    return productData ? (<>
-        <Navbar />
-        <div className="px-6 md:px-16 lg:px-32 pt-14 space-y-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-                <div className="px-5 lg:px-16 xl:px-20">
-                    <div className="rounded-lg overflow-hidden bg-gray-500/10 mb-4">
-                        <Image
-                            src={mainImage || productData.image[0]}
-                            alt="alt"
-                            className="w-full h-auto object-cover mix-blend-multiply"
-                            width={1280}
-                            height={720}
-                        />
+    const handleThumbnailClick = (image, index) => {
+        setMainImage(image);
+        setSelectedThumbnailIndex(index);
+    };
+
+    const handleAddToCart = () => {
+        if (!productData.isAvailable) {
+            toast.error("Sorry, this product is currently unavailable");
+            return;
+        }
+        addToCart(productData._id);
+        toast.success("Added to cart");
+    };
+
+    const handleBuyNow = () => {
+        if (!user) {
+            toast.error("Please login to continue purchasing");
+            openSignIn();
+            return;
+        }
+        if (!productData.isAvailable) {
+            toast.error("Sorry, this product is currently unavailable");
+            return;
+        }
+        addToCart(productData._id);
+        router.push('/cart');
+    };
+
+    const calculateDiscount = () => {
+        if (!productData) return 0;
+        const discount = ((productData.price - productData.offerPrice) / productData.price) * 100;
+        return Math.round(discount);
+    };
+
+    return productData ? (
+        <>
+            <Navbar />
+            <div className="px-4 sm:px-6 md:px-16 lg:px-32 pt-10 space-y-6">
+                {!productData.isAvailable && (
+                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md flex items-center gap-2 mb-4">
+                        <MdOutlineError className="text-xl" />
+                        <span>This product is currently unavailable</span>
                     </div>
+                )}
 
-                    <div className="grid grid-cols-4 gap-4">
-                        {productData.image.map((image, index) => (
-                            <div
-                                key={index}
-                                onClick={() => setMainImage(image)}
-                                className="cursor-pointer rounded-lg overflow-hidden bg-gray-500/10"
-                            >
-                                <Image
-                                    src={image}
-                                    alt="alt"
-                                    className="w-full h-auto object-cover mix-blend-multiply"
-                                    width={1280}
-                                    height={720}
-                                />
-                            </div>
-
-                        ))}
-                    </div>
-                </div>
-
-                <div className="flex flex-col">
-                    <h1 className="text-xl md:text-3xl font-medium text-gray-800/90 mb-4">
-                        {productData.name}
-                    </h1>
-                    <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-0.5">
-                            <Image className="h-4 w-4" src={assets.star_icon} alt="star_icon" />
-                            <Image className="h-4 w-4" src={assets.star_icon} alt="star_icon" />
-                            <Image className="h-4 w-4" src={assets.star_icon} alt="star_icon" />
-                            <Image className="h-4 w-4" src={assets.star_icon} alt="star_icon" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div className="px-4 sm:px-6 lg:px-16 xl:px-20">
+                        <div className="rounded-lg overflow-hidden bg-gray-500/10 mb-4 relative">
                             <Image
-                                className="h-4 w-4"
-                                src={assets.star_dull_icon}
-                                alt="star_dull_icon"
+                                src={mainImage || productData.image[0]}
+                                alt={productData.name}
+                                className={`w-full h-auto object-cover mix-blend-multiply transition-opacity duration-300 ${!productData.isAvailable ? 'opacity-60' : 'opacity-100'}`}
+                                width={1280}
+                                height={720}
                             />
+
+                            {calculateDiscount() > 0 && (
+                                <div className="absolute top-4 left-4 bg-red-500 text-white px-2 py-1 rounded-md text-sm font-medium">
+                                    {calculateDiscount()}% OFF
+                                </div>
+                            )}
+
+                            {!productData.isAvailable && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="bg-black/70 text-white px-6 py-3 font-medium rounded-md transform rotate-[-20deg] text-lg">
+                                        OUT OF STOCK
+                                    </span>
+                                </div>
+                            )}
                         </div>
-                        <p>(4.5)</p>
-                    </div>
-                    <p className="text-3xl font-medium mt-6">
-                        ${productData.offerPrice}
-                        {/* <span className="text-base font-normal text-gray-800/60 line-through ml-2"> */}
-                        <span className="text-base font-normal text-red-400 line-through ml-2">
-                            ${productData.price}
-                        </span>
-                    </p>
-                    {/* <hr className="bg-gray-600 my-6" /> */}
-                    {/* <div className="overflow-x-auto">
-                        <table className="table-auto border-collapse w-full max-w-72">
-                            <tbody>
-                                <tr>
-                                    <td className="text-gray-600 font-medium">Brand</td>
-                                    <td className="text-gray-800/50 ">-</td>
-                                </tr>
-                                <tr>
-                                    <td className="text-gray-600 font-medium">Color</td>
-                                    <td className="text-gray-800/50 ">-</td>
-                                </tr>
-                                <tr>
-                                    <td className="text-gray-600 font-medium">Category</td>
-                                    <td className="text-gray-800/50">
-                                        {productData.category}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div> */}
 
-                    <div className="flex items-center mt-10 gap-4">
-                        <button onClick={() => addToCart(productData._id)} className="w-full py-3.5 bg-gray-100 rounded-md md:rounded-sm text-gray-800/80 hover:bg-gray-200 transition">
-                            Add to Cart
-                        </button>
-                        {/* <button onClick={() => { addToCart(productData._id); router.push('/cart') }} className="w-full py-3.5 bg-black text-white hover:bg-green-500 transition duration-300">
-                            Buy now
-                        </button> */}
-                        <button 
-                            onClick={() => { 
-                                if (user) {
-                                    addToCart(productData._id); 
-                                    router.push('/cart');
-                                } else {
-                                    toast.error("Please login to continue purchasing");
-                                    openSignIn();
-                                }
-                            }} 
-                            className="w-full py-3.5 bg-black rounded-md md:rounded-sm text-white hover:bg-green-500 transition duration-300">
-                            Buy now
-                        </button>
+                        <div className="grid grid-cols-4 gap-3">
+                            {productData.image.map((image, index) => (
+                                <div
+                                    key={index}
+                                    onClick={() => handleThumbnailClick(image, index)}
+                                    className={`cursor-pointer rounded-lg overflow-hidden bg-gray-500/10 border-2 transition ${
+                                        (mainImage === image || (!mainImage && index === 0))
+                                            ? 'border-green-500'
+                                            : 'border-transparent'
+                                    }`}
+                                >
+                                    <Image
+                                        src={image}
+                                        alt={`${productData.name} - view ${index + 1}`}
+                                        className="w-full h-auto object-cover mix-blend-multiply"
+                                        width={1280}
+                                        height={720}
+                                    />
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                    <hr className="bg-gray-600 my-6" />
-                    {/* <p className="text-gray-600 mt-3">
-                        <h1 className="text-black mb-3">Directions for Use :</h1>
-                        {productData.description}
-                    </p> */}
 
-                      {/* Toggle Directions for Use */}
-  
-                    <div>
-                        <button
-                            onClick={() => setShowDirections(!showDirections)}
-                            className="flex items-center justify-between w-full text-left text-gray-800 font-medium py-2"
-                        >
-                            <span>How to use</span>
-                            {showDirections ? <FaChevronUp /> : <FaChevronDown />}
-                        </button>
-                        {showDirections && (
-                            <p className="text-gray-600 mt-3">
-                            {productData.description}
+                    <div className="flex flex-col">
+                        <h1 className="text-lg md:text-3xl font-medium text-gray-800/90 mb-2">
+                            {productData.name}
+                        </h1>
+
+                        <div className="flex items-center gap-1 text-sm">
+                            <div className="flex items-center gap-0.5">
+                                <Image className="h-4 w-4" src={assets.star_icon} alt="star_icon" />
+                                <Image className="h-4 w-4" src={assets.star_icon} alt="star_icon" />
+                                <Image className="h-4 w-4" src={assets.star_icon} alt="star_icon" />
+                                <Image className="h-4 w-4" src={assets.star_icon} alt="star_icon" />
+                                <Image className="h-4 w-4" src={assets.star_dull_icon} alt="star_dull_icon" />
+                            </div>
+                            <p>(4.5)</p>
+                        </div>
+
+                        <div className="mt-2 flex items-center text-green-600 text-sm">
+                            {productData.isAvailable ? (
+                                <><IoMdCheckmarkCircleOutline className="mr-1" /> <span>In Stock</span></>
+                            ) : (
+                                <span className="text-red-500">Out of Stock</span>
+                            )}
+                        </div>
+
+                        <div className="mt-4 bg-gray-50 p-3 rounded-md">
+                            <p className="text-2xl sm:text-3xl font-medium text-gray-800">
+                                ${productData.offerPrice}
+                                {productData.price > productData.offerPrice && (
+                                    <span className="text-base font-normal text-red-400 line-through ml-2">
+                                        ${productData.price}
+                                    </span>
+                                )}
                             </p>
-                        )}
-                    </div>
+                            {calculateDiscount() > 0 && (
+                                <p className="text-green-600 text-sm mt-1">
+                                    You save: ${(productData.price - productData.offerPrice).toFixed(2)} ({calculateDiscount()}%)
+                                </p>
+                            )}
+                        </div>
 
+                        <p className="mt-2 text-gray-500 text-sm">
+                            Category: <span className="text-gray-700">{productData.category}</span>
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row items-center mt-6 gap-3">
+                            <button
+                                onClick={handleAddToCart}
+                                disabled={!productData.isAvailable}
+                                className={`w-full py-3 text-sm sm:text-base rounded-md text-gray-800/80 transition ${
+                                    productData.isAvailable
+                                        ? 'bg-gray-100 hover:bg-gray-200'
+                                        : 'bg-gray-100 opacity-60 cursor-not-allowed'
+                                }`}
+                            >
+                                Add to Cart
+                            </button>
+                            <button
+                                onClick={handleBuyNow}
+                                disabled={!productData.isAvailable}
+                                className={`w-full py-3 text-sm sm:text-base rounded-md text-white transition duration-300 ${
+                                    productData.isAvailable
+                                        ? 'bg-sky-500 hover:bg-green-500'
+                                        : 'bg-gray-500 cursor-not-allowed'
+                                }`}
+                            >
+                                Buy now
+                            </button>
+                        </div>
+
+                        <hr className="bg-gray-200 my-5" />
+
+                        <div className="border border-gray-200 text-sm rounded-md overflow-hidden">
+                            <button
+                                onClick={() => setShowDirections(!showDirections)}
+                                className="flex items-center justify-between w-full text-left text-gray-800 py-3 px-4 bg-gray-50 hover:bg-gray-100 transition"
+                            >
+                                <span>How to use</span>
+                                {showDirections ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
+                            </button>
+                            {showDirections && (
+                                <div className="p-4 text-gray-600 text-xs">
+                                    {productData.description}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex flex-col items-center">
+                    <div className="flex flex-col items-center mb-4">
+                        <p className="text-2xl sm:text-3xl font-medium text-center">Featured <span className="text-black">Products</span></p>
+                        <div className="w-20 h-0.5 bg-black mt-1 mb-4"></div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 mt-2 pb-14 w-full">
+                        {products
+                            .filter(product => product._id !== id && product.isAvailable)
+                            .slice(0, 5)
+                            .map((product, index) => (
+                                <ProductCard key={index} product={product} />
+                            ))}
+                    </div>
+                    <button
+                        onClick={() => router.push('/shop')}
+                        className="px-10 py-2 mb-14 text-sm border rounded text-gray-500/70 hover:bg-slate-50/90 transition"
+                    >
+                        See more
+                    </button>
                 </div>
             </div>
-            <div className="flex flex-col items-center">
-                <div className="flex flex-col items-center mb-4">
-                    <p className="text-3xl font-medium">Featured <span className="font-medium text-black">Products</span></p>
-                    <div className="w-28 h-0.5 bg-black mt-2"></div>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mt-6 pb-14 w-full">
-                    {products.slice(0, 5).map((product, index) => <ProductCard key={index} product={product} />)}
-                </div>
-                <button className="px-8 py-2 mb-16 border rounded text-gray-500/70 hover:bg-slate-50/90 transition">
-                    See more
-                </button>
-            </div>
-        </div>
-        <Footer />
-    </>
-    ) : <Loading />
+            <Footer />
+        </>
+    ) : <Loading />;
 };
 
 export default Product;
