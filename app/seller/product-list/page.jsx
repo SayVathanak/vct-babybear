@@ -199,7 +199,7 @@ const ProductList = () => {
             <button 
               onClick={() => toggleAvailability(product._id, product.isAvailable)}
               disabled={updatingProductId === product._id}
-              className={`px-2 py-1 rounded-full text-xs font-medium transition-colors ${
+              className={`w-24 px-2 py-1 rounded-full text-xs font-medium transition-colors ${
                 product.isAvailable 
                   ? 'bg-green-100 text-green-700 hover:bg-green-200' 
                   : 'bg-red-100 text-red-700 hover:bg-red-200'
