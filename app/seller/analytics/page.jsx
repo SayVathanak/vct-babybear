@@ -197,13 +197,13 @@ const Analytics = () => {
       {loading ? (
         <Loading />
       ) : (
-        <div className="px-4 py-6 sm:px-6 md:px-10 space-y-6 w-full">
-          <div className="flex justify-between gap-y-4 gap-x-2 sm:gap-x-4">
-            <h2 className="text-lg sm:text-xl font-prata font-medium whitespace-nowrap">Sales Analytics</h2>
-            <div className="flex flex-wrap gap-0.5 sm:gap-3">
+        <div className="px-2 py-4 sm:px-6 md:px-10 space-y-4 sm:space-y-6 w-full">
+          <div className="flex flex-col sm:flex-row sm:justify-between gap-y-3 gap-x-2 sm:gap-x-4">
+            <h2 className="text-lg sm:text-xl font-prata font-medium">Sales Analytics</h2>
+            <div className="flex flex-wrap gap-1 sm:gap-3">
               <button
                 onClick={() => handleTimeFrameChange('weekly')}
-                className={`px-3 py-1 rounded whitespace-nowrap ${
+                className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded whitespace-nowrap ${
                   selectedTimeFrame === 'weekly' ? 'bg-black text-white' : 'bg-gray-200'
                 }`}
               >
@@ -211,7 +211,7 @@ const Analytics = () => {
               </button>
               <button
                 onClick={() => handleTimeFrameChange('monthly')}
-                className={`px-3 py-1 rounded whitespace-nowrap ${
+                className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded whitespace-nowrap ${
                   selectedTimeFrame === 'monthly' ? 'bg-black text-white' : 'bg-gray-200'
                 }`}
               >
@@ -219,7 +219,7 @@ const Analytics = () => {
               </button>
               <button
                 onClick={() => handleTimeFrameChange('all')}
-                className={`px-3 py-1 rounded whitespace-nowrap ${
+                className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded whitespace-nowrap ${
                   selectedTimeFrame === 'all' ? 'bg-black text-white' : 'bg-gray-200'
                 }`}
               >
@@ -229,41 +229,42 @@ const Analytics = () => {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h3 className="text-gray-500 text-sm mb-1">Total Sales</h3>
-              <p className="text-2xl">{currency}{analytics.totalSales.toFixed(2)}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+              <h3 className="text-gray-500 text-xs sm:text-sm mb-1">Total Sales</h3>
+              <p className="text-xl sm:text-2xl">{currency}{analytics.totalSales.toFixed(2)}</p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h3 className="text-gray-500 text-sm mb-1">Total Orders</h3>
-              <p className="text-2xl">{analytics.totalOrders}</p>
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+              <h3 className="text-gray-500 text-xs sm:text-sm mb-1">Total Orders</h3>
+              <p className="text-xl sm:text-2xl">{analytics.totalOrders}</p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h3 className="text-gray-500 text-sm mb-1">Average Order Value</h3>
-              <p className="text-2xl">{currency}{analytics.averageOrderValue}</p>
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+              <h3 className="text-gray-500 text-xs sm:text-sm mb-1">Average Order Value</h3>
+              <p className="text-xl sm:text-2xl">{currency}{analytics.averageOrderValue}</p>
             </div>
           </div>
 
           {/* Sales Trend */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="font-medium mb-4">Sales Trend</h3>
-            <div className="h-64 sm:h-80">
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Sales Trend</h3>
+            <div className="h-48 sm:h-64 md:h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={analytics.salesByDate}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
+                  <XAxis dataKey="date" tick={{fontSize: 10}} />
+                  <YAxis tick={{fontSize: 10}} />
                   <Tooltip formatter={(value) => `${currency}${value}`} />
-                  <Legend />
+                  <Legend wrapperStyle={{fontSize: '10px'}} />
                   <Line
                     type="monotone"
                     dataKey="amount"
                     name="Sales"
                     stroke="#8884d8"
-                    activeDot={{ r: 8 }}
+                    activeDot={{ r: 6 }}
+                    strokeWidth={2}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -272,49 +273,57 @@ const Analytics = () => {
 
           {/* Top Products and Sales by City */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h3 className="font-medium mb-4">Top Products</h3>
-              <div className="h-64">
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+              <h3 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Top Products</h3>
+              <div className="h-48 sm:h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={analytics.topProducts}
                     layout="vertical"
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis type="category" dataKey="name" width={100} />
+                    <XAxis type="number" tick={{fontSize: 10}} />
+                    <YAxis 
+                      type="category" 
+                      dataKey="name" 
+                      width={80} 
+                      tick={{fontSize: 9}}
+                      tickFormatter={(value) => value.length > 12 ? `${value.substring(0, 12)}...` : value}
+                    />
                     <Tooltip formatter={(value, name) => [
                       name === 'revenue' ? `${currency}${value}` : value,
                       name === 'revenue' ? 'Revenue' : 'Quantity'
                     ]} />
-                    <Legend />
+                    <Legend wrapperStyle={{fontSize: '10px'}} />
                     <Bar dataKey="revenue" name="Revenue" fill="#8884d8" />
                     <Bar dataKey="count" name="Quantity" fill="#82ca9d" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h3 className="font-medium mb-4">Sales by Province</h3>
-              <div className="h-64">
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+              <h3 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Sales by Province</h3>
+              <div className="h-48 sm:h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                <PieChart className="font-kantumruy">
+                <PieChart>
                   <Pie
-                    data={analytics.salesByState} // updated
+                    data={analytics.salesByState}
                     dataKey="sales"
-                    nameKey="state" // updated
+                    nameKey="state"
                     cx="50%"
                     cy="50%"
-                    outerRadius={80}
-                    label={(entry) => entry.state} // updated
+                    outerRadius={60}
+                    innerRadius={0}
+                    label={(entry) => entry.state.length > 5 ? `${entry.state.substring(0, 5)}...` : entry.state}
+                    labelLine={false}
                   >
                     {analytics.salesByState.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value) => `${currency}${value}`} />
-                  <Legend />
+                  <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{fontSize: '10px'}} />
                 </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -322,48 +331,40 @@ const Analytics = () => {
           </div>
 
           {/* Recent Orders */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="font-medium mb-4">Recent Orders</h3>
-            <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm sm:text-base">
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Recent Orders</h3>
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
                 <thead>
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Date
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Customer
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider max-md:hidden">
                       Items
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Amount
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {orders.slice(0, 5).map((order, index) => (
                     <tr key={index}>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
                         {new Date(order.date).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap truncate max-w-[100px] sm:max-w-none">
                         {order.address.fullName}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-2 sm:px-6 py-2 sm:py-4 max-md:hidden truncate max-w-[100px] md:max-w-[200px] lg:max-w-none">
                         {order.items.map((item) => item.product.name).join(", ")}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
                         {currency}{order.amount}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5">
-                          Pending
-                        </span>
                       </td>
                     </tr>
                   ))}
