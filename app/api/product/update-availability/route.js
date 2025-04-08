@@ -21,35 +21,86 @@ export async function PUT(request) {
       return NextResponse.json({ success: false, message: "Not Authorized" });
     }
     
-    const { productId, isAvailable } = await request.json();
+    const requestData = await request.json();
     
-    if (!productId) {
-      return NextResponse.json({ success: false, message: "Product ID is required" });
+    // Check if this is a quick-edit request or just an availability update
+    const isQuickEdit = 'name' in requestData;
+    
+    if (isQuickEdit) {
+      // Handle quick edit functionality
+      const { _id, name, price, offerPrice, category, isAvailable } = requestData;
+      
+      if (!_id) {
+        return NextResponse.json({ success: false, message: "Product ID is required" });
+      }
+      
+      // Validate required fields
+      if (!name || !price || !offerPrice || !category) {
+        return NextResponse.json({ 
+          success: false, 
+          message: "Name, price, offer price, and category are required" 
+        });
+      }
+      
+      // Connect to the database
+      await connectDB();
+      
+      // Find the product and verify ownership
+      const product = await Product.findById(_id);
+      
+      if (!product) {
+        return NextResponse.json({ success: false, message: "Product not found" });
+      }
+      
+      if (product.userId !== userId) {
+        return NextResponse.json({ success: false, message: "Not authorized to update this product" });
+      }
+      
+      // Update product with all quick edit fields
+      product.name = name;
+      product.price = price;
+      product.offerPrice = offerPrice;
+      product.category = category;
+      product.isAvailable = isAvailable;
+      
+      await product.save();
+      
+      return NextResponse.json({ 
+        success: true, 
+        message: "Product updated successfully",
+        product
+      });
+    } else {
+      // Handle simple availability update (original functionality)
+      const { productId, isAvailable } = requestData;
+      
+      if (!productId) {
+        return NextResponse.json({ success: false, message: "Product ID is required" });
+      }
+      
+      // Connect to the database
+      await connectDB();
+      
+      // Find the product and verify ownership
+      const product = await Product.findById(productId);
+      
+      if (!product) {
+        return NextResponse.json({ success: false, message: "Product not found" });
+      }
+      
+      if (product.userId !== userId) {
+        return NextResponse.json({ success: false, message: "Not authorized to update this product" });
+      }
+      
+      // Update product availability
+      product.isAvailable = isAvailable;
+      await product.save();
+      
+      return NextResponse.json({ 
+        success: true, 
+        message: `Product marked as ${isAvailable ? 'available' : 'unavailable'}` 
+      });
     }
-    
-    // Connect to the database
-    await connectDB();
-    
-    // Find the product and verify ownership
-    const product = await Product.findById(productId);
-    
-    if (!product) {
-      return NextResponse.json({ success: false, message: "Product not found" });
-    }
-    
-    if (product.userId !== userId) {
-      return NextResponse.json({ success: false, message: "Not authorized to update this product" });
-    }
-    
-    // Update product availability
-    product.isAvailable = isAvailable;
-    await product.save();
-    
-    return NextResponse.json({ 
-      success: true, 
-      message: `Product marked as ${isAvailable ? 'available' : 'unavailable'}` 
-    });
-    
   } catch (error) {
     return NextResponse.json({ success: false, message: error.message });
   }

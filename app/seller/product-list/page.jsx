@@ -7,26 +7,47 @@ import Footer from "@/components/seller/Footer";
 import Loading from "@/components/Loading";
 import axios from "axios";
 import toast from "react-hot-toast";
+import QuickEditModal from "@/components/seller/QuickEditModal";
 
 const ProductList = () => {
   const { router, getToken, user } = useAppContext()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [updatingProductId, setUpdatingProductId] = useState(null)
+  const [quickEditProduct, setQuickEditProduct] = useState(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filterCategory, setFilterCategory] = useState("")
+  const [sortBy, setSortBy] = useState("newest")
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false)
+
+  const categories = [
+    { value: '', label: 'All Categories' },
+    { value: 'PowderedMilk', label: 'Formula & Powdered Milk' },
+    { value: 'LiquidMilk', label: 'Ready-to-Feed Milk' },
+    { value: 'Bottles', label: 'Bottles & Sippy Cups' },
+    { value: 'Tumblers', label: 'Toddler Tumblers & Cups' },
+    { value: 'FeedingTools', label: 'Feeding Sets & Utensils' },
+    { value: 'Accessories', label: 'Baby Essentials & Accessories' },
+    { value: 'Vitamins', label: 'Nutrition & Supplements' },
+    { value: 'Diapers', label: 'Diapers & Wipes' },
+    { value: 'NurseryItems', label: 'Nursery & Sleep Essentials' }
+  ];
 
   const fetchSellerProduct = async () => {
     try {
+      setLoading(true)
       const token = await getToken()
       const {data} = await axios.get('/api/product/seller-list', {headers:{Authorization:`Bearer ${token}`}})
       
       if (data.success) {
         setProducts(data.products)
-        setLoading(false)
       } else {
         toast.error(data.message)
       }
     } catch (error) {
       toast.error(error.message)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -61,6 +82,81 @@ const ProductList = () => {
     }
   }
 
+  const handleQuickEdit = (product) => {
+    setQuickEditProduct({
+      ...product,
+      price: product.price.toString(),
+      offerPrice: product.offerPrice.toString()
+    })
+  }
+
+  const closeQuickEdit = () => {
+    setQuickEditProduct(null)
+  }
+
+  const handleQuickEditSubmit = async (updatedProductData) => {
+    try {
+      setUpdatingProductId(updatedProductData._id)
+      const token = await getToken()
+      
+      const { data } = await axios.put(
+        '/api/product/update-availability',
+        updatedProductData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      
+      if (data.success) {
+        // Update products in state
+        setProducts(products.map(product => 
+          product._id === updatedProductData._id ? 
+          {...product, ...updatedProductData} : 
+          product
+        ))
+        toast.success('Product updated successfully')
+        setQuickEditProduct(null)
+      } else {
+        toast.error(data.message)
+      }
+    } catch (error) {
+      toast.error(error.message || 'Failed to update product')
+    } finally {
+      setUpdatingProductId(null)
+    }
+  }
+
+  // Reset filters function
+  const resetFilters = () => {
+    setSearchTerm("");
+    setFilterCategory("");
+    setSortBy("newest");
+  }
+
+  // Filter and sort products
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesCategory = filterCategory === "" || product.category === filterCategory
+    return matchesSearch && matchesCategory
+  })
+
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    switch(sortBy) {
+      case "newest":
+        return new Date(b.createdAt) - new Date(a.createdAt)
+      case "oldest":
+        return new Date(a.createdAt) - new Date(b.createdAt)
+      case "name-asc":
+        return a.name.localeCompare(b.name)
+      case "name-desc":
+        return b.name.localeCompare(a.name)
+      case "price-asc":
+        return a.offerPrice - b.offerPrice
+      case "price-desc":
+        return b.offerPrice - a.offerPrice
+      default:
+        return 0
+    }
+  })
+
   useEffect(() => {
     if (user) {
       fetchSellerProduct();
@@ -69,54 +165,81 @@ const ProductList = () => {
 
   // For products on smaller screens
   const ProductCard = ({ product }) => (
-    <div className={`sm:hidden border-t border-gray-500/20 ${!product.isAvailable ? 'bg-gray-100' : ''} p-3`}>
+    <div className={`relative border-t border-gray-200 ${!product.isAvailable ? 'bg-gray-100' : ''} p-4`}>
       <div className="flex items-start space-x-3">
-        <div className="bg-gray-500/10 rounded p-2 flex-shrink-0">
+        <div className="bg-white rounded-lg shadow-sm p-2 flex-shrink-0">
           <Image
             src={product.image[0]}
-            alt="product Image"
-            className={`w-12 h-12 object-cover ${!product.isAvailable ? 'opacity-50' : ''}`}
-            width={48}
-            height={48}
+            alt={product.name}
+            className={`w-16 h-16 object-cover rounded ${!product.isAvailable ? 'opacity-60' : ''}`}
+            width={64}
+            height={64}
           />
         </div>
         <div className="flex-1 min-w-0">
-          <p className={`text-sm font-medium truncate ${!product.isAvailable ? 'line-through text-gray-400' : ''}`}>
+          <p className={`text-sm font-medium ${!product.isAvailable ? 'line-through text-gray-400' : 'text-gray-800'}`}>
             {product.name}
           </p>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Category: {product.category}
-          </p>
-          <p className="text-xs font-medium mt-0.5">
-            ${product.offerPrice}
-          </p>
-          <div className="flex items-center justify-between mt-2">
+          <div className="flex items-center mt-1">
+            <span className="px-2 py-0.5 bg-gray-100 rounded-full text-xs font-medium text-gray-600">
+              {product.category}
+            </span>
+          </div>
+          <div className="flex items-center mt-2">
+            <p className="text-sm font-medium text-gray-900">
+              ${product.offerPrice}
+            </p>
+            {product.price !== product.offerPrice && (
+              <p className="ml-2 text-xs line-through text-gray-400">
+                ${product.price}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center justify-between mt-3">
             <button 
               onClick={() => toggleAvailability(product._id, product.isAvailable)}
               disabled={updatingProductId === product._id}
-              className={`px-2 py-0.5 rounded-full text-xs ${
+              className={`px-2 py-1 rounded-full text-xs font-medium transition-colors ${
                 product.isAvailable 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-red-100 text-red-800'
+                  ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                  : 'bg-red-100 text-red-700 hover:bg-red-200'
               }`}
             >
               {updatingProductId === product._id ? (
-                <span>Updating...</span>
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-0.5 mr-1.5 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Updating...
+                </span>
               ) : (
                 <span>{product.isAvailable ? 'Available' : 'Not Available'}</span>
               )}
             </button>
-            <button 
-              onClick={() => router.push(`/product/${product._id}`)} 
-              className="flex items-center gap-1 px-2 py-1 bg-green-400 text-white text-xs rounded-md"
-            >
-              <span>View</span>
-              <Image
-                className="h-3"
-                src={assets.redirect_icon}
-                alt="redirect_icon"
-              />
-            </button>
+            <div className="flex space-x-2">
+              <button 
+                onClick={() => router.push(`/product/${product._id}`)} 
+                className="flex items-center justify-center gap-1 px-2 py-1 bg-green-500 text-white text-xs rounded-md hover:bg-green-600 transition-colors"
+                aria-label="View product"
+              >
+                <span>View</span>
+                <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                  <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                </svg>
+              </button>
+              <button 
+                onClick={() => handleQuickEdit(product)} 
+                className="flex items-center justify-center gap-1 px-2 py-1 bg-blue-500 text-white text-xs rounded-md hover:bg-blue-600 transition-colors"
+                aria-label="Quick edit"
+              >
+                <span>Edit</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -124,90 +247,329 @@ const ProductList = () => {
   );
 
   return (
-    <div className="flex-1 min-h-screen flex flex-col justify-between">
+    <div className="flex-1 min-h-screen flex flex-col justify-between bg-gray-50">
       {loading ? <Loading /> : (
-        <div className="w-full md:p-10 p-4">
-          <h2 className="pb-4 text-lg font-medium">All Products</h2>
-          
-          {/* Mobile view - Card Layout */}
-          <div className="sm:hidden flex flex-col w-full overflow-hidden rounded-md bg-white border border-gray-500/20 mb-4">
-            {products.map((product, index) => (
-              <ProductCard key={index} product={product} />
-            ))}
-          </div>
-          
-          {/* Tablet and Desktop view - Table Layout */}
-          <div className="hidden sm:flex flex-col items-center max-w-4xl w-full overflow-hidden rounded-md bg-white border border-gray-500/20">
-            <div className="w-full overflow-x-auto">
-              <table className="min-w-full">
-                <thead className="text-gray-900 text-sm text-left">
-                  <tr>
-                    <th className="w-2/5 px-4 py-3 font-medium truncate">Product</th>
-                    <th className="px-4 py-3 font-medium truncate">Category</th>
-                    <th className="px-4 py-3 font-medium truncate">Price</th>
-                    <th className="px-4 py-3 font-medium truncate">Status</th>
-                    <th className="px-4 py-3 font-medium truncate">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm text-gray-500">
-                  {products.map((product, index) => (
-                    <tr key={index} className={`border-t border-gray-500/20 ${!product.isAvailable ? 'bg-gray-100' : ''}`}>
-                      <td className="px-4 py-3 flex items-center space-x-3 truncate">
-                        <div className="bg-gray-500/10 rounded p-2">
-                          <Image
-                            src={product.image[0]}
-                            alt="product Image"
-                            className={`w-12 h-12 object-cover ${!product.isAvailable ? 'opacity-50' : ''}`}
-                            width={48}
-                            height={48}
-                          />
-                        </div>
-                        <span className={`truncate w-32 md:w-40 lg:w-full ${!product.isAvailable ? 'line-through text-gray-400' : ''}`}>
-                          {product.name}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">{product.category}</td>
-                      <td className="px-4 py-3">${product.offerPrice}</td>
-                      <td className="px-4 py-3">
-                        <button 
-                          onClick={() => toggleAvailability(product._id, product.isAvailable)}
-                          disabled={updatingProductId === product._id}
-                          className={`px-2 md:px-3 py-1 rounded-full text-xs ${
-                            product.isAvailable 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {updatingProductId === product._id ? (
-                            <span>Updating...</span>
-                          ) : (
-                            <span>{product.isAvailable ? 'Available' : 'Not Available'}</span>
-                          )}
-                        </button>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex space-x-2">
-                          <button 
-                            onClick={() => router.push(`/product/${product._id}`)} 
-                            className="flex items-center gap-1 px-2 md:px-3 py-1.5 bg-green-400 text-white rounded-md"
-                          >
-                            <span className="text-xs">Visit</span>
-                            <Image
-                              className="h-3"
-                              src={assets.redirect_icon}
-                              alt="redirect_icon"
-                            />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <div className="w-full max-w-7xl mx-auto px-4 py-6 md:px-8 md:py-8">
+          <div className="flex flex-col mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4">
+              <h1 className="text-2xl md:text-3xl font-prata text-gray-800">All Products</h1>
+              <button
+                onClick={() => router.push('/seller')}
+                className="mt-3 sm:mt-0 inline-flex items-center justify-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+              >
+                <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add New Product
+              </button>
+            </div>
+            
+            {/* Mobile Filters Toggle */}
+            <div className="sm:hidden mb-4">
+              <button
+                onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+                className="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-gray-300 rounded-md shadow-sm text-gray-700"
+              >
+                <span className="flex items-center">
+                  <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                  </svg>
+                  Filters & Sort
+                </span>
+                <svg 
+                  className={`h-5 w-5 transform transition-transform ${isFiltersOpen ? 'rotate-180' : ''}`} 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  viewBox="0 0 20 20" 
+                  fill="currentColor"
+                >
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* Filters Row - Mobile (Collapsible) */}
+            <div className={`flex flex-col gap-3 sm:hidden ${isFiltersOpen ? 'block' : 'hidden'}`}>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 pr-3 py-2.5 border border-gray-300 rounded-md w-full focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                <svg 
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" 
+                  width="16" height="16" fill="currentColor" viewBox="0 0 16 16"
+                >
+                  <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                </svg>
+              </div>
+              <select 
+                className="border border-gray-300 rounded-md py-2.5 px-3 bg-white focus:ring-indigo-500 focus:border-indigo-500"
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+              >
+                {categories.map(cat => (
+                  <option key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </option>
+                ))}
+              </select>
+              <select 
+                className="border border-gray-300 rounded-md py-2.5 px-3 bg-white focus:ring-indigo-500 focus:border-indigo-500"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="name-asc">Name (A-Z)</option>
+                <option value="name-desc">Name (Z-A)</option>
+                <option value="price-asc">Price (Low-High)</option>
+                <option value="price-desc">Price (High-Low)</option>
+              </select>
+              <button
+                onClick={resetFilters}
+                className="w-full py-2 text-gray-600 text-sm font-medium hover:text-indigo-600 transition-colors"
+              >
+                Clear Filters
+              </button>
+            </div>
+            
+            {/* Filters Row - Desktop */}
+            <div className="hidden sm:flex sm:flex-row sm:items-center gap-3 mt-4">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 pr-3 py-2 border border-gray-300 rounded-md w-full focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                />
+                <svg 
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" 
+                  width="16" height="16" fill="currentColor" viewBox="0 0 16 16"
+                >
+                  <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                </svg>
+              </div>
+              <select 
+                className="border border-gray-300 rounded-md py-2 px-3 bg-white focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+              >
+                {categories.map(cat => (
+                  <option key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </option>
+                ))}
+              </select>
+              <select 
+                className="border border-gray-300 rounded-md py-2 px-3 bg-white focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="name-asc">Name (A-Z)</option>
+                <option value="name-desc">Name (Z-A)</option>
+                <option value="price-asc">Price (Low-High)</option>
+                <option value="price-desc">Price (High-Low)</option>
+              </select>
+              {(searchTerm || filterCategory !== "" || sortBy !== "newest") && (
+                <button
+                  onClick={resetFilters}
+                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-indigo-500"
+                >
+                  <svg className="mr-1.5 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                  Clear
+                </button>
+              )}
             </div>
           </div>
+          
+          {/* Results count */}
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-sm text-gray-600">
+              {sortedProducts.length === 0 
+                ? 'No products found' 
+                : `Showing ${sortedProducts.length} ${sortedProducts.length === 1 ? 'product' : 'products'}`
+              }
+            </p>
+          </div>
+          
+          {/* Empty state */}
+          {sortedProducts.length === 0 ? (
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8 text-center">
+              <svg className="mx-auto h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+              <h3 className="mt-3 text-lg font-medium text-gray-900">No products found</h3>
+              <p className="mt-2 text-sm text-gray-500 max-w-md mx-auto">
+                {searchTerm || filterCategory ? 
+                  'Try changing your filters or search term to find what you\'re looking for.' : 
+                  'Get started by adding your first product to your inventory.'}
+              </p>
+              <div className="mt-6">
+                <button
+                  onClick={() => router.push('/seller')}
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                >
+                  <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Add Your First Product
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Mobile view - Card Layout */}
+              <div className="sm:hidden">
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden divide-y divide-gray-200">
+                  {sortedProducts.map((product, index) => (
+                    <ProductCard key={product._id || index} product={product} />
+                  ))}
+                </div>
+              </div>
+              
+              {/* Tablet and Desktop view - Table Layout */}
+              <div className="hidden sm:block">
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                  <div className="w-full overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Product
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Category
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Price
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {sortedProducts.map((product, index) => (
+                          <tr 
+                            key={product._id || index} 
+                            className={`hover:bg-gray-50 transition-colors ${!product.isAvailable ? 'bg-gray-50' : ''}`}
+                          >
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="flex-shrink-0 h-14 w-14 bg-gray-100 rounded-md overflow-hidden">
+                                  <Image
+                                    src={product.image[0]}
+                                    alt={product.name}
+                                    className={`h-full w-full object-cover ${!product.isAvailable ? 'opacity-60' : ''}`}
+                                    width={56}
+                                    height={56}
+                                  />
+                                </div>
+                                <div className="ml-4">
+                                  <div className={`text-sm font-medium ${!product.isAvailable ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+                                    {product.name}
+                                  </div>
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {new Date(product.createdAt).toLocaleDateString()}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700">
+                                {product.category}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium text-gray-900">${product.offerPrice}</span>
+                                {product.price !== product.offerPrice && (
+                                  <span className="text-xs line-through text-gray-400">${product.price}</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <button 
+                                onClick={() => toggleAvailability(product._id, product.isAvailable)}
+                                disabled={updatingProductId === product._id}
+                                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                                  updatingProductId === product._id 
+                                    ? 'bg-gray-200 text-gray-500' 
+                                    : product.isAvailable 
+                                    ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                    : 'bg-red-100 text-red-800 hover:bg-red-200'
+                                } transition-colors`}
+                              >
+                                {updatingProductId === product._id ? (
+                                  <span className="flex items-center">
+                                    <svg className="animate-spin -ml-1 mr-2 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Updating
+                                  </span>
+                                ) : (
+                                  <span>{product.isAvailable ? 'Available' : 'Not Available'}</span>
+                                )}
+                              </button>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="flex space-x-2">
+                                <button 
+                                  onClick={() => router.push(`/product/${product._id}`)} 
+                                  className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-green-500 transition-colors"
+                                  title="View product details"
+                                >
+                                  <span>View</span>
+                                  <svg className="ml-1.5 h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                                    <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                                  </svg>
+                                </button>
+                                <button 
+                                  onClick={() => handleQuickEdit(product)} 
+                                  className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-blue-500 transition-colors"
+                                  title="Quick edit product"
+                                >
+                                  <span>Edit</span>
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="ml-1.5 h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
+      
+      {/* Quick Edit Modal */}
+      {quickEditProduct && (
+        <QuickEditModal
+          product={quickEditProduct}
+          onClose={closeQuickEdit}
+          onSubmit={handleQuickEditSubmit}
+          isSubmitting={updatingProductId === quickEditProduct._id}
+        />
+      )}
+      
       <Footer />
     </div>
   );
