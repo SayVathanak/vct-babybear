@@ -22,6 +22,7 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import TimeFrameSelector from "@/components/TimeFrameSelector";
 
 const Analytics = () => {
   const { currency, getToken, user } = useAppContext();
@@ -114,7 +115,6 @@ const Analytics = () => {
 
   const processSalesByTimeFrame = (orders, timeFrame) => {
     const today = new Date();
-    const dateFormat = { weekday: 'short', month: 'short', day: 'numeric' };
     const dateMap = new Map();
     
     // Filter orders based on time frame
@@ -182,7 +182,13 @@ const Analytics = () => {
 
   useEffect(() => {
     if (orders.length > 0) {
-      processAnalytics(orders);
+      // Add a loading state when changing time frames for better UX
+      setLoading(true);
+      // Use setTimeout to prevent UI freezing during heavy data processing
+      setTimeout(() => {
+        processAnalytics(orders);
+        setLoading(false);
+      }, 0);
     }
   }, [selectedTimeFrame]);
 
@@ -200,32 +206,12 @@ const Analytics = () => {
         <div className="px-2 py-4 sm:px-6 md:px-10 space-y-4 sm:space-y-6 w-full">
           <div className="flex flex-col sm:flex-row sm:justify-between gap-y-3 gap-x-2 sm:gap-x-4">
             <h2 className="text-lg sm:text-xl font-prata font-medium">Sales Analytics</h2>
-            <div className="flex flex-wrap gap-1 sm:gap-3">
-              <button
-                onClick={() => handleTimeFrameChange('weekly')}
-                className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded whitespace-nowrap ${
-                  selectedTimeFrame === 'weekly' ? 'bg-black text-white' : 'bg-gray-200'
-                }`}
-              >
-                Weekly
-              </button>
-              <button
-                onClick={() => handleTimeFrameChange('monthly')}
-                className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded whitespace-nowrap ${
-                  selectedTimeFrame === 'monthly' ? 'bg-black text-white' : 'bg-gray-200'
-                }`}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => handleTimeFrameChange('all')}
-                className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded whitespace-nowrap ${
-                  selectedTimeFrame === 'all' ? 'bg-black text-white' : 'bg-gray-200'
-                }`}
-              >
-                All
-              </button>
-            </div>
+            
+            {/* Use the TimeFrameSelector component */}
+            <TimeFrameSelector 
+              selectedTimeFrame={selectedTimeFrame}
+              onTimeFrameChange={handleTimeFrameChange}
+            />
           </div>
 
           {/* Summary Cards */}
