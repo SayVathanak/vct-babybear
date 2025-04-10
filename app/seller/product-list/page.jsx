@@ -214,7 +214,7 @@ const ProductList = () => {
                   Updating...
                 </span>
               ) : (
-                <span>{product.isAvailable ? 'Available' : 'Not Available'}</span>
+                <span className="whitespace-nowrap">{product.isAvailable ? 'Available' : 'Not Available'}</span>
               )}
             </button>
             <div className="flex space-x-2">
