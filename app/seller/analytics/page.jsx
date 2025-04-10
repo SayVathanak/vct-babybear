@@ -290,7 +290,7 @@ const Analytics = () => {
             </div>
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
               <h3 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Sales by Province</h3>
-              <div className="h-48 sm:h-64">
+              <div className="h-48 sm:h-64 font-kantumruy">
                 <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -301,7 +301,7 @@ const Analytics = () => {
                     cy="50%"
                     outerRadius={60}
                     innerRadius={0}
-                    label={(entry) => entry.state.length > 5 ? `${entry.state.substring(0, 5)}...` : entry.state}
+                    label={(entry) => entry.state.length > 10 ? `${entry.state.substring(0, 5)}...` : entry.state}
                     labelLine={false}
                   >
                     {analytics.salesByState.map((entry, index) => (
