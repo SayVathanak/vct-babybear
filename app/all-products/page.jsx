@@ -30,13 +30,31 @@ const AllProducts = () => {
         "NurseryItems": "Nursery & Sleep Essentials"
     };
     
+    // Commented out all the icon definitions
+    /*
+    const categoryIcons = {
+            "All": (
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+            ),
+            "PowderedMilk": (
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 8h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2Z"></path>
+                    <path d="M5 8V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2"></path>
+                    <path d="M8 12h8"></path>
+                    <path d="M10 16h4"></path>
+                </svg>
+            ),
+            // ... other icons
+    };
+    */
+    
     // Get unique categories from products and add "All" option
     const allCategories = ["All", ...new Set(products.map(product => product.category))];
-    
-    // Function to truncate text for mobile view
-    const truncateText = (text, maxLength = 20) => {
-        return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-    };
     
     // Filter and sort products when category, sort option, or search query changes
     useEffect(() => {
@@ -136,6 +154,7 @@ const AllProducts = () => {
                             </button>
                         </div>
 
+                        {/* <div className="h-1 bg-black w-full my-4 rounded-full bg-gradient-to-r from-blue-300 via-blue-600 to-purple-600 shadow-sm"></div> */}
                         <div className="h-px w-full my-4 bg-gray-200"></div>
                         
                         {/* Category Section - Updated to remove icon spaces and make text even */}
@@ -154,6 +173,7 @@ const AllProducts = () => {
                                                 : 'hover:text-blue-400'}
                                         `}
                                     >
+                                        {/* Icon section removed */}
                                         {categoryDisplayNames[category] || category}
                                     </button>
                                 ))}
@@ -166,15 +186,7 @@ const AllProducts = () => {
                 <div className="flex-1 px-4 md:px-8 lg:px-12 py-6">
                     {/* Header with Title, Search Icon and Menu Icon */}
                     <div className="flex justify-between items-center">
-                        {/* Title with truncation for mobile */}
-                        <h1 className="text-2xl">
-                            <span className="md:hidden whitespace-nowrap overflow-hidden text-ellipsis" style={{ maxWidth: '300px', display: 'inline-block' }}>
-                                {categoryDisplayNames[selectedCategory] || selectedCategory}
-                            </span>
-                            <span className="hidden md:inline">
-                                {categoryDisplayNames[selectedCategory] || selectedCategory}
-                            </span>
-                        </h1>
+                        <h1 className="text-2xl">{categoryDisplayNames[selectedCategory] || selectedCategory}</h1>
                         
                         <div className="flex items-center space-x-3">
                             {/* Mobile menu button */}
