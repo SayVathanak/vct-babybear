@@ -4,6 +4,7 @@ import ProductCard from "@/components/ProductCard";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAppContext } from "@/context/AppContext";
+import { MdFilterAlt } from 'react-icons/md';
 
 const AllProducts = () => {
     const { products } = useAppContext();
@@ -198,8 +199,8 @@ const AllProducts = () => {
                 >
                     <div className="p-6 h-full overflow-y-auto flex flex-col">
                         {/* Sidebar Header */}
-                        <div className="flex justify-between items-center mt-6 md:mt-0">
-                            <h3 className="text-3xl md:text-4xl md:mt-0 font-playfair">Categories</h3>
+                        <div className="flex justify-between items-center mt-12 sm:mt-0 mb-8">
+                            <h3 className="text-2xl md:text-3xl md:mt-0">Categories</h3>
                             <button onClick={toggleSidebar} className="md:hidden">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -207,7 +208,6 @@ const AllProducts = () => {
                                 </svg>
                             </button>
                         </div>
-                        <div className="w-12 h-0.5 bg-sky-200 rounded-full mb-8"></div>
                         
                         {/* Category Section */}
                         <div className="mb-8">
@@ -240,9 +240,16 @@ const AllProducts = () => {
                 <div className="flex-1 px-4 md:px-8 lg:px-12 py-6">
                     {/* Header with Title, Search Icon and Menu Icon */}
                     <div className="flex justify-between items-center md:mb-4">
-                        <h1 className="text-2xl font-prata">{categoryDisplayNames[selectedCategory] || selectedCategory}</h1>
+                        <h1 className="text-2xl">{categoryDisplayNames[selectedCategory] || selectedCategory}</h1>
                         
                         <div className="flex items-center space-x-3">
+                            {/* Mobile menu button */}
+                            <button 
+                                onClick={toggleSidebar} 
+                                className="md:hidden rounded-md underline underline-offset-4 text-gray-500"
+                            >
+                                FILTERS
+                            </button>
                             {/* Search Icon Button */}
                             <button
                                 onClick={toggleSearch}
@@ -261,16 +268,6 @@ const AllProducts = () => {
                                 >
                                     <circle cx="11" cy="11" r="8"></circle>
                                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                </svg>
-                            </button>
-                            
-                            {/* Mobile menu button */}
-                            <button 
-                                onClick={toggleSidebar} 
-                                className="md:hidden rounded-md"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                                    <path d="M4 5a1 1 0 0 0 0 2h16a1 1 0 0 0 0-2H4ZM8 11a1 1 0 0 0 0 2h12a1 1 0 0 0 0-2H8ZM14 17a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2h-6Z" fill="#000"/>
                                 </svg>
                             </button>
                         </div>

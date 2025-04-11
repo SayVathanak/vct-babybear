@@ -109,7 +109,7 @@ const processSalesByTimeFrame = (orders, timeFrame) => {
         <button
           onClick={() => onTimeFrameChange('weekly')}
           className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded whitespace-nowrap transition-colors duration-200 ${
-            selectedTimeFrame === 'weekly' ? 'bg-black text-white' : 'bg-gray-200 hover:bg-gray-300'
+            selectedTimeFrame === 'weekly' ? 'bg-black text-white' : 'bg-gray-50 hover:bg-gray-100'
           }`}
         >
           Last 7 Days
@@ -117,7 +117,7 @@ const processSalesByTimeFrame = (orders, timeFrame) => {
         <button
           onClick={() => onTimeFrameChange('monthly')}
           className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded whitespace-nowrap transition-colors duration-200 ${
-            selectedTimeFrame === 'monthly' ? 'bg-black text-white' : 'bg-gray-200 hover:bg-gray-300'
+            selectedTimeFrame === 'monthly' ? 'bg-black text-white' : 'bg-gray-50 hover:bg-gray-100'
           }`}
         >
           Last 30 Days
@@ -125,7 +125,7 @@ const processSalesByTimeFrame = (orders, timeFrame) => {
         <button
           onClick={() => onTimeFrameChange('all')}
           className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded whitespace-nowrap transition-colors duration-200 ${
-            selectedTimeFrame === 'all' ? 'bg-black text-white' : 'bg-gray-200 hover:bg-gray-300'
+            selectedTimeFrame === 'all' ? 'bg-black text-white' : 'bg-gray-50 hover:bg-gray-100'
           }`}
         >
           All Time

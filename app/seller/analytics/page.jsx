@@ -22,14 +22,17 @@ import {
   Pie,
   Cell
 } from 'recharts';
-import TimeFrameSelector from "@/components/TimeFrameSelector";
+import TimeFrameSelector from "@/components/seller/TimeFrameSelector";
+import DateRangeSelector from "@/components/seller/DateRangeSelector";
 
 const Analytics = () => {
   const { currency, getToken, user } = useAppContext();
 
   const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTimeFrame, setSelectedTimeFrame] = useState('weekly');
+  const [customDateRange, setCustomDateRange] = useState(null);
   const [analytics, setAnalytics] = useState({
     totalSales: 0,
     totalOrders: 0,
@@ -49,6 +52,7 @@ const Analytics = () => {
       if (data.success) {
         const fetchedOrders = data.orders.reverse();
         setOrders(fetchedOrders);
+        setFilteredOrders(fetchedOrders);
         processAnalytics(fetchedOrders);
         setLoading(false);
       } else {
@@ -87,7 +91,13 @@ const Analytics = () => {
       .slice(0, 5);
 
     // Process sales by date
-    const salesByDate = processSalesByTimeFrame(orders, selectedTimeFrame);
+    let salesByDate;
+    
+    if (customDateRange) {
+      salesByDate = processSalesByCustomDateRange(orders);
+    } else {
+      salesByDate = processSalesByTimeFrame(orders, selectedTimeFrame);
+    }
     
     // Process sales by state
     const stateMap = new Map();
@@ -101,7 +111,6 @@ const Analytics = () => {
       state,
       sales: amount
     })).sort((a, b) => b.sales - a.sales);
-
 
     setAnalytics({
       totalSales,
@@ -174,6 +183,78 @@ const Analytics = () => {
     return salesByDate;
   };
 
+  const processSalesByCustomDateRange = (orders) => {
+    if (!customDateRange || !customDateRange.startDate || !customDateRange.endDate) {
+      return [];
+    }
+
+    const { startDate, endDate } = customDateRange;
+    const dateMap = new Map();
+    
+    // Filter orders based on custom date range
+    const filteredOrders = orders.filter(order => {
+      const orderDate = new Date(order.date);
+      return orderDate >= startDate && orderDate <= endDate;
+    });
+    
+    // Determine appropriate date format based on range duration
+    const rangeDuration = (endDate - startDate) / (1000 * 60 * 60 * 24); // duration in days
+    let dateFormat;
+    
+    if (rangeDuration <= 14) {
+      // For ranges up to 2 weeks, show each day
+      dateFormat = { month: 'short', day: 'numeric' };
+    } else if (rangeDuration <= 90) {
+      // For ranges up to 3 months, group by week
+      dateFormat = { month: 'short', day: 'numeric' };
+    } else {
+      // For longer ranges, group by month
+      dateFormat = { month: 'short', year: 'numeric' };
+    }
+    
+    // Group by date
+    filteredOrders.forEach(order => {
+      const orderDate = new Date(order.date);
+      let dateKey;
+      
+      if (rangeDuration <= 14) {
+        dateKey = orderDate.toLocaleDateString(undefined, dateFormat);
+      } else if (rangeDuration <= 90) {
+        // Get week number
+        const weekNumber = getWeekNumber(orderDate);
+        dateKey = `Week ${weekNumber}`;
+      } else {
+        dateKey = orderDate.toLocaleDateString(undefined, dateFormat);
+      }
+      
+      const currentAmount = dateMap.get(dateKey) || 0;
+      dateMap.set(dateKey, currentAmount + order.amount);
+    });
+    
+    // Convert to array suitable for charts
+    let salesByDate = Array.from(dateMap.entries()).map(([date, amount]) => ({
+      date,
+      amount
+    }));
+    
+    // Sort by date
+    salesByDate.sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      return dateA - dateB;
+    });
+    
+    return salesByDate;
+  };
+
+  // Helper function to get week number
+  const getWeekNumber = (d) => {
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+  };
+
   useEffect(() => {
     if (user) {
       fetchSellerOrders();
@@ -182,18 +263,63 @@ const Analytics = () => {
 
   useEffect(() => {
     if (orders.length > 0) {
-      // Add a loading state when changing time frames for better UX
       setLoading(true);
+      
+      let ordersToProcess;
+      
+      if (customDateRange && customDateRange.startDate && customDateRange.endDate) {
+        // Filter orders by custom date range
+        ordersToProcess = orders.filter(order => {
+          const orderDate = new Date(order.date);
+          return orderDate >= customDateRange.startDate && orderDate <= customDateRange.endDate;
+        });
+        setFilteredOrders(ordersToProcess);
+      } else {
+        // Apply time frame filtering
+        const today = new Date();
+        
+        if (selectedTimeFrame === 'weekly') {
+          const weekAgo = new Date();
+          weekAgo.setDate(today.getDate() - 7);
+          
+          ordersToProcess = orders.filter(order => {
+            const orderDate = new Date(order.date);
+            return orderDate >= weekAgo;
+          });
+        } else if (selectedTimeFrame === 'monthly') {
+          const monthAgo = new Date();
+          monthAgo.setDate(today.getDate() - 30);
+          
+          ordersToProcess = orders.filter(order => {
+            const orderDate = new Date(order.date);
+            return orderDate >= monthAgo;
+          });
+        } else {
+          // All time
+          ordersToProcess = orders;
+        }
+        
+        setFilteredOrders(ordersToProcess);
+      }
+      
       // Use setTimeout to prevent UI freezing during heavy data processing
       setTimeout(() => {
-        processAnalytics(orders);
+        processAnalytics(ordersToProcess);
         setLoading(false);
       }, 0);
     }
-  }, [selectedTimeFrame]);
+  }, [selectedTimeFrame, customDateRange, orders]);
 
   const handleTimeFrameChange = (timeFrame) => {
+    // Reset custom date range when switching to preset time frames
+    setCustomDateRange(null);
     setSelectedTimeFrame(timeFrame);
+  };
+
+  const handleDateRangeChange = (dateRange) => {
+    // When applying a custom date range, set timeFrame to null to indicate custom mode
+    setCustomDateRange(dateRange);
+    setSelectedTimeFrame(null);
   };
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
@@ -203,15 +329,19 @@ const Analytics = () => {
       {loading ? (
         <Loading />
       ) : (
-        <div className="px-2 py-4 sm:px-6 md:px-10 space-y-4 sm:space-y-6 w-full">
-          <div className="flex flex-col sm:flex-row sm:justify-between gap-y-3 gap-x-2 sm:gap-x-4">
-            <h2 className="text-lg sm:text-xl font-prata font-medium">Sales Analytics</h2>
+        <div className="px-2 py-4 sm:py-6 sm:px-6 md:px-10 space-y-4 sm:space-y-6 w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-y-3 gap-x-2 sm:gap-x-4">
+            <h2 className="text-lg sm:text-3xl font-prata font-medium">Sales Analytics</h2>
             
-            {/* Use the TimeFrameSelector component */}
-            <TimeFrameSelector 
-              selectedTimeFrame={selectedTimeFrame}
-              onTimeFrameChange={handleTimeFrameChange}
-            />
+            <div className="flex flex-row justify-between sm:gap-3">
+              {/* Time Frame Selector */}
+              <TimeFrameSelector 
+                selectedTimeFrame={selectedTimeFrame}
+                onTimeFrameChange={handleTimeFrameChange}
+              />
+              {/* Date Range Selector */}
+              <DateRangeSelector onDateRangeChange={handleDateRangeChange} />
+            </div>
           </div>
 
           {/* Summary Cards */}
@@ -232,7 +362,14 @@ const Analytics = () => {
 
           {/* Sales Trend */}
           <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Sales Trend</h3>
+            <h3 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">
+              Sales Trend 
+              {customDateRange && (
+                <span className="text-xs text-gray-500 ml-2">
+                  ({new Date(customDateRange.startDate).toLocaleDateString()} - {new Date(customDateRange.endDate).toLocaleDateString()})
+                </span>
+              )}
+            </h3>
             <div className="h-48 sm:h-64 md:h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
@@ -338,7 +475,7 @@ const Analytics = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {orders.slice(0, 5).map((order, index) => (
+                  {filteredOrders.slice(0, 5).map((order, index) => (
                     <tr key={index}>
                       <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
                         {new Date(order.date).toLocaleDateString()}

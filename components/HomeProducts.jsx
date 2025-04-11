@@ -12,19 +12,19 @@ const HomeProducts = () => {
         <div className="marquee-container">
           <div className="animate-marquee">
             <p className="whitespace-nowrap pr-10 text-xl text-sky-200 font-prata font-medium">
-              Baby Bear - Premium Imported Milk from the USA. Pure, Nutritious, and Safe for Your Little One.
+              Baby Bear - Premium Imported Milk and Baby Essentials from the USA. Pure, Nutritious, and Safe for Your Little One.
             </p>
             <p className="whitespace-nowrap pr-10 text-xl text-sky-200 font-prata font-medium">
-              Baby Bear - Premium Imported Milk from the USA. Pure, Nutritious, and Safe for Your Little One.
+              Baby Bear - Premium Imported Milk and Baby Essentials from the USA. Pure, Nutritious, and Safe for Your Little One.
             </p>
             <p className="whitespace-nowrap pr-10 text-xl text-sky-200 font-prata font-medium">
-              Baby Bear - Premium Imported Milk from the USA. Pure, Nutritious, and Safe for Your Little One.
+              Baby Bear - Premium Imported Milk and Baby Essentials from the USA. Pure, Nutritious, and Safe for Your Little One.
             </p>
             <p className="whitespace-nowrap pr-10 text-xl text-sky-200 font-prata font-medium">
-              Baby Bear - Premium Imported Milk from the USA. Pure, Nutritious, and Safe for Your Little One.
+              Baby Bear - Premium Imported Milk and Baby Essentials from the USA. Pure, Nutritious, and Safe for Your Little One.
             </p>
             <p className="whitespace-nowrap pr-10 text-xl text-sky-200 font-prata font-medium">
-              Baby Bear - Premium Imported Milk from the USA. Pure, Nutritious, and Safe for Your Little One.
+              Baby Bear - Premium Imported Milk and Baby Essentials from the USA. Pure, Nutritious, and Safe for Your Little One.
             </p>
           </div>
         </div>
