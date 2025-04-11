@@ -168,7 +168,7 @@ const AllProducts = () => {
                     <div className="flex justify-between items-center">
                         {/* Title with truncation for mobile */}
                         <h1 className="text-2xl">
-                            <span className="md:hidden whitespace-nowrap overflow-hidden text-ellipsis" style={{ maxWidth: '180px', display: 'inline-block' }}>
+                            <span className="md:hidden whitespace-nowrap overflow-hidden text-ellipsis" style={{ maxWidth: '220px', display: 'inline-block' }}>
                                 {categoryDisplayNames[selectedCategory] || selectedCategory}
                             </span>
                             <span className="hidden md:inline">
