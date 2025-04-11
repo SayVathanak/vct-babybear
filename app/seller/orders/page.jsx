@@ -288,8 +288,8 @@ const Orders = () => {
                                                     </div>
                                                     <div className="flex justify-between">
                                                         <span className="text-gray-500">Payment Status</span>
-                                                        <span className={`font-medium ${order.paymentStatus === 'paid' ? 'text-green-600' : 'text-yellow-600'}`}>
-                                                            {order.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
+                                                        <span className={`font-medium ${order.status === 'delivered' || order.paymentStatus === 'paid' ? 'text-green-600' : 'text-yellow-600'}`}>
+                                                        {order.status === 'delivered' || order.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
                                                         </span>
                                                     </div>
                                                 </div>
