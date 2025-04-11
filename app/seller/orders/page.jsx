@@ -57,45 +57,41 @@ const Orders = () => {
 
     const updateOrderStatus = async (orderId, status) => {
         try {
-            setUpdating(true);
-            const token = await getToken();
-            
-            // Find the order to get its items
-            const order = orders.find(o => (o._id || o.id || o.orderId) === orderId);
-            if (!order) {
-                toast.error("Order not found");
-                return;
-            }
-            
-            // Get all itemIds from this order that belong to this seller
-            const itemIds = order.items.map(item => item._id || item.id);
-            
-            // Send API request with itemIds included
-            const { data } = await axios.put(
-                '/api/order/update-status', 
-                { orderId, status, itemIds },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-    
-            if (data.success) {
-                toast.success("Order status updated successfully");
-                // Update the order in the local state to avoid refetching
-                setOrders(orders.map(order => 
-                    (order._id || order.id || order.orderId) === orderId 
-                        ? { ...order, status } 
-                        : order
-                ));
-                setUpdatingOrderId(null);
-                setNewStatus("");
-            } else {
-                toast.error(data.message || "Failed to update order status");
-            }
+          setUpdating(true);
+          const token = await getToken();
+      
+          const order = orders.find(o => (o._id || o.id || o.orderId) === orderId);
+          if (!order) {
+            toast.error("Order not found");
+            return;
+          }
+      
+          const itemIds = order.items.map(item => item._id || item.id);
+      
+          const { data } = await axios.put(
+            '/api/order/update-status',
+            { orderId, status, itemIds },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+      
+          if (data.success) {
+            toast.success("Order status updated successfully");
+            setOrders(orders.map(order =>
+              (order._id || order.id || order.orderId) === orderId
+                ? data.order
+                : order
+            ));
+            setUpdatingOrderId(null);
+            setNewStatus("");
+          } else {
+            toast.error(data.message || "Failed to update order status");
+          }
         } catch (error) {
-            toast.error(error.response?.data?.message || error.message || "An error occurred");
+          toast.error(error.response?.data?.message || error.message || "An error occurred");
         } finally {
-            setUpdating(false);
+          setUpdating(false);
         }
-    };
+      };      
 
     const getFilteredOrders = () => {
         let filtered = [...orders];
@@ -255,10 +251,9 @@ const Orders = () => {
                                                     {order.items.map((item, idx) => (
                                                         <div key={idx} className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                                                             <div className="flex items-center mb-2 sm:mb-0">
-                                                                {/* Improved image container with better sizing for mobile */}
                                                                 <div className="w-14 h-14 min-w-14 bg-gray-50 rounded-md flex items-center justify-center overflow-hidden">
                                                                     <Image 
-                                                                        src={item.product.image?.[0] || item.product.image || "/fallback-image.jpg"}
+                                                                        src={item.product.image?.[0] || item.product.image || assets.box_icon}
                                                                         alt={item.product.name || "Product Image"}
                                                                         className="object-contain w-4/5 h-4/5 transition-transform duration-300 hover:scale-105"
                                                                         width={56}
@@ -288,10 +283,14 @@ const Orders = () => {
                                                         <span className="font-medium text-gray-900">{currency}{order.amount}</span>
                                                     </div>
                                                     <div className="flex justify-between">
-                                                    <span className="text-gray-500">Payment Status</span>
-                                                    <span className={`font-medium ${order.paymentStatus === 'paid' ? 'text-green-600' : 'text-yellow-600'}`}>
-                                                        {order.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
-                                                    </span>
+                                                        <span className="text-gray-500">Payment Method</span>
+                                                        <span className="font-medium text-gray-900">COD</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-500">Payment Status</span>
+                                                        <span className={`font-medium ${order.paymentStatus === 'paid' ? 'text-green-600' : 'text-yellow-600'}`}>
+                                                            {order.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>

@@ -102,7 +102,7 @@ export async function PUT(request) {
             order.status = overallStatus;
         }
 
-        // ✅ If all items are delivered, update paymentStatus to "paid"
+        // If all items are delivered, update paymentStatus to "paid"
         const allDelivered = order.items.every(item => item.status === 'delivered');
         if (allDelivered) {
             order.paymentStatus = 'paid';
