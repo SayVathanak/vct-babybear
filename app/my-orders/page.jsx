@@ -18,10 +18,6 @@ const MyOrders = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [sortBy, setSortBy] = useState("newest");
-  // New state variables for status update
-  const [updating, setUpdating] = useState(false);
-  const [updatingOrderId, setUpdatingOrderId] = useState(null);
-  const [newStatus, setNewStatus] = useState("");
 
   const fetchOrders = async () => {
     try {
@@ -31,10 +27,18 @@ const MyOrders = () => {
       });
 
       if (data.success) {
-        setOrders(data.orders.reverse());
+        const sortedOrders = data.orders.reverse(); // Most recent first
+        setOrders(sortedOrders);
+        
+        // Set the most recent order to be expanded by default
+        if (sortedOrders.length > 0) {
+          setExpandedOrder(sortedOrders[0]._id);
+        }
+        
         setLoading(false);
       } else {
         toast.error(data.message);
+        setLoading(false);
       }
     } catch (error) {
       toast.error(error.message);
@@ -102,56 +106,6 @@ const MyOrders = () => {
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
-  };
-
-  // Implement the updateOrderStatus function
-  const updateOrderStatus = async (orderId, status) => {
-    try {
-        setUpdating(true);
-        const token = await getToken();
-        
-        // Find the order to get its items
-        const order = orders.find(o => (o._id || o.id || o.orderId) === orderId);
-        if (!order) {
-            toast.error("Order not found");
-            return;
-        }
-        
-        // Get all itemIds from this order
-        const itemIds = order.items.map(item => item._id || item.id);
-        
-        // Send API request with itemIds included
-        const { data } = await axios.put(
-            '/api/order/update-status', 
-            { orderId, status, itemIds },
-            { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        if (data.success) {
-            toast.success("Order status updated successfully");
-            // Update the order in the local state to avoid refetching
-            setOrders(orders.map(order => 
-                (order._id || order.id || order.orderId) === orderId 
-                    ? { ...order, status } 
-                    : order
-            ));
-            setUpdatingOrderId(null);
-            setNewStatus("");
-        } else {
-            toast.error(data.message || "Failed to update order status");
-        }
-    } catch (error) {
-        toast.error(error.response?.data?.message || error.message || "An error occurred");
-    } finally {
-        setUpdating(false);
-    }
-  };
-  
-  // Helper function to handle status update UI
-  const handleStatusUpdateClick = (orderId) => {
-    setUpdatingOrderId(orderId);
-    const currentStatus = orders.find(o => o._id === orderId)?.status || "";
-    setNewStatus(currentStatus);
   };
 
   return (
@@ -314,8 +268,8 @@ const MyOrders = () => {
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-500">Payment Status</span>
-                            <span className={`font-medium ${order.paymentStatus === 'paid' ? 'text-green-600' : 'text-yellow-600'}`}>
-                              {order.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
+                            <span className={`font-medium ${order.status === 'delivered' || order.paymentStatus === 'paid' ? 'text-green-600' : 'text-yellow-600'}`}>
+                              {order.status === 'delivered' || order.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
                             </span>
                           </div>
                         </div>
@@ -396,59 +350,6 @@ const MyOrders = () => {
                             </div>
                           </div>
                         </div>
-                        
-                        {/* Status Update UI */}
-                        {/* <div className="mt-6">
-                          <h3 className="font-medium text-gray-900 mb-3">Update Status</h3>
-                          <div className="flex flex-col space-y-3">
-                            {updatingOrderId === order._id ? (
-                              <>
-                                <select
-                                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                                  value={newStatus}
-                                  onChange={(e) => setNewStatus(e.target.value)}
-                                  disabled={updating}
-                                >
-                                  <option value="">Select status</option>
-                                  <option value="pending">Pending</option>
-                                  <option value="processing">Processing</option>
-                                  <option value="out for delivery">out for delivery</option>
-                                  <option value="delivered">Delivered</option>
-                                  <option value="cancelled">Cancelled</option>
-                                </select>
-                                <div className="flex space-x-2">
-                                  <button
-                                    className="bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-md flex-1 transition duration-300 disabled:opacity-50"
-                                    onClick={() => updateOrderStatus(order._id, newStatus)}
-                                    disabled={updating || !newStatus}
-                                  >
-                                    {updating ? "Updating..." : "Update"}
-                                  </button>
-                                  <button
-                                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md flex-1 transition duration-300 disabled:opacity-50"
-                                    onClick={() => {
-                                      setUpdatingOrderId(null);
-                                      setNewStatus("");
-                                    }}
-                                    disabled={updating}
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              </>
-                            ) : (
-                              <button
-                                className="bg-sky-100 hover:bg-sky-200 text-sky-800 px-4 py-2 rounded-md transition duration-300"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleStatusUpdateClick(order._id);
-                                }}
-                              >
-                                Change Status
-                              </button>
-                            )}
-                          </div>
-                        </div> */}
                       </div>
                     </div>
                   )}
