@@ -29,7 +29,7 @@ export async function PUT(request) {
         }
 
         // Valid status values
-        const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+        const validStatuses = ['pending', 'processing', 'out for delivery', 'delivered', 'cancelled'];
         if (!validStatuses.includes(status.toLowerCase())) {
             return NextResponse.json({ 
                 success: false, 

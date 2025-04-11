@@ -91,7 +91,7 @@ const MyOrders = () => {
   const getStatusColor = (status) => {
     switch(status?.toLowerCase()) {
       case "delivered": return "bg-green-100 text-green-800";
-      case "shipped": return "bg-blue-100 text-blue-800";
+      case "out for delivery": return "bg-blue-100 text-blue-800";
       case "processing": 
       case "pending": return "bg-yellow-100 text-yellow-800";
       case "cancelled": return "bg-red-100 text-red-800";
@@ -184,7 +184,7 @@ const MyOrders = () => {
                       <option value="all">Status</option>
                       <option value="pending">Pending</option>
                       <option value="processing">Processing</option>
-                      <option value="shipped">Shipped</option>
+                      <option value="out for delivery">Out for delivery</option>
                       <option value="delivered">Delivered</option>
                       <option value="cancelled">Cancelled</option>
                     </select>
@@ -350,32 +350,32 @@ const MyOrders = () => {
                             </div>
                             
                             {/* Conditionally show next steps based on order status */}
-                            <div className={`flex ${(order.status?.toLowerCase() === "processing" || order.status?.toLowerCase() === "shipped" || order.status?.toLowerCase() === "delivered") ? "" : "opacity-50"}`}>
+                            <div className={`flex ${(order.status?.toLowerCase() === "processing" || order.status?.toLowerCase() === "out for delivery" || order.status?.toLowerCase() === "delivered") ? "" : "opacity-50"}`}>
                               <div className="flex flex-col items-center mr-4">
-                                <div className={`rounded-full ${(order.status?.toLowerCase() === "processing" || order.status?.toLowerCase() === "shipped" || order.status?.toLowerCase() === "delivered") ? "bg-sky-500" : "bg-gray-300"} h-3 w-3`}></div>
+                                <div className={`rounded-full ${(order.status?.toLowerCase() === "processing" || order.status?.toLowerCase() === "out for delivery" || order.status?.toLowerCase() === "delivered") ? "bg-sky-500" : "bg-gray-300"} h-3 w-3`}></div>
                                 <div className="h-full w-0.5 bg-gray-200"></div>
                               </div>
                               <div>
                                 <p className="text-sm font-medium text-gray-900">Processing</p>
                                 <p className="text-xs text-gray-500">
                                   {order.status?.toLowerCase() === "processing" ? "Your order is being processed" : 
-                                   order.status?.toLowerCase() === "shipped" || order.status?.toLowerCase() === "delivered" ? "Processed on " + formatDate(new Date(new Date(order.date).getTime() + 86400000)) : 
+                                   order.status?.toLowerCase() === "out for delivery" || order.status?.toLowerCase() === "delivered" ? "Processed on " + formatDate(new Date(new Date(order.date).getTime() + 86400000)) : 
                                    "Awaiting processing"}
                                 </p>
                               </div>
                             </div>
                             
-                            <div className={`flex ${(order.status?.toLowerCase() === "shipped" || order.status?.toLowerCase() === "delivered") ? "" : "opacity-50"}`}>
+                            <div className={`flex ${(order.status?.toLowerCase() === "out for delivery" || order.status?.toLowerCase() === "delivered") ? "" : "opacity-50"}`}>
                               <div className="flex flex-col items-center mr-4">
-                                <div className={`rounded-full ${(order.status?.toLowerCase() === "shipped" || order.status?.toLowerCase() === "delivered") ? "bg-sky-500" : "bg-gray-300"} h-3 w-3`}></div>
+                                <div className={`rounded-full ${(order.status?.toLowerCase() === "out for delivery" || order.status?.toLowerCase() === "delivered") ? "bg-sky-500" : "bg-gray-300"} h-3 w-3`}></div>
                                 <div className="h-full w-0.5 bg-gray-200"></div>
                               </div>
                               <div>
-                                <p className="text-sm font-medium text-gray-900">Shipped</p>
+                                <p className="text-sm font-medium text-gray-900">Out for delivery</p>
                                 <p className="text-xs text-gray-500">
-                                  {order.status?.toLowerCase() === "shipped" ? "Your order is on the way" : 
-                                   order.status?.toLowerCase() === "delivered" ? "Shipped on " + formatDate(new Date(new Date(order.date).getTime() + 172800000)) : 
-                                   "Not yet shipped"}
+                                  {order.status?.toLowerCase() === "out for delivery" ? "Your order is on the way" : 
+                                   order.status?.toLowerCase() === "delivered" ? "Arrived on " + formatDate(new Date(new Date(order.date).getTime() + 172800000)) : 
+                                   "Not yet out for delivery"}
                                 </p>
                               </div>
                             </div>
@@ -410,7 +410,7 @@ const MyOrders = () => {
                                   <option value="">Select status</option>
                                   <option value="pending">Pending</option>
                                   <option value="processing">Processing</option>
-                                  <option value="shipped">Shipped</option>
+                                  <option value="out for delivery">out for delivery</option>
                                   <option value="delivered">Delivered</option>
                                   <option value="cancelled">Cancelled</option>
                                 </select>
