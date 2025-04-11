@@ -221,8 +221,8 @@ const AllProducts = () => {
                                         }}
                                         className={`flex items-center text-left px-4 py-3 rounded-md transition-all duration-300 ease-in-out cursor-pointer
                                             ${selectedCategory === category
-                                                ? 'bg-white text-blue-600 shadow-lg transform scale-105'
-                                                : 'hover:bg-sky-100 hover:text-sky-600'}
+                                                ? 'text-blue-600 transform scale-105'
+                                                : 'hover:text-blue-400'}
                                         `}
                                     >
                                         <span className="mr-3">
