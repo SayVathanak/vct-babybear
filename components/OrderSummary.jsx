@@ -2,7 +2,6 @@ import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-// Import the sendTelegramNotification function
 import { sendTelegramNotification } from "@/utils/telegram-config";
 
 const OrderSummary = () => {
