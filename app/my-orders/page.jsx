@@ -314,7 +314,9 @@ const MyOrders = () => {
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-500">Payment Status</span>
-                            <span className="font-medium text-yellow-600">Pending</span>
+                            <span className={`font-medium ${order.paymentStatus === 'paid' ? 'text-green-600' : 'text-yellow-600'}`}>
+                              {order.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
+                            </span>
                           </div>
                         </div>
                       </div>
