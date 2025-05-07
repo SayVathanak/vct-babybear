@@ -3,6 +3,7 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { sendTelegramNotification } from "@/utils/telegram-config";
+import { FaChevronDown, FaChevronUp, FaTag, FaMapMarkerAlt, FaLock } from "react-icons/fa";
 
 const OrderSummary = () => {
   const {
@@ -20,6 +21,8 @@ const OrderSummary = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [userAddresses, setUserAddresses] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [promoExpanded, setPromoExpanded] = useState(false);
 
   // Determine if delivery is free (more than 1 item)
   const isFreeDelivery = getCartCount() > 1;
@@ -39,7 +42,6 @@ const OrderSummary = () => {
       return { success: telegramResult.success };
     } catch (error) {
       console.error("Error sending notifications:", error);
-      // Don't throw the error so the order process can continue even if notifications fail
       return { success: false, error };
     }
   };
@@ -91,7 +93,7 @@ const OrderSummary = () => {
 
       if (!selectedAddress) {
         setLoading(false);
-        return toast.error('Please select an address');
+        return toast.error('Please select a delivery address');
       }
 
       let cartItemsArray = Object.keys(cartItems).map((key) => ({
@@ -102,7 +104,7 @@ const OrderSummary = () => {
 
       if (cartItemsArray.length === 0) {
         setLoading(false);
-        return toast.error("Cart is empty");
+        return toast.error("Your cart is empty");
       }
 
       const token = await getToken();
@@ -142,7 +144,6 @@ const OrderSummary = () => {
             total
           });
         } catch (notificationError) {
-          // Log the error but don't fail the order process
           console.error("Failed to send notifications:", notificationError);
         }
 
@@ -166,123 +167,159 @@ const OrderSummary = () => {
     }
   }, [user]);
 
-  // Dynamic button class based on form validation
-  const buttonClassName = `w-full py-3 mt-5 transition duration-300 ${validateOrderForm() && !loading
-    ? "bg-black text-white hover:bg-green-500 cursor-pointer"
-    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-    }`;
-
   // Calculate total amount
   const subtotal = getCartAmount();
   const totalAmount = subtotal + deliveryFee;
 
   return (
-    <div className="w-full md:w-96 bg-gray-500/5 p-5">
-      <h2 className="text-xl md:text-2xl font-medium text-gray-700 font-prata">
+    <div className="w-full md:w-96 border border-gray-200 bg-gray-50 shadow-sm p-6 sticky top-24 h-fit">
+      <h2 className="text-xl text-gray-800 mb-6 uppercase font-medium">
         Order Summary
       </h2>
-      <hr className="border-gray-500/30 my-5" />
-      <div className="space-y-6">
-        <div>
-          <label className="text-base font-medium uppercase text-gray-600 block mb-2">
-            Select Address
-          </label>
-          <div className="relative inline-block w-full text-sm border">
-            <button
-              className="peer w-full text-left px-4 pr-2 py-2 bg-white text-gray-700 focus:outline-none"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              type="button"
-            >
-              <span className="font-kantumruy">
-                {selectedAddress
-                  ? `${selectedAddress.fullName}, ${selectedAddress.area}, ${selectedAddress.state}`
-                  : "Select Address"}
-              </span>
-              <svg className={`w-5 h-5 inline float-right transition-transform duration-200 ${isDropdownOpen ? "rotate-0" : "-rotate-90"}`}
-                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#6B7280"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            {isDropdownOpen && (
-              <ul className="absolute w-full bg-white border shadow-md mt-1 z-10 py-1.5">
-                {userAddresses.length > 0 ? userAddresses.map((address, index) => (
-                  <li
-                    key={index}
-                    className="px-4 py-2 hover:bg-gray-500/10 cursor-pointer"
-                    onClick={() => handleAddressSelect(address)}
-                  >
-                    {address.fullName}, {address.area}, {address.city || ''}, {address.state}
-                  </li>
-                )) : (
-                  <li className="px-4 py-2 text-gray-500">No addresses found</li>
-                )}
-                <li
-                  onClick={() => router.push("/add-address")}
-                  className="px-4 py-2 hover:bg-gray-500/10 cursor-pointer text-center"
-                >
-                  + Add New Address
-                </li>
-              </ul>
-            )}
-          </div>
+      
+      {/* Delivery Address Section */}
+      <div className="mb-6">
+        <div className="flex items-center mb-3">
+          <FaMapMarkerAlt className="text-gray-500 mr-2" />
+          <h3 className="text-sm font-medium uppercase text-gray-700">Delivery Address</h3>
         </div>
+        
+        <div className="relative w-full text-sm">
+          <button
+            className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 transition-colors"
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            type="button"
+            aria-expanded={isDropdownOpen}
+            aria-haspopup="listbox"
+          >
+            <span className="text-gray-700 truncate flex-1 text-left font-kantumruy">
+              {selectedAddress
+                ? `${selectedAddress.fullName}, ${selectedAddress.area}, ${selectedAddress.state}`
+                : "Select delivery address"}
+            </span>
+            {isDropdownOpen ? <FaChevronUp className="ml-2 text-gray-500" /> : <FaChevronDown className="ml-2 text-gray-500" />}
+          </button>
 
-        <div>
-          <label className="text-base font-medium uppercase text-gray-600 block mb-2">
-            Promo Code
-          </label>
-          <div className="flex flex-col items-start gap-3">
+          {isDropdownOpen && (
+            <ul 
+              className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 shadow-lg rounded-md max-h-60 overflow-y-auto z-10"
+              role="listbox"
+            >
+              {userAddresses.length > 0 ? userAddresses.map((address, index) => (
+                <li
+                  key={index}
+                  className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 border-gray-100"
+                  onClick={() => handleAddressSelect(address)}
+                  role="option"
+                  aria-selected={selectedAddress?._id === address._id}
+                >
+                  <p className="font-medium text-gray-800">{address.fullName}</p>
+                  <p className="text-gray-600 text-sm mt-1">{address.area}, {address.state}</p>
+                </li>
+              )) : (
+                <li className="px-4 py-3 text-gray-500 italic">No addresses found</li>
+              )}
+              <li
+                onClick={() => router.push("/add-address")}
+                className="px-4 py-3 bg-gray-50 hover:bg-gray-100 cursor-pointer text-center text-blue-600 font-medium"
+              >
+                + Add New Address
+              </li>
+            </ul>
+          )}
+        </div>
+      </div>
+
+      {/* Promo Code Section (Collapsible) */}
+      <div className="mb-6">
+        <button 
+          className="flex items-center justify-between w-full"
+          // onClick={() => setPromoExpanded(!promoExpanded)}
+          type="button"
+        >
+          <div className="flex items-center">
+            <FaTag className="text-gray-500 mr-2" />
+            <h3 className="text-sm font-medium uppercase text-gray-700">Apply Promo Code</h3>
+          </div>
+          {/* {promoExpanded ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />} */}
+        </button>
+        
+        {promoExpanded && (
+          <div className="mt-3 flex">
             <input
               type="text"
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value)}
               placeholder="Enter promo code"
-              className="flex-grow w-full outline-none p-2.5 text-gray-600 border cursor-not-allowed"
-              disabled
+              className="flex-grow outline-none p-3 text-gray-700 border border-gray-200 rounded-l-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
             <button 
-              className="bg-black text-white px-9 py-2 hover:bg-black cursor-not-allowed"
-              disabled
+              className="bg-black text-white px-4 py-3 rounded-r-md hover:bg-gray-800 transition-colors"
               type="button"
             >
               Apply
             </button>
           </div>
+        )}
+      </div>
+
+      {/* Order Summary Details */}
+      <div className="space-y-3 border-t border-b border-gray-200 py-5 mb-6">
+        <div className="flex justify-between text-gray-600">
+          <p>Subtotal ({getCartCount()} items)</p>
+          <p className="font-medium">{currency}{subtotal.toFixed(2)}</p>
         </div>
-
-        <hr className="border-gray-500/30 my-5" />
-
-        <div className="space-y-4">
-          <div className="flex justify-between text-base font-medium">
-            <p className="uppercase text-gray-600">Items {getCartCount()}</p>
-            <p className="text-gray-800">{currency}{getCartAmount()}</p>
-          </div>
-          <div className="flex justify-between">
-            <p className="text-gray-600">Delivery Fee</p>
-            {isFreeDelivery ? (
-              <p className="font-medium text-gray-800">
-                <span className="line-through text-gray-500 mr-2">{currency}1.5</span>
-                Free
-              </p>
-            ) : (
-              <p className="font-medium text-gray-800">{currency}1.5</p>
-            )}
-          </div>
-          <div className="flex justify-between text-lg md:text-xl font-medium border-t pt-3">
-            <p>Total</p>
-            <p>{currency}{totalAmount}</p>
-          </div>
+        
+        <div className="flex justify-between text-gray-600">
+          <p>Delivery Fee</p>
+          {isFreeDelivery ? (
+            <p className="font-medium">
+              <span className="line-through text-gray-400 mr-2">{currency}1.50</span>
+              <span className="text-green-600">Free</span>
+            </p>
+          ) : (
+            <p className="font-medium">{currency}{deliveryFee.toFixed(2)}</p>
+          )}
+        </div>
+        
+        <div className="flex justify-between text-lg text-gray-800 border-t border-gray-200 pt-3 mt-3">
+          <p>Total</p>
+          <p>{currency}{totalAmount.toFixed(2)}</p>
         </div>
       </div>
 
+      {/* Place Order Button */}
       <button
-        onClick={validateOrderForm() ? createOrder : () => toast.error("Please complete all required fields")}
-        className={buttonClassName}
+        onClick={validateOrderForm() ? createOrder : () => toast.error("Please select a delivery address")}
         disabled={!validateOrderForm() || loading}
+        className={`w-full py-2 rounded-md flex items-center justify-center transition-all duration-300 ${
+          validateOrderForm() && !loading
+            ? "bg-black text-white hover:bg-gray-800"
+            : "bg-gray-200 text-gray-500 cursor-not-allowed"
+        }`}
         type="button"
       >
-        {loading ? "Processing..." : "Place Order"}
+        {loading ? (
+          <>
+            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Processing...
+          </>
+        ) : (
+          <>
+            Place Order
+          </>
+        )}
       </button>
+      
+      {/* Trust indicators */}
+      <div className="mt-4 text-center">
+        <p className="text-xs text-gray-500 flex items-center justify-center">
+          <FaLock className="mr-1" /> Secure checkout
+        </p>
+      </div>
     </div>
   );
 };

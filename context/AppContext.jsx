@@ -9,136 +9,116 @@ import toast from "react-hot-toast";
 export const AppContext = createContext();
 
 export const useAppContext = () => {
-    return useContext(AppContext)
+    return useContext(AppContext);
 }
 
 export const AppContextProvider = (props) => {
+    const currency = process.env.NEXT_PUBLIC_CURRENCY;
+    const router = useRouter();
 
-    const currency = process.env.NEXT_PUBLIC_CURRENCY
-    const router = useRouter()
+    const { user } = useUser();
+    const { getToken, openSignIn } = useAuth();
 
-    const { user } = useUser()
-    const { getToken, openSignIn } = useAuth()
-
-    const [products, setProducts] = useState([])
-    const [userData, setUserData] = useState(false)
-    const [isSeller, setIsSeller] = useState(false)
-    const [cartItems, setCartItems] = useState({})
-    const [showCartPopup, setShowCartPopup] = useState(false)
-    const [isAddingToCart, setIsAddingToCart] = useState(false)
-
-    // Removed the auto-close timeout for the cart popup
-    // This will make the popup stay visible until manually closed
+    const [products, setProducts] = useState([]);
+    const [userData, setUserData] = useState(false);
+    const [isSeller, setIsSeller] = useState(false);
+    const [cartItems, setCartItems] = useState({});
+    const [isAddingToCart, setIsAddingToCart] = useState(false);
 
     const fetchProductData = async () => {
-        
         try {
-            
-            const {data} = await axios.get('/api/product/list')
-
-            if(data.success) {
-                setProducts(data.products)
+            const { data } = await axios.get('/api/product/list');
+            if (data.success) {
+                setProducts(data.products);
             } else {
-                toast.error(data.message)
+                toast.error(data.message);
             }
-
         } catch (error) {
-            toast.error(error.message)
+            toast.error(error.message);
         }
-
     }
 
     const fetchUserData = async () => {
-
         try {
             if (user.publicMetadata.role === 'seller') {
-                setIsSeller(true)
+                setIsSeller(true);
             }
 
-            const token = await getToken()
-
-            const { data } = await axios.get('/api/user/data', { headers: { Authorization: `Bearer ${token}` } })
+            const token = await getToken();
+            const { data } = await axios.get('/api/user/data', { headers: { Authorization: `Bearer ${token}` } });
 
             if (data.success) {
-                setUserData(data.user)
-                setCartItems(data.user.cartItems)
+                setUserData(data.user);
+                setCartItems(data.user.cartItems);
             } else {
-                toast.error(data.message)
+                toast.error(data.message);
             }
-
         } catch (error) {
-            toast.error(error.message)
+            toast.error(error.message);
         }
     }
 
-    const addToCart = async (productId, showPopup = true) => {
+    const addToCart = async (productId) => {
         setIsAddingToCart(true);
-        
-        // Show loading state briefly
+
         setTimeout(async () => {
             let cartData = structuredClone(cartItems);
             if (cartData[productId]) {
                 cartData[productId] += 1;
-            }
-            else {
+            } else {
                 cartData[productId] = 1;
             }
             setCartItems(cartData);
 
             if (user) {
                 try {
-                    const token = await getToken()
-                    await axios.post('/api/cart/update', {cartData}, {headers:{Authorization:`Bearer ${token}`}})
-                    if (showPopup) {
-                        setShowCartPopup(true);
-                        toast.success('Item added to cart');
-                    }
+                    const token = await getToken();
+                    await axios.post('/api/cart/update', { cartData }, { headers: { Authorization: `Bearer ${token}` } });
+                    toast.success('Item added to cart');
                 } catch (error) {
-                    toast.error(error.message)
+                    toast.error(error.message);
                 }
-            } else if (showPopup) {
-                setShowCartPopup(true);
             }
-            
+
             setIsAddingToCart(false);
         }, 300);
     }
 
     const updateCartQuantity = async (itemId, quantity) => {
-
         let cartData = structuredClone(cartItems);
         if (quantity === 0) {
             delete cartData[itemId];
         } else {
             cartData[itemId] = quantity;
         }
-        setCartItems(cartData)
+        setCartItems(cartData);
+
         if (user) {
             try {
-                const token = await getToken()
-                await axios.post('/api/cart/update', {cartData}, {headers:{Authorization:`Bearer ${token}`}})
-                toast.success('Cart Updated')
+                const token = await getToken();
+                await axios.post('/api/cart/update', { cartData }, { headers: { Authorization: `Bearer ${token}` } });
+                toast.success('Cart Updated');
             } catch (error) {
-                toast.error(error.message)
+                toast.error(error.message);
             }
         }
     }
 
     const increaseQty = (productId, e) => {
         if (e) {
-            e.stopPropagation(); // Prevent event bubbling
-            e.preventDefault(); // Prevent default behavior
+            e.stopPropagation();
+            e.preventDefault();
         }
-        addToCart(productId, false);
-    };
+        addToCart(productId);
+    }
 
     const decreaseQty = (productId, currentQuantity, e) => {
         if (e) {
-            e.stopPropagation(); // Prevent event bubbling
-            e.preventDefault(); // Prevent default behavior
+            e.stopPropagation();
+            e.preventDefault();
         }
         updateCartQuantity(productId, currentQuantity - 1);
-    };
+    }
 
     const handlePayClick = () => {
         if (user) {
@@ -147,7 +127,7 @@ export const AppContextProvider = (props) => {
             toast.error("Please login to continue purchasing");
             openSignIn();
         }
-    };
+    }
 
     const getCartCount = () => {
         let totalCount = 0;
@@ -171,14 +151,14 @@ export const AppContextProvider = (props) => {
     }
 
     useEffect(() => {
-        fetchProductData()
-    }, [])
+        fetchProductData();
+    }, []);
 
     useEffect(() => {
         if (user) {
-            fetchUserData()
+            fetchUserData();
         }
-    }, [user])
+    }, [user]);
 
     const value = {
         user, getToken,
@@ -189,16 +169,14 @@ export const AppContextProvider = (props) => {
         cartItems, setCartItems,
         addToCart, updateCartQuantity,
         getCartCount, getCartAmount,
-        // Cart popup and quantity functions
-        showCartPopup, setShowCartPopup,
         isAddingToCart, setIsAddingToCart,
         increaseQty, decreaseQty,
         handlePayClick
-    }
+    };
 
     return (
         <AppContext.Provider value={value}>
             {props.children}
         </AppContext.Provider>
-    )
+    );
 }
