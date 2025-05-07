@@ -95,81 +95,81 @@ const Navbar = () => {
 
   const categoryIcons = {
     "All": (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="7" height="7"></rect>
-            <rect x="14" y="3" width="7" height="7"></rect>
-            <rect x="14" y="14" width="7" height="7"></rect>
-            <rect x="3" y="14" width="7" height="7"></rect>
-        </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7"></rect>
+        <rect x="14" y="3" width="7" height="7"></rect>
+        <rect x="14" y="14" width="7" height="7"></rect>
+        <rect x="3" y="14" width="7" height="7"></rect>
+      </svg>
     ),
     "PowderedMilk": (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 8h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2Z"></path>
-            <path d="M5 8V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2"></path>
-            <path d="M8 12h8"></path>
-            <path d="M10 16h4"></path>
-        </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 8h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2Z"></path>
+        <path d="M5 8V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2"></path>
+        <path d="M8 12h8"></path>
+        <path d="M10 16h4"></path>
+      </svg>
     ),
     "LiquidMilk": (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M8 2h8"></path>
-            <path d="M9 2v2.789a4 4 0 0 1-.672 2.219l-.656.984A4 4 0 0 0 7 10.212V20a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-9.789a4 4 0 0 0-.672-2.219l-.656-.984A4 4 0 0 1 15 4.788V2"></path>
-            <path d="M7 15a6.472 6.472 0 0 1 5 0 6.47 6.47 0 0 0 5 0"></path>
-        </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 2h8"></path>
+        <path d="M9 2v2.789a4 4 0 0 1-.672 2.219l-.656.984A4 4 0 0 0 7 10.212V20a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-9.789a4 4 0 0 0-.672-2.219l-.656-.984A4 4 0 0 1 15 4.788V2"></path>
+        <path d="M7 15a6.472 6.472 0 0 1 5 0 6.47 6.47 0 0 0 5 0"></path>
+      </svg>
     ),
     "Bottles": (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 2h6"></path>
-            <path d="M12 2v4"></path>
-            <path d="M8 8h8l-1 13a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1L8 8Z"></path>
-            <path d="M7 11h10"></path>
-        </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 2h6"></path>
+        <path d="M12 2v4"></path>
+        <path d="M8 8h8l-1 13a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1L8 8Z"></path>
+        <path d="M7 11h10"></path>
+      </svg>
     ),
     "Tumblers": (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M8 8h8"></path>
-            <path d="M8 8v11a3 3 0 0 0 3 3h2a3 3 0 0 0 3-3V8"></path>
-            <path d="M8 8a4 4 0 0 1 8 0"></path>
-            <path d="M14 3.5c0 1.5-.7 2.5-2 2.5s-2-1-2-2.5.7-2.5 2-2.5 2 1 2 2.5z"></path>
-        </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 8h8"></path>
+        <path d="M8 8v11a3 3 0 0 0 3 3h2a3 3 0 0 0 3-3V8"></path>
+        <path d="M8 8a4 4 0 0 1 8 0"></path>
+        <path d="M14 3.5c0 1.5-.7 2.5-2 2.5s-2-1-2-2.5.7-2.5 2-2.5 2 1 2 2.5z"></path>
+      </svg>
     ),
     "FeedingTools": (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 2v20l3-2 3 2 3-2 3 2V2"></path>
-            <path d="M4 11h16"></path>
-            <path d="M4 15h16"></path>
-        </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 2v20l3-2 3 2 3-2 3 2V2"></path>
+        <path d="M4 11h16"></path>
+        <path d="M4 15h16"></path>
+      </svg>
     ),
     "Accessories": (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-            <path d="M9.5 9a2.5 2.5 0 0 1 5 0v4.5"></path>
-        </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        <path d="M9.5 9a2.5 2.5 0 0 1 5 0v4.5"></path>
+      </svg>
     ),
     "Vitamins": (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="7"></circle>
-            <path d="M12 9v6"></path>
-            <path d="M9 12h6"></path>
-        </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="7"></circle>
+        <path d="M12 9v6"></path>
+        <path d="M9 12h6"></path>
+      </svg>
     ),
     "Diapers": (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 22s-8-2-8-16h16c0 14-8 16-8 16z"></path>
-            <path d="M8 6h8"></path>
-            <path d="M8 10h8"></path>
-            <path d="M8 14h8"></path>
-        </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s-8-2-8-16h16c0 14-8 16-8 16z"></path>
+        <path d="M8 6h8"></path>
+        <path d="M8 10h8"></path>
+        <path d="M8 14h8"></path>
+      </svg>
     ),
     "NurseryItems": (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M2 6c0-1.1.9-2 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6z"></path>
-            <path d="M4 10h16"></path>
-            <path d="M12 10v8"></path>
-            <path d="M8 14h8"></path>
-        </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2 6c0-1.1.9-2 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6z"></path>
+        <path d="M4 10h16"></path>
+        <path d="M12 10v8"></path>
+        <path d="M8 14h8"></path>
+      </svg>
     )
-};
+  };
 
   // Calculate cart total - using cart items directly from context
   const calculateCartTotal = useCallback(() => {
@@ -311,7 +311,7 @@ const Navbar = () => {
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm px-4 py-2 md:px-12 flex items-center justify-between">
-      
+
       {/* Mobile Menu Icon */}
       <div className="flex items-center gap-4">
         <button
@@ -859,7 +859,7 @@ const Navbar = () => {
                       onClick={() => setShowCartPanel(false)}
                       className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors text-center"
                     >
-                      View Cart
+                      Back
                     </button>
                     <button
                       onClick={handleCheckout}

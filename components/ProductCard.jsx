@@ -42,12 +42,12 @@ const ProductCard = ({ product }) => {
   const handleAddToCart = (e) => {
     e.stopPropagation(); // Prevent event bubbling
     e.preventDefault(); // Prevent default behavior
-    
+
     if (!isAvailable) {
       toast.error("This product is currently not available");
       return;
     }
-    
+
     addToCart(product._id);
     toast.success("Added to cart");
   };
@@ -67,10 +67,9 @@ const ProductCard = ({ product }) => {
   return (
     <div className="group flex flex-col rounded-lg overflow-hidden border border-gray-100 hover:shadow-md transition duration-300">
       {/* Product image container */}
-      <div 
-        className={`cursor-pointer relative bg-gray-50 w-full h-52 flex items-center justify-center overflow-hidden ${
-          !isAvailable ? 'opacity-70' : ''
-        }`} 
+      <div
+        className={`cursor-pointer relative bg-gray-50 w-full h-52 flex items-center justify-center overflow-hidden ${!isAvailable ? 'opacity-70' : ''
+          }`}
         onClick={handleCardClick}
       >
         {/* Discount badge */}
@@ -79,7 +78,7 @@ const ProductCard = ({ product }) => {
             {discountPercentage}% OFF
           </div>
         )}
-        
+
         {/* Product image */}
         <Image
           src={product.image?.[0] || "/fallback-image.jpg"}
@@ -88,18 +87,18 @@ const ProductCard = ({ product }) => {
           width={800}
           height={800}
         />
-        
+
         {/* Out of stock overlay */}
-        {!isAvailable && (
+        {/* {!isAvailable && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/40">
             <span className="bg-red-500 text-white px-3 py-1.5 rounded text-sm font-medium transform rotate-[-20deg]">
               Out of Stock
             </span>
           </div>
-        )}
-        
+        )} */}
+
         {/* Wishlist button */}
-        <button 
+        <button
           className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
           onClick={handleWishlist}
           aria-label="Add to wishlist"
@@ -118,17 +117,16 @@ const ProductCard = ({ product }) => {
         <p className="text-xs text-gray-500 mb-1">
           {product.category || "General"}
         </p>
-        
+
         {/* Product name */}
-        <h3 
-          className={`text-sm md:text-base font-medium mb-1 line-clamp-2 cursor-pointer hover:text-sky-600 transition ${
-            !isAvailable ? 'text-gray-400' : 'text-gray-800'
-          }`} 
+        <h3
+          className={`text-sm md:text-base font-medium mb-1 line-clamp-2 cursor-pointer hover:text-sky-600 transition ${!isAvailable ? 'text-gray-400' : 'text-gray-800'
+            }`}
           onClick={handleCardClick}
         >
           {product.name}
         </h3>
-        
+
         {/* Product description - hidden on small screens */}
         <p className="w-full text-xs text-gray-500 max-sm:hidden line-clamp-1 mb-2">
           {product.description || "No description available"}
@@ -149,7 +147,7 @@ const ProductCard = ({ product }) => {
               )}
             </div>
           </div>
-          
+
           {/* Availability indicator */}
           {isAvailable ? (
             <div className="text-green-600 text-xs flex items-center">
@@ -168,7 +166,7 @@ const ProductCard = ({ product }) => {
         <div className="w-full h-[38px]">
           {!isAvailable ? (
             <button
-              disabled={true}
+              disabled
               className="w-full px-4 py-2 text-gray-400 bg-gray-100 border border-gray-200 rounded-md text-sm flex items-center justify-center cursor-not-allowed"
             >
               Not Available
@@ -177,17 +175,32 @@ const ProductCard = ({ product }) => {
             <button
               onClick={handleAddToCart}
               disabled={isAddingToCart}
-              className={`w-full px-4 py-2 text-white rounded-md text-sm flex items-center justify-center transition-all ${
-                isAddingToCart 
-                ? "bg-sky-300/70 opacity-70" 
-                : "bg-sky-500 hover:bg-sky-600"
-              }`}
+              className={`w-full px-4 py-2 text-white rounded-md text-sm flex items-center justify-center transition-colors duration-200 ${isAddingToCart
+                ? "bg-sky-300/70 opacity-70"
+                : "bg-sky-500 active:bg-sky-600 focus:bg-sky-600"
+                }`}
             >
               {isAddingToCart ? (
                 <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Adding...
                 </span>
@@ -200,9 +213,9 @@ const ProductCard = ({ product }) => {
             </button>
           ) : (
             <div className="quantity-selector w-full h-full flex items-center justify-between border border-sky-200 rounded-md bg-white">
-              <button 
+              <button
                 onClick={(e) => decreaseQty(product._id, currentQuantity, e)}
-                className="px-4 py-2 text-sky-500 flex-1 text-center"
+                className="px-4 py-2 text-sky-500 flex-1 text-center active:bg-sky-100"
                 aria-label="Decrease quantity"
               >
                 <FaMinus className="w-2.5 h-2.5 inline-block" />
@@ -210,7 +223,7 @@ const ProductCard = ({ product }) => {
               <span className="px-4 py-2 flex-1 text-center font-medium">{currentQuantity}</span>
               <button
                 onClick={(e) => increaseQty(product._id, e)}
-                className="px-4 py-2 text-sky-500 flex-1 text-center"
+                className="px-4 py-2 text-sky-500 flex-1 text-center active:bg-sky-100"
                 aria-label="Increase quantity"
               >
                 <FaPlus className="w-2.5 h-2.5 inline-block" />
