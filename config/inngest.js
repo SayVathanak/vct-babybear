@@ -74,6 +74,10 @@ export const createUserOrder = inngest.createFunction(
             return {
                 userId: event.data.userId,
                 items: event.data.items,
+                subtotal: event.data.subtotal,
+                deliveryFee: event.data.deliveryFee,
+                discount: event.data.discount,
+                promoCode: event.data.promoCode,
                 amount: event.data.amount,
                 address: event.data.address,
                 date: event.data.date,
