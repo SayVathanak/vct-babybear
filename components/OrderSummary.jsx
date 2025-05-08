@@ -5,7 +5,6 @@ import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { sendTelegramNotification } from "@/utils/telegram-config";
 import { FaChevronDown, FaChevronUp, FaTag, FaMapMarkerAlt, FaLock, FaTimes, FaCheck } from "react-icons/fa";
-import { useClerk } from "@clerk/nextjs";
 
 const OrderSummary = () => {
   const {
@@ -19,8 +18,6 @@ const OrderSummary = () => {
     setCartItems,
     products
   } = useAppContext();
-  
-  const { openSignIn, session } = useClerk();
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [userAddresses, setUserAddresses] = useState([]);
@@ -168,51 +165,9 @@ const OrderSummary = () => {
     toast.success("Promo code removed");
   };
 
-  // Check if user's email is verified
-  const checkEmailVerification = async () => {
-    if (!session) {
-      openSignIn(); // Open sign-in if no session exists
-      return false;
-    }
-    
-    // Check if the primary email is verified
-    const primaryEmailId = session.user.primaryEmailAddressId;
-    const primaryEmail = session.user.emailAddresses?.find(
-      email => email.id === primaryEmailId
-    );
-    
-    if (!primaryEmail || !primaryEmail.verification.status === "verified") {
-      // Open verification flow if email is not verified
-      try {
-        await session.user.verifyEmailAddress(primaryEmailId);
-        toast.success("Please verify your email to continue");
-      } catch (error) {
-        console.error("Error requesting email verification:", error);
-        toast.error("Failed to send verification email. Please try again.");
-      }
-      return false;
-    }
-    
-    return true;
-  };
-
   const createOrder = async () => {
     try {
       setLoading(true);
-
-      // Check if user is logged in and email is verified
-      if (!user) {
-        setLoading(false);
-        openSignIn();
-        return;
-      }
-      
-      // Check email verification
-      const isEmailVerified = await checkEmailVerification();
-      if (!isEmailVerified) {
-        setLoading(false);
-        return;
-      }
 
       if (!selectedAddress) {
         setLoading(false);
@@ -300,13 +255,6 @@ const OrderSummary = () => {
       setLoading(false);
       toast.error(error.message || "An error occurred");
     }
-  };
-
-  const handlePlaceOrder = async () => {
-    if (!validateOrderForm()) {
-      return toast.error("Please select a delivery address");
-    }
-    await createOrder();
   };
 
   useEffect(() => {
@@ -487,7 +435,7 @@ const OrderSummary = () => {
 
       {/* Place Order Button */}
       <button
-        onClick={handlePlaceOrder}
+        onClick={validateOrderForm() ? createOrder : () => toast.error("Please select a delivery address")}
         disabled={!validateOrderForm() || loading}
         className={`w-full py-2 rounded-md flex items-center justify-center transition-all duration-300 ${
           validateOrderForm() && !loading
