@@ -7,19 +7,19 @@ export async function POST(request) {
   try {
     const { userId } = getAuth(request);
     if (!userId) {
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ success: false, message: "You need to be logged in to use a promo code." }, { status: 401 });
     }
 
     const { code, cartAmount } = await request.json();
-    
+
     if (!code) {
-      return NextResponse.json({ success: false, message: "Promo code is required" }, { status: 400 });
+      return NextResponse.json({ success: false, message: "Please enter a promo code." }, { status: 400 });
     }
 
     await connectDB();
 
     // Find an active promo code with the given code
-    const promoCode = await PromoCode.findOne({ 
+    const promoCode = await PromoCode.findOne({
       code: code.toUpperCase(),
       isActive: true,
       $or: [
@@ -30,9 +30,9 @@ export async function POST(request) {
     });
 
     if (!promoCode) {
-      return NextResponse.json({ 
-        success: false, 
-        message: "Invalid or expired promo code" 
+      return NextResponse.json({
+        success: false,
+        message: "This promo code is either invalid or has expired."
       }, { status: 404 });
     }
 
@@ -40,7 +40,7 @@ export async function POST(request) {
     if (promoCode.minPurchaseAmount && cartAmount < promoCode.minPurchaseAmount) {
       return NextResponse.json({
         success: false,
-        message: `This code requires a minimum purchase of $${promoCode.minPurchaseAmount.toFixed(2)}`,
+        message: `To use this code, your order must be at least $${promoCode.minPurchaseAmount.toFixed(2)}.`,
         minAmount: promoCode.minPurchaseAmount
       }, { status: 400 });
     }
@@ -49,7 +49,7 @@ export async function POST(request) {
     let discountAmount = 0;
     if (promoCode.discountType === 'percentage') {
       discountAmount = (cartAmount * promoCode.discountValue) / 100;
-      
+
       // Apply maximum discount cap if set
       if (promoCode.maxDiscountAmount && discountAmount > promoCode.maxDiscountAmount) {
         discountAmount = promoCode.maxDiscountAmount;
@@ -61,7 +61,7 @@ export async function POST(request) {
 
     return NextResponse.json({
       success: true,
-      message: "Promo code applied successfully",
+      message: "Promo code applied! Your discount has been added.",
       discountAmount,
       promoCode: {
         id: promoCode._id,
@@ -76,7 +76,7 @@ export async function POST(request) {
     console.error("Error validating promo code:", error);
     return NextResponse.json({
       success: false,
-      message: error.message || "An error occurred while validating the promo code"
+      message: "Something went wrong while applying the promo code. Please try again."
     }, { status: 500 });
   }
 }
