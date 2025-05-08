@@ -6,7 +6,15 @@ const orderSchema = new mongoose.Schema({
         product: { type: String, required: true, ref: 'product' },
         quantity: { type: Number, required: true }
     }],
-    amount: { type: Number, required: true },
+    subtotal: { type: Number, required: true },
+    deliveryFee: { type: Number, required: true, default: 0 },
+    discount: { type: Number, default: 0 },
+    promoCode: {
+        id: { type: String, ref: 'PromoCode' },
+        code: { type: String },
+        discountAmount: { type: Number }
+    },
+    amount: { type: Number, required: true }, // Total amount after all calculations
     address: { type: String, ref: 'address', required: true },
     status: { type: String, required: true, default: 'Order Placed' },
     date: { type: Number, required: true }

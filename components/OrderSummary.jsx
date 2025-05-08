@@ -1,9 +1,10 @@
+'use client';
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { sendTelegramNotification } from "@/utils/telegram-config";
-import { FaChevronDown, FaChevronUp, FaTag, FaMapMarkerAlt, FaLock } from "react-icons/fa";
+import { FaChevronDown, FaChevronUp, FaTag, FaMapMarkerAlt, FaLock, FaTimes, FaCheck } from "react-icons/fa";
 
 const OrderSummary = () => {
   const {
@@ -23,6 +24,9 @@ const OrderSummary = () => {
   const [loading, setLoading] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [promoExpanded, setPromoExpanded] = useState(false);
+  const [applyingPromo, setApplyingPromo] = useState(false);
+  const [appliedPromo, setAppliedPromo] = useState(null);
+  const [promoError, setPromoError] = useState("");
 
   // Determine if delivery is free (more than 1 item)
   const isFreeDelivery = getCartCount() > 1;
@@ -87,6 +91,80 @@ const OrderSummary = () => {
     return true;
   };
 
+  // Calculate discount based on applied promo code
+  const calculateDiscount = (subtotal) => {
+    if (!appliedPromo) return 0;
+
+    let discount = 0;
+    if (appliedPromo.discountType === 'percentage') {
+      discount = (subtotal * appliedPromo.discountValue) / 100;
+      // Apply max discount if defined
+      if (appliedPromo.maxDiscountAmount && discount > appliedPromo.maxDiscountAmount) {
+        discount = appliedPromo.maxDiscountAmount;
+      }
+    } else { // fixed amount
+      discount = Math.min(appliedPromo.discountValue, subtotal); // Can't discount more than the subtotal
+    }
+
+    return Number(discount.toFixed(2));
+  };
+
+  // Calculate total amount for display and order creation
+  const calculateOrderAmounts = () => {
+    const subtotal = Number(getCartAmount().toFixed(2));
+    const discount = calculateDiscount(subtotal);
+    const total = Number((subtotal + deliveryFee - discount).toFixed(2));
+    
+    return {
+      subtotal,
+      discount,
+      deliveryFee: Number(deliveryFee.toFixed(2)),
+      total
+    };
+  };
+
+  const applyPromoCode = async () => {
+    if (!promoCode.trim()) {
+      setPromoError("Please enter a promo code");
+      return;
+    }
+
+    try {
+      setApplyingPromo(true);
+      setPromoError("");
+      const token = await getToken();
+      
+      const { data } = await axios.post('/api/promo/validate', {
+        code: promoCode,
+        cartAmount: getCartAmount()
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (data.success) {
+        setAppliedPromo(data.promoCode);
+        setPromoCode("");
+        setPromoExpanded(false);
+        toast.success(data.message || "Promo code applied successfully!");
+      } else {
+        setPromoError(data.message || "Invalid promo code");
+        toast.error(data.message || "Invalid promo code");
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message || "Failed to apply promo code";
+      setPromoError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setApplyingPromo(false);
+    }
+  };
+
+  const removePromoCode = () => {
+    setAppliedPromo(null);
+    setPromoError("");
+    toast.success("Promo code removed");
+  };
+
   const createOrder = async () => {
     try {
       setLoading(true);
@@ -109,10 +187,18 @@ const OrderSummary = () => {
 
       const token = await getToken();
 
-      // Create order in your system
+      // Calculate all order amounts
+      const { subtotal, discount, deliveryFee, total } = calculateOrderAmounts();
+
+      // Create order in your system including promo code if applied
       const { data } = await axios.post('/api/order/create', {
         address: selectedAddress._id,
-        items: cartItemsArray
+        items: cartItemsArray,
+        promoCodeId: appliedPromo ? appliedPromo._id : null,
+        subtotal: subtotal,
+        deliveryFee: deliveryFee,
+        discount: discount,
+        amount: total // This is the final amount that will be stored in your order model
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -129,10 +215,6 @@ const OrderSummary = () => {
             };
           });
 
-          // Calculate totals
-          const subtotal = getCartAmount();
-          const total = subtotal + deliveryFee;
-
           // Send Telegram notification only
           await sendOrderNotifications({
             orderId: data.orderId || `ORD-${Date.now()}`,
@@ -140,8 +222,10 @@ const OrderSummary = () => {
             items: productsDetails,
             currency,
             subtotal,
+            discount,
             deliveryFee,
-            total
+            total,
+            promoCode: appliedPromo ? appliedPromo.code : null
           });
         } catch (notificationError) {
           console.error("Failed to send notifications:", notificationError);
@@ -167,9 +251,8 @@ const OrderSummary = () => {
     }
   }, [user]);
 
-  // Calculate total amount
-  const subtotal = getCartAmount();
-  const totalAmount = subtotal + deliveryFee;
+  // Get calculated amounts for display
+  const { subtotal, discount, deliveryFee: fee, total: totalAmount } = calculateOrderAmounts();
 
   return (
     <div className="w-full md:w-96 border border-gray-200 bg-gray-50 shadow-sm p-6 sticky top-24 h-fit">
@@ -232,32 +315,71 @@ const OrderSummary = () => {
 
       {/* Promo Code Section (Collapsible) */}
       <div className="mb-6">
-        <button 
-          className="flex items-center justify-between w-full"
-          // onClick={() => setPromoExpanded(!promoExpanded)}
-          type="button"
-        >
-          <div className="flex items-center">
-            <FaTag className="text-gray-500 mr-2" />
-            <h3 className="text-sm font-medium uppercase text-gray-700">Apply Promo Code</h3>
-          </div>
-          {/* {promoExpanded ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />} */}
-        </button>
-        
-        {promoExpanded && (
-          <div className="mt-3 flex">
-            <input
-              type="text"
-              value={promoCode}
-              onChange={(e) => setPromoCode(e.target.value)}
-              placeholder="Enter promo code"
-              className="flex-grow outline-none p-3 text-gray-700 border border-gray-200 rounded-l-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            />
+        {!appliedPromo ? (
+          <>
             <button 
-              className="bg-black text-white px-4 py-3 rounded-r-md hover:bg-gray-800 transition-colors"
+              className="flex items-center justify-between w-full"
+              onClick={() => setPromoExpanded(!promoExpanded)}
               type="button"
             >
-              Apply
+              <div className="flex items-center">
+                <FaTag className="text-gray-500 mr-2" />
+                <h3 className="text-sm font-medium uppercase text-gray-700">Apply Promo Code</h3>
+              </div>
+              {promoExpanded ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />}
+            </button>
+            
+            {promoExpanded && (
+              <div className="mt-3">
+                <div className="flex">
+                  <input
+                    type="text"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                    placeholder="Enter promo code"
+                    className="flex-grow outline-none p-3 text-gray-700 border border-gray-200 rounded-l-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  />
+                  <button 
+                    className="bg-black text-white px-4 py-3 rounded-r-md hover:bg-gray-800 transition-colors disabled:bg-gray-300"
+                    type="button"
+                    onClick={applyPromoCode}
+                    disabled={applyingPromo || !promoCode.trim()}
+                  >
+                    {applyingPromo ? (
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : "Apply"}
+                  </button>
+                </div>
+                {promoError && (
+                  <p className="text-red-500 text-xs mt-2">{promoError}</p>
+                )}
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="flex items-center justify-between bg-green-50 p-3 border border-green-200 rounded-md">
+            <div className="flex items-center">
+              <FaTag className="text-green-600 mr-2" />
+              <div>
+                <p className="text-sm font-medium text-gray-800">{appliedPromo.code}</p>
+                <p className="text-xs text-gray-600">
+                  {appliedPromo.discountType === 'percentage' 
+                    ? `${appliedPromo.discountValue}% off${appliedPromo.maxDiscountAmount ? ` (up to ${currency}${appliedPromo.maxDiscountAmount})` : ''}`
+                    : `${currency}${appliedPromo.discountValue} off`
+                  }
+                </p>
+              </div>
+            </div>
+            <button 
+              className="text-gray-500 hover:text-red-500"
+              onClick={removePromoCode}
+              type="button"
+              aria-label="Remove promo code"
+            >
+              <FaTimes />
             </button>
           </div>
         )}
@@ -270,6 +392,17 @@ const OrderSummary = () => {
           <p className="font-medium">{currency}{subtotal.toFixed(2)}</p>
         </div>
         
+        {/* Display discount if promo applied */}
+        {appliedPromo && discount > 0 && (
+          <div className="flex justify-between text-gray-600">
+            <p className="flex items-center">
+              <FaTag className="text-green-600 mr-1 text-xs" /> 
+              Discount
+            </p>
+            <p className="font-medium text-green-600">-{currency}{discount.toFixed(2)}</p>
+          </div>
+        )}
+        
         <div className="flex justify-between text-gray-600">
           <p>Delivery Fee</p>
           {isFreeDelivery ? (
@@ -278,7 +411,7 @@ const OrderSummary = () => {
               <span className="text-green-600">Free</span>
             </p>
           ) : (
-            <p className="font-medium">{currency}{deliveryFee.toFixed(2)}</p>
+            <p className="font-medium">{currency}{fee.toFixed(2)}</p>
           )}
         </div>
         
