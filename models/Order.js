@@ -10,9 +10,11 @@ const orderSchema = new mongoose.Schema({
     deliveryFee: { type: Number, required: true, default: 0 },
     discount: { type: Number, default: 0 },
     promoCode: {
-        id: { type: String, ref: 'PromoCode' },
+        id: { type: mongoose.Schema.Types.ObjectId, ref: 'PromoCode' },
         code: { type: String },
-        discountAmount: { type: Number }
+        discountAmount: { type: Number },
+        discountType: { type: String },
+        discountValue: { type: Number }
     },
     amount: { type: Number, required: true }, // Total amount after all calculations
     address: { type: String, ref: 'address', required: true },

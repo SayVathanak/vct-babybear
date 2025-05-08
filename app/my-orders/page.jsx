@@ -243,7 +243,7 @@ const MyOrders = () => {
                                 <div className="ml-3 flex-1">
                                   <p className="text-sm font-medium text-gray-900 line-clamp-1">{item.product.name}</p>
                                   <div className="flex items-center justify-between sm:justify-start mt-1">
-                                    <p className="text-sm text-gray-500">{currency}{item.product.price} each</p>
+                                    <p className="text-sm text-gray-500">{currency}{item.product.offerPrice} each</p>
                                     <p className="text-sm font-medium text-gray-900 sm:hidden">
                                       x{item.quantity}
                                     </p>
@@ -260,8 +260,41 @@ const MyOrders = () => {
                         <div className="mt-6 space-y-2 border-t border-gray-200 pt-4">
                           <div className="flex justify-between">
                             <span className="text-gray-500">Subtotal</span>
-                            <span className="font-medium text-gray-900">{currency}{order.amount}</span>
+                            <span className="font-medium text-gray-900">{currency}{order.subtotal || order.amount}</span>
                           </div>
+                          
+                          {/* Show discount if promoCode exists */}
+                          {order.promoCode && order.discount > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Discount ({typeof order.promoCode === 'string' ? order.promoCode : order.promoCode?.code})</span>
+                              <span className="font-medium text-green-600">-{currency}{order.discount.toFixed(2)}</span>
+                            </div>
+                          )}
+                          
+                          {/* Show total after discount if there is a discount */}
+                          {order.promoCode && order.discount > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Total After Discount</span>
+                              <span className="font-medium text-gray-900">{currency}{(order.subtotal - order.discount).toFixed(2)}</span>
+                            </div>
+                          )}
+                          
+                          {/* Show delivery fee if available */}
+                          {order.deliveryFee !== undefined && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Delivery Fee</span>
+                              <span className="font-medium text-gray-900">
+                                {order.deliveryFee === 0 ? "Free" : `${currency}${order.deliveryFee.toFixed(2)}`}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* Total amount - always shown */}
+                          <div className="flex justify-between pt-2 border-t border-gray-200">
+                            <span className="font-medium text-gray-900">Total</span>
+                            <span className="font-medium text-gray-900">{currency}{(order.total || order.amount).toFixed(2)}</span>
+                          </div>
+                          
                           <div className="flex justify-between">
                             <span className="text-gray-500">Payment Method</span>
                             <span className="font-medium text-gray-900">COD</span>

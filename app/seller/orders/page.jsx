@@ -26,8 +26,8 @@ const Orders = () => {
     const fetchSellerOrders = async () => {
         try {
             const token = await getToken();
-            const { data } = await axios.get('/api/order/seller-orders', { 
-                headers: { Authorization: `Bearer ${token}` } 
+            const { data } = await axios.get('/api/order/seller-orders', {
+                headers: { Authorization: `Bearer ${token}` }
             });
 
             if (data.success) {
@@ -58,58 +58,58 @@ const Orders = () => {
 
     const updateOrderStatus = async (orderId, status) => {
         try {
-          setUpdating(true);
-          const token = await getToken();
-      
-          const order = orders.find(o => (o._id || o.id || o.orderId) === orderId);
-          if (!order) {
-            toast.error("Order not found");
-            return;
-          }
-      
-          const itemIds = order.items.map(item => item._id || item.id);
-      
-          const { data } = await axios.put(
-            '/api/order/update-status',
-            { orderId, status, itemIds },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-      
-          if (data.success) {
-            toast.success("Order status updated successfully");
-            setOrders(orders.map(order =>
-              (order._id || order.id || order.orderId) === orderId
-                ? data.order
-                : order
-            ));
-            setUpdatingOrderId(null);
-            setNewStatus("");
-          } else {
-            toast.error(data.message || "Failed to update order status");
-          }
+            setUpdating(true);
+            const token = await getToken();
+
+            const order = orders.find(o => (o._id || o.id || o.orderId) === orderId);
+            if (!order) {
+                toast.error("Order not found");
+                return;
+            }
+
+            const itemIds = order.items.map(item => item._id || item.id);
+
+            const { data } = await axios.put(
+                '/api/order/update-status',
+                { orderId, status, itemIds },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (data.success) {
+                toast.success("Order status updated successfully");
+                setOrders(orders.map(order =>
+                    (order._id || order.id || order.orderId) === orderId
+                        ? data.order
+                        : order
+                ));
+                setUpdatingOrderId(null);
+                setNewStatus("");
+            } else {
+                toast.error(data.message || "Failed to update order status");
+            }
         } catch (error) {
-          toast.error(error.response?.data?.message || error.message || "An error occurred");
+            toast.error(error.response?.data?.message || error.message || "An error occurred");
         } finally {
-          setUpdating(false);
+            setUpdating(false);
         }
-      };      
+    };
 
     const getFilteredOrders = () => {
         let filtered = [...orders];
-        
+
         // Apply search filter
         if (searchTerm) {
-            filtered = filtered.filter(order => 
+            filtered = filtered.filter(order =>
                 order.address.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 order.items.some(item => item.product.name.toLowerCase().includes(searchTerm.toLowerCase()))
             );
         }
-        
+
         // Apply status filter
         if (filterStatus !== "all") {
             filtered = filtered.filter(order => order.status === filterStatus);
         }
-        
+
         // Apply sorting
         if (sortBy === "newest") {
             filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -120,15 +120,15 @@ const Orders = () => {
         } else if (sortBy === "lowest") {
             filtered.sort((a, b) => a.amount - b.amount);
         }
-        
+
         return filtered;
     };
 
     const getStatusColor = (status) => {
-        switch(status?.toLowerCase()) {
+        switch (status?.toLowerCase()) {
             case "delivered": return "bg-green-100 text-green-800";
             case "out for delivery": return "bg-blue-100 text-blue-800";
-            case "processing": 
+            case "processing":
             case "pending": return "bg-yellow-100 text-yellow-800";
             case "cancelled": return "bg-red-100 text-red-800";
             default: return "bg-gray-100 text-gray-800";
@@ -198,19 +198,19 @@ const Orders = () => {
                             <Package className="mx-auto h-12 w-12 text-gray-400" />
                             <h3 className="mt-4 text-lg font-medium text-gray-900">No orders found</h3>
                             <p className="mt-2 text-gray-500">
-                                {searchTerm || filterStatus !== "all" 
-                                    ? "Try adjusting your search or filter criteria" 
+                                {searchTerm || filterStatus !== "all"
+                                    ? "Try adjusting your search or filter criteria"
                                     : "You don't have any orders yet"}
                             </p>
                         </div>
                     ) : (
                         <div className="space-y-4">
                             {getFilteredOrders().map((order) => (
-                                <div 
-                                    key={order._id || order.id || order.orderId} 
+                                <div
+                                    key={order._id || order.id || order.orderId}
                                     className="bg-white rounded-lg shadow overflow-hidden transition-all duration-200"
                                 >
-                                    <div 
+                                    <div
                                         className="p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between cursor-pointer hover:bg-gray-50"
                                         onClick={() => toggleOrderExpansion(order._id || order.id || order.orderId)}
                                     >
@@ -226,7 +226,7 @@ const Orders = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                        
+
                                         <div className="flex items-center justify-between md:justify-end w-full md:w-auto">
                                             <div className="flex items-center">
                                                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status || "pending")}`}>
@@ -253,7 +253,7 @@ const Orders = () => {
                                                         <div key={idx} className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                                                             <div className="flex items-center mb-2 sm:mb-0">
                                                                 <div className="w-14 h-14 min-w-14 bg-gray-50 rounded-md flex items-center justify-center overflow-hidden">
-                                                                    <Image 
+                                                                    <Image
                                                                         src={item.product.image?.[0] || item.product.image || assets.box_icon}
                                                                         alt={item.product.name || "Product Image"}
                                                                         className="object-contain w-4/5 h-4/5 transition-transform duration-300 hover:scale-105"
@@ -264,7 +264,7 @@ const Orders = () => {
                                                                 <div className="ml-3 flex-1">
                                                                     <p className="text-sm font-medium text-gray-900 line-clamp-1">{item.product.name}</p>
                                                                     <div className="flex items-center justify-between sm:justify-start mt-1">
-                                                                        <p className="text-sm text-gray-500">{currency}{item.product.price} each</p>
+                                                                        <p className="text-sm text-gray-500">{currency}{item.product.offerPrice} each</p>
                                                                         <p className="text-sm font-medium text-gray-900 sm:hidden">
                                                                             x{item.quantity}
                                                                         </p>
@@ -281,7 +281,29 @@ const Orders = () => {
                                                 <div className="mt-6 space-y-2 border-t border-gray-200 pt-4">
                                                     <div className="flex justify-between">
                                                         <span className="text-gray-500">Subtotal</span>
-                                                        <span className="font-medium text-gray-900">{currency}{order.amount}</span>
+                                                        <span className="font-medium text-gray-900">{currency}{order.subtotal}</span>
+                                                    </div>
+                                                    {order.discount > 0 && (
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-500">Discount</span>
+                                                            <span className="font-medium text-green-600">-{currency}{order.discount}</span>
+                                                        </div>
+                                                    )}
+                                                    {order.promoCode?.code && (
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-500">Promo Code</span>
+                                                            <span className="font-medium text-gray-900">{order.promoCode.code}</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-500">Delivery Fee</span>
+                                                        <span className="font-medium text-gray-900">
+                                                            {order.deliveryFee === 0 ? "Free" : `${currency}${order.deliveryFee}`}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between font-medium">
+                                                        <span className="text-gray-900">Total Amount</span>
+                                                        <span className="text-gray-900">{currency}{order.amount}</span>
                                                     </div>
                                                     <div className="flex justify-between">
                                                         <span className="text-gray-500">Payment Method</span>
@@ -290,7 +312,7 @@ const Orders = () => {
                                                     <div className="flex justify-between">
                                                         <span className="text-gray-500">Payment Status</span>
                                                         <span className={`font-medium ${order.status === 'delivered' || order.paymentStatus === 'paid' ? 'text-green-600' : 'text-yellow-600'}`}>
-                                                        {order.status === 'delivered' || order.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
+                                                            {order.status === 'delivered' || order.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -325,7 +347,7 @@ const Orders = () => {
                                                                 <p className="text-xs text-gray-500">{formatDate(order.date)}</p>
                                                             </div>
                                                         </div>
-                                                        
+
                                                         {/* Conditionally show processing step based on status */}
                                                         <div className={`flex ${(order.status?.toLowerCase() === "processing" || order.status?.toLowerCase() === "out for delivery" || order.status?.toLowerCase() === "delivered") ? "" : "opacity-50"}`}>
                                                             <div className="flex flex-col items-center mr-4">
@@ -335,13 +357,13 @@ const Orders = () => {
                                                             <div>
                                                                 <p className="text-sm font-medium text-gray-900">Processing</p>
                                                                 <p className="text-xs text-gray-500">
-                                                                    {order.status?.toLowerCase() === "processing" ? "Order is being processed" : 
-                                                                    order.status?.toLowerCase() === "out for delivery" || order.status?.toLowerCase() === "delivered" ? "Processed" : 
-                                                                    "Awaiting processing"}
+                                                                    {order.status?.toLowerCase() === "processing" ? "Order is being processed" :
+                                                                        order.status?.toLowerCase() === "out for delivery" || order.status?.toLowerCase() === "delivered" ? "Processed" :
+                                                                            "Awaiting processing"}
                                                                 </p>
                                                             </div>
                                                         </div>
-                                                        
+
                                                         {/* Conditionally show out for delivery step based on status */}
                                                         <div className={`flex ${(order.status?.toLowerCase() === "out for delivery" || order.status?.toLowerCase() === "delivered") ? "" : "opacity-50"}`}>
                                                             <div className="flex flex-col items-center mr-4">
@@ -351,13 +373,13 @@ const Orders = () => {
                                                             <div>
                                                                 <p className="text-sm font-medium text-gray-900">Out for delivery</p>
                                                                 <p className="text-xs text-gray-500">
-                                                                    {order.status?.toLowerCase() === "out for delivery" ? "Order is on the way" : 
-                                                                    order.status?.toLowerCase() === "delivered" ? "Arrived" : 
-                                                                    "Not yet out for delivery"}
+                                                                    {order.status?.toLowerCase() === "out for delivery" ? "Order is on the way" :
+                                                                        order.status?.toLowerCase() === "delivered" ? "Arrived" :
+                                                                            "Not yet out for delivery"}
                                                                 </p>
                                                             </div>
                                                         </div>
-                                                        
+
                                                         {/* Conditionally show delivered step based on status */}
                                                         <div className={`flex ${order.status?.toLowerCase() === "delivered" ? "" : "opacity-50"}`}>
                                                             <div className="flex flex-col items-center mr-4">
@@ -366,8 +388,8 @@ const Orders = () => {
                                                             <div>
                                                                 <p className="text-sm font-medium text-gray-900">Delivered</p>
                                                                 <p className="text-xs text-gray-500">
-                                                                    {order.status?.toLowerCase() === "delivered" ? "Order has been delivered" : 
-                                                                    "Awaiting delivery"}
+                                                                    {order.status?.toLowerCase() === "delivered" ? "Order has been delivered" :
+                                                                        "Awaiting delivery"}
                                                                 </p>
                                                             </div>
                                                         </div>
@@ -390,14 +412,14 @@ const Orders = () => {
                                                                 <option value="cancelled">Cancelled</option>
                                                             </select>
                                                             <div className="flex gap-2">
-                                                                <button 
+                                                                <button
                                                                     className="flex-1 bg-blue-600 text-white rounded-lg py-2 px-4 font-medium hover:bg-blue-700 transition-colors disabled:bg-blue-300"
                                                                     onClick={() => updateOrderStatus(order._id || order.id || order.orderId, newStatus)}
                                                                     disabled={!newStatus || updating}
                                                                 >
                                                                     {updating ? "Updating..." : "Save"}
                                                                 </button>
-                                                                <button 
+                                                                <button
                                                                     className="flex-1 bg-gray-100 text-gray-700 rounded-lg py-2 px-4 font-medium hover:bg-gray-200 transition-colors"
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
@@ -410,7 +432,7 @@ const Orders = () => {
                                                             </div>
                                                         </div>
                                                     ) : (
-                                                        <button 
+                                                        <button
                                                             className="w-full bg-blue-600 text-white rounded-lg py-2 px-4 font-medium hover:bg-blue-700 transition-colors"
                                                             onClick={(e) => {
                                                                 e.stopPropagation(); // Prevent order expansion toggle

@@ -187,19 +187,31 @@ const OrderSummary = () => {
 
       const token = await getToken();
 
-      // Calculate all order amounts
+      // Calculate all order amounts - ensuring they're consistent
       const { subtotal, discount, deliveryFee, total } = calculateOrderAmounts();
 
-      // Create order in your system including promo code if applied
-      const { data } = await axios.post('/api/order/create', {
+      // Create a proper order payload with all necessary information
+      const orderPayload = {
         address: selectedAddress._id,
         items: cartItemsArray,
-        promoCodeId: appliedPromo ? appliedPromo._id : null,
         subtotal: subtotal,
         deliveryFee: deliveryFee,
         discount: discount,
-        amount: total // This is the final amount that will be stored in your order model
-      }, {
+        amount: total,
+        // Explicitly include promo code details if applicable
+        ...(appliedPromo && { 
+          promoCodeId: appliedPromo._id,
+          promoCode: {
+            id: appliedPromo._id,
+            code: appliedPromo.code,
+            discountType: appliedPromo.discountType,
+            discountValue: appliedPromo.discountValue,
+            discountAmount: discount
+          }
+        })
+      };
+
+      const { data } = await axios.post('/api/order/create', orderPayload, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
