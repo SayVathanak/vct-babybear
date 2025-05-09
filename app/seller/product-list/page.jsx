@@ -96,31 +96,39 @@ const ProductList = () => {
 
   const handleQuickEditSubmit = async (updatedProductData) => {
     try {
-      setUpdatingProductId(updatedProductData._id)
-      const token = await getToken()
-      
+      setUpdatingProductId(
+        updatedProductData instanceof FormData
+          ? updatedProductData.get('_id')
+          : updatedProductData._id
+      );
+
+      const token = await getToken();
+
       const { data } = await axios.put(
         '/api/product/update-availability',
         updatedProductData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-      
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            ...(updatedProductData instanceof FormData
+              ? {} // No content-type for FormData (browser sets it with boundary)
+              : { 'Content-Type': 'application/json' })
+          }
+        }
+      );
+
       if (data.success) {
-        // Update products in state
-        setProducts(products.map(product => 
-          product._id === updatedProductData._id ? 
-          {...product, ...updatedProductData} : 
-          product
-        ))
-        toast.success('Product updated successfully')
-        setQuickEditProduct(null)
+        // Refresh product list to get updated data
+        await fetchSellerProduct();
+        toast.success('Product updated successfully');
+        setQuickEditProduct(null);
       } else {
-        toast.error(data.message)
+        toast.error(data.message);
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to update product')
+      toast.error(error.message || 'Failed to update product');
     } finally {
-      setUpdatingProductId(null)
+      setUpdatingProductId(null);
     }
   }
 
