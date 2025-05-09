@@ -208,7 +208,7 @@ const Product = () => {
                                 onClick={() => setShowDirections(!showDirections)}
                                 className="flex items-center justify-between w-full text-left text-gray-800 py-3 px-4 bg-gray-50 hover:bg-gray-100 transition"
                             >
-                                <span>How to use</span>
+                                <span>Details</span>
                                 {showDirections ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
                             </button>
                             {showDirections && (
