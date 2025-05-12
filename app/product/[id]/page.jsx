@@ -71,6 +71,24 @@ const Product = () => {
         const discount = ((productData.price - productData.offerPrice) / productData.price) * 100;
         return Math.round(discount);
     };
+    
+    // Format the description text to preserve indentation
+    const formatDescription = (text) => {
+        if (!text) return "";
+        
+        // Split by line breaks
+        const paragraphs = text.split('\n');
+        
+        return paragraphs.map((paragraph, index) => (
+            <React.Fragment key={index}>
+                {paragraph.trim() === "" ? (
+                    <br />
+                ) : (
+                    <p className="mb-2 whitespace-pre-wrap">{paragraph}</p>
+                )}
+            </React.Fragment>
+        ));
+    };
 
     return productData ? (
         <>
@@ -203,17 +221,19 @@ const Product = () => {
 
                         <hr className="bg-gray-200 my-5" />
 
-                        <div className="border border-gray-200 text-sm rounded-md overflow-hidden">
+                        <div className="border border-gray-200 rounded-md overflow-hidden">
                             <button
                                 onClick={() => setShowDirections(!showDirections)}
                                 className="flex items-center justify-between w-full text-left text-gray-800 py-3 px-4 bg-gray-50 hover:bg-gray-100 transition"
                             >
-                                <span>Details</span>
+                                <span className="font-medium">Product Details</span>
                                 {showDirections ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
                             </button>
                             {showDirections && (
-                                <div className="p-4 text-gray-600 text-xs">
-                                    {productData.description}
+                                <div className="p-4 text-gray-700 bg-white">
+                                    <div className="prose prose-sm max-w-none">
+                                        {formatDescription(productData.description)}
+                                    </div>
                                 </div>
                             )}
                         </div>

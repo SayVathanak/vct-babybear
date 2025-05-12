@@ -114,9 +114,9 @@ const ProductCard = ({ product }) => {
       {/* Product info section */}
       <div className="flex flex-col p-3 flex-grow">
         {/* Category */}
-        <p className="text-xs text-gray-500 mb-1">
+        {/* <p className="text-xs text-gray-500 mb-1">
           {product.category || "General"}
-        </p>
+        </p> */}
 
         {/* Product name */}
         <h3
