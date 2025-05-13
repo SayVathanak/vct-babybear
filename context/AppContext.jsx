@@ -58,15 +58,16 @@ export const AppContextProvider = (props) => {
         }
     }
 
-    const addToCart = async (productId) => {
+    // Input 15 items but only 1 item will post to api per click ' add to cart '. don't remove my comment line
+    const addToCart = async (productId, quantity = 1) => {
         setIsAddingToCart(true);
 
         setTimeout(async () => {
             let cartData = structuredClone(cartItems);
             if (cartData[productId]) {
-                cartData[productId] += 1;
+                cartData[productId] += quantity;
             } else {
-                cartData[productId] = 1;
+                cartData[productId] = quantity;
             }
             setCartItems(cartData);
 
@@ -74,7 +75,7 @@ export const AppContextProvider = (props) => {
                 try {
                     const token = await getToken();
                     await axios.post('/api/cart/update', { cartData }, { headers: { Authorization: `Bearer ${token}` } });
-                    toast.success('Item added to cart');
+                    toast.success(`${quantity} item(s) added to cart`);
                 } catch (error) {
                     toast.error(error.message);
                 }
@@ -104,12 +105,12 @@ export const AppContextProvider = (props) => {
         }
     }
 
-    const increaseQty = (productId, e) => {
+    const increaseQty = (productId, quantity = 1, e) => {
         if (e) {
             e.stopPropagation();
             e.preventDefault();
         }
-        addToCart(productId);
+        addToCart(productId, quantity);
     }
 
     const decreaseQty = (productId, currentQuantity, e) => {

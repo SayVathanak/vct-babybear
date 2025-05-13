@@ -284,6 +284,7 @@ import ProductGallery from "@/components/ProductGallery";
 import ProductInfo from "@/components/ProductInfo";
 import ProductActions from "@/components/ProductActions";
 import ProductGrid from "@/components/ProductGrid";
+import ProductDetail from "@/components/ProductDetails";
 
 const Product = () => {
     const { id } = useParams();
@@ -342,9 +343,15 @@ const Product = () => {
                     />
 
                     <div className="space-y-8">
-                        <ProductInfo product={productData} />
+                        {/* <ProductInfo product={productData} />
 
                         <ProductActions
+                            product={productData}
+                            addToCart={addToCart}
+                            user={user}
+                            openSignIn={openSignIn}
+                        /> */}
+                        <ProductDetail
                             product={productData}
                             addToCart={addToCart}
                             user={user}
