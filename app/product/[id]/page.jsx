@@ -71,14 +71,14 @@
 //         const discount = ((productData.price - productData.offerPrice) / productData.price) * 100;
 //         return Math.round(discount);
 //     };
-    
+
 //     // Format the description text to preserve indentation
 //     const formatDescription = (text) => {
 //         if (!text) return "";
-        
+
 //         // Split by line breaks
 //         const paragraphs = text.split('\n');
-        
+
 //         return paragraphs.map((paragraph, index) => (
 //             <React.Fragment key={index}>
 //                 {paragraph.trim() === "" ? (
@@ -281,14 +281,11 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Loading from "@/components/Loading";
 import ProductGallery from "@/components/ProductGallery";
-import ProductInfo from "@/components/ProductInfo";
-import ProductActions from "@/components/ProductActions";
-import ProductGrid from "@/components/ProductGrid";
 import ProductDetail from "@/components/ProductDetails";
 
 const Product = () => {
     const { id } = useParams();
-    const { products, router, addToCart, user } = useAppContext();
+    const { products, router, addToCart, user, cartItems } = useAppContext();
     const [productData, setProductData] = useState(null);
     const [relatedProducts, setRelatedProducts] = useState([]);
     const { openSignIn } = useClerk();
@@ -343,29 +340,39 @@ const Product = () => {
                     />
 
                     <div className="space-y-8">
-                        {/* <ProductInfo product={productData} />
-
-                        <ProductActions
-                            product={productData}
-                            addToCart={addToCart}
-                            user={user}
-                            openSignIn={openSignIn}
-                        /> */}
                         <ProductDetail
                             product={productData}
                             addToCart={addToCart}
                             user={user}
                             openSignIn={openSignIn}
+                            cartItems={cartItems}
                         />
                     </div>
                 </div>
 
                 <div className="mt-16 mb-12">
-                    <ProductGrid
-                        products={relatedProducts}
-                        isLoading={false}
-                        title="You might also like"
-                    />
+                    {relatedProducts.length > 0 && (
+                        <div className="space-y-6">
+                            <h2 className="text-xl font-medium text-center">You might also like</h2>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+                                {relatedProducts.map((product, index) => (
+                                    <div key={index} className="cursor-pointer" onClick={() => router.push(`/product/${product._id}`)}>
+                                        <div className="bg-white p-2 rounded-md">
+                                            <img
+                                                src={product.image[0]}
+                                                alt={product.name}
+                                                className="w-full h-auto object-contain mix-blend-multiply aspect-square"
+                                            />
+                                        </div>
+                                        <div className="mt-2">
+                                            <h3 className="text-sm line-clamp-2">{product.name}</h3>
+                                            <p className="text-sm font-medium mt-1">${product.offerPrice}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
             <Footer />

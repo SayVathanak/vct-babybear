@@ -11,23 +11,17 @@ import {
     CiDeliveryTruck,
     CiCircleCheck
 } from "react-icons/ci";
-import {
-    RiTruckLine,
-    RiHandCoinLine,
-    RiSecurePaymentLine,
-    RiVerifiedBadgeLine,
-} from "react-icons/ri";
 
 const ProductDetail = ({ product, addToCart, user, openSignIn, cartItems }) => {
     const [showDescription, setShowDescription] = useState(false);
     const [showSpecifications, setShowSpecifications] = useState(false);
     const [quantity, setQuantity] = useState(1);
-    const [inputValue, setInputValue] = useState("1"); // New state for input value
+    const [inputValue, setInputValue] = useState("1");
     const router = useRouter();
 
-    // Initialize quantity based on cart items when component loads
+    // Initialize quantity based on cart items when component loads or cartItems changes
     useEffect(() => {
-        if (product && cartItems && cartItems[product._id]) {
+        if (product && cartItems && product._id in cartItems) {
             const cartQuantity = cartItems[product._id];
             setQuantity(cartQuantity);
             setInputValue(cartQuantity.toString());
@@ -73,28 +67,26 @@ const ProductDetail = ({ product, addToCart, user, openSignIn, cartItems }) => {
 
     const handleInputChange = (e) => {
         const value = e.target.value;
+        // Always keep inputValue as a string
         setInputValue(value);
 
         // Only update quantity if the value is a valid number
-        if (value === "" || value === "0") {
-            // Allow empty field for better UX, but don't update actual quantity yet
-        } else {
-            const parsedValue = parseInt(value);
-            if (!isNaN(parsedValue)) {
-                setQuantity(parsedValue);
-            }
+        const parsedValue = parseInt(value, 10);
+        if (!isNaN(parsedValue) && parsedValue > 0) {
+            setQuantity(parsedValue);
         }
     };
 
     const handleInputBlur = () => {
         // On blur, ensure we have a valid quantity (minimum 1)
-        if (inputValue === "" || inputValue === "0" || isNaN(parseInt(inputValue))) {
+        const parsedValue = parseInt(inputValue, 10);
+        if (isNaN(parsedValue) || parsedValue < 1) {
             setQuantity(1);
             setInputValue("1");
         } else {
-            const parsedValue = parseInt(inputValue);
+            // Make sure both state values are in sync
             setQuantity(parsedValue);
-            setInputValue(parsedValue.toString());
+            setInputValue(String(parsedValue));
         }
     };
 
@@ -117,7 +109,7 @@ const ProductDetail = ({ product, addToCart, user, openSignIn, cartItems }) => {
             toast.error("Sorry, this product is currently unavailable");
             return;
         }
-        addToCart(product._id, quantity);
+        addToCart(product._id, quantity, true); // Set replaceQuantity to true
         router.push('/cart');
     };
 
