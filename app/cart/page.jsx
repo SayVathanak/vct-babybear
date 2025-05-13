@@ -1,5 +1,5 @@
 'use client'
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { assets } from "@/assets/assets";
 import OrderSummary from "@/components/OrderSummary";
 import Image from "next/image";
@@ -8,11 +8,56 @@ import { useAppContext } from "@/context/AppContext";
 import { FaChevronLeft, FaTimes } from "react-icons/fa";
 
 const Cart = () => {
-  const { products, router, cartItems, addToCart, updateCartQuantity, getCartCount } = useAppContext();
+  const { products, router, cartItems, updateCartQuantity, getCartCount } = useAppContext();
+  const [inputQuantities, setInputQuantities] = useState({});
+
+  // Sync inputQuantities with cartItems whenever cartItems changes
+  useEffect(() => {
+    const newInputQuantities = {};
+    Object.keys(cartItems).forEach(itemId => {
+      newInputQuantities[itemId] = cartItems[itemId];
+    });
+    setInputQuantities(newInputQuantities);
+  }, [cartItems]);
 
   const decreaseQuantity = (productId, currentQuantity) => {
     if (currentQuantity > 1) {
-      updateCartQuantity(productId, currentQuantity - 1);
+      const newQuantity = currentQuantity - 1;
+      updateCartQuantity(productId, newQuantity);
+    }
+  };
+
+  const increaseQuantity = (productId, currentQuantity) => {
+    const newQuantity = currentQuantity + 1;
+    updateCartQuantity(productId, newQuantity);
+  };
+
+  const handleQuantityChange = (productId, value) => {
+    // Allow empty value for clearing the input
+    setInputQuantities({
+      ...inputQuantities,
+      [productId]: value
+    });
+  };
+
+  const handleQuantityBlur = (productId) => {
+    // When input field loses focus, update the cart
+    const newQuantity = parseInt(inputQuantities[productId]);
+    if (!isNaN(newQuantity) && newQuantity > 0) {
+      updateCartQuantity(productId, newQuantity);
+    } else {
+      // Reset the input field if value is invalid
+      setInputQuantities({
+        ...inputQuantities,
+        [productId]: cartItems[productId]
+      });
+    }
+  };
+
+  const handleKeyPress = (e, productId) => {
+    // Update cart when Enter key is pressed
+    if (e.key === 'Enter') {
+      handleQuantityBlur(productId);
     }
   };
 
@@ -79,24 +124,34 @@ const Cart = () => {
                         </div>
 
                         <div className="flex flex-col sm:flex-row sm:items-center mt-4 sm:mt-6 sm:space-x-8 md:space-x-12">
-                          {/* Quantity */}
+                          {/* Improved Quantity Section */}
                           <div className="flex items-center mb-2 sm:mb-0">
                             <span className="text-xs sm:text-sm md:text-base uppercase tracking-wider mr-3 sm:mr-4 text-gray-600">
                               Quantity
                             </span>
-                            <div className="flex items-center">
+                            <div className="flex items-center border border-gray-200 rounded overflow-hidden">
                               <button
-                                className="w-6 h-6 md:w-8 md:h-8 flex items-center justify-center text-sm md:text-base"
+                                className="w-8 h-8 flex items-center justify-center text-sm bg-gray-50 hover:bg-gray-100 transition-colors"
                                 onClick={() => decreaseQuantity(product._id, cartItems[itemId])}
                                 disabled={cartItems[itemId] <= 1}
                                 aria-label="Decrease quantity"
                               >
                                 -
                               </button>
-                              <span className="mx-3 text-sm md:text-base">{cartItems[itemId]}</span>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                value={inputQuantities[itemId]}
+                                onChange={(e) => handleQuantityChange(product._id, e.target.value)}
+                                onBlur={() => handleQuantityBlur(product._id)}
+                                onKeyPress={(e) => handleKeyPress(e, product._id)}
+                                className="w-12 h-8 text-center border-x border-gray-200 focus:outline-none"
+                                aria-label="Quantity"
+                              />
                               <button
-                                className="w-6 h-6 md:w-8 md:h-8 flex items-center justify-center text-sm md:text-base"
-                                onClick={() => addToCart(product._id)}
+                                className="w-8 h-8 flex items-center justify-center text-sm bg-gray-50 hover:bg-gray-100 transition-colors"
+                                onClick={() => increaseQuantity(product._id, cartItems[itemId])}
                                 aria-label="Increase quantity"
                               >
                                 +
@@ -109,7 +164,7 @@ const Cart = () => {
                             <span className="text-xs sm:text-sm md:text-base uppercase tracking-wider mr-2 sm:mr-4 text-gray-600">
                               Subtotal
                             </span>
-                            <span className="text-sm md:text-lg ml-2">
+                            <span className="text-sm md:text-lg ml-2 font-medium">
                               ${(product.offerPrice * cartItems[itemId]).toFixed(2)}
                             </span>
                           </div>
@@ -126,12 +181,12 @@ const Cart = () => {
             <div className="mt-4 sm:mt-6">
               <button
                 onClick={() => router.push('/all-products')}
-                className="group flex items-center text-black"
+                className="group flex items-center text-black hover:text-gray-700 transition-colors"
               >
                 <FaChevronLeft className="mr-1" size={12} />
                 <span className="text-sm uppercase tracking-wide">Continue Shopping</span>
               </button>
-              
+
               <p className="mt-2 text-xs md:text-sm text-sky-500 font-kantumruy">
                 សេវាដឹកជញ្ជូនឥតគិតថ្លៃរាល់ការជាវទំនិញចាប់ពី ២​ ឡើង
               </p>

@@ -1,5 +1,5 @@
 // components/ProductDetail.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
@@ -18,12 +18,21 @@ import {
     RiVerifiedBadgeLine,
 } from "react-icons/ri";
 
-const ProductDetail = ({ product, addToCart, user, openSignIn }) => {
+const ProductDetail = ({ product, addToCart, user, openSignIn, cartItems }) => {
     const [showDescription, setShowDescription] = useState(false);
     const [showSpecifications, setShowSpecifications] = useState(false);
     const [quantity, setQuantity] = useState(1);
     const [inputValue, setInputValue] = useState("1"); // New state for input value
     const router = useRouter();
+
+    // Initialize quantity based on cart items when component loads
+    useEffect(() => {
+        if (product && cartItems && cartItems[product._id]) {
+            const cartQuantity = cartItems[product._id];
+            setQuantity(cartQuantity);
+            setInputValue(cartQuantity.toString());
+        }
+    }, [product, cartItems]);
 
     const calculateDiscount = () => {
         if (!product) return 0;
@@ -94,7 +103,7 @@ const ProductDetail = ({ product, addToCart, user, openSignIn }) => {
             toast.error("Sorry, this product is currently unavailable");
             return;
         }
-        addToCart(product._id, quantity);
+        addToCart(product._id, quantity, true); // true = replace quantity
         toast.success(`${quantity} item(s) added to cart`);
     };
 
@@ -147,8 +156,6 @@ const ProductDetail = ({ product, addToCart, user, openSignIn }) => {
                         </p>
                     )}
                 </div>
-
-
 
                 {/* Product Actions Section */}
                 <div className="space-y-6 pt-2">
@@ -235,7 +242,6 @@ const ProductDetail = ({ product, addToCart, user, openSignIn }) => {
                         ))}
                     </div>
                 </div>
-
             </div>
         </div>
     );

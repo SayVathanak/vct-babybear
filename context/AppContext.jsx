@@ -58,17 +58,20 @@ export const AppContextProvider = (props) => {
         }
     }
 
-    // Input 15 items but only 1 item will post to api per click ' add to cart '. don't remove my comment line
-    const addToCart = async (productId, quantity = 1) => {
+    const addToCart = async (productId, quantity = 1, replaceQuantity = false) => {
         setIsAddingToCart(true);
 
         setTimeout(async () => {
             let cartData = structuredClone(cartItems);
-            if (cartData[productId]) {
-                cartData[productId] += quantity;
-            } else {
+
+            if (replaceQuantity || !cartData[productId]) {
+                // Replace quantity or set new if item doesn't exist
                 cartData[productId] = quantity;
+            } else {
+                // Add to existing quantity
+                cartData[productId] += quantity;
             }
+
             setCartItems(cartData);
 
             if (user) {
