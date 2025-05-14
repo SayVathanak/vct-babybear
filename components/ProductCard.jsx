@@ -93,15 +93,6 @@ const ProductCard = ({ product }) => {
                     height={800}
                 />
 
-                {/* Out of stock overlay */}
-                {/* {!isAvailable && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/40">
-            <span className="bg-red-500 text-white px-3 py-1.5 rounded text-sm font-medium transform rotate-[-20deg]">
-              Out of Stock
-            </span>
-          </div>
-        )} */}
-
                 {/* Wishlist button */}
                 <button
                     className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -118,11 +109,6 @@ const ProductCard = ({ product }) => {
 
             {/* Product info section */}
             <div className="flex flex-col p-3 flex-grow">
-                {/* Category */}
-                {/* <p className="text-xs text-gray-500 mb-1">
-          {product.category || "General"}
-        </p> */}
-
                 {/* Product name */}
                 <h3
                     className={`text-sm md:text-base font-medium mb-1 line-clamp-2 cursor-pointer hover:text-sky-600 transition ${!isAvailable ? 'text-gray-400' : 'text-gray-800'
@@ -230,7 +216,8 @@ const ProductCard = ({ product }) => {
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     e.preventDefault();
-                                    increaseQty(product._id, currentQuantity + 1, e);
+                                    // Fix: Pass 1 as quantity parameter instead of currentQuantity + 1
+                                    increaseQty(product._id, 1, e);
                                 }}
                                 className="px-4 py-2 text-sky-500 flex-1 text-center active:bg-sky-100"
                                 aria-label="Increase quantity"

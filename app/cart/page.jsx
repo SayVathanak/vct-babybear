@@ -9,31 +9,46 @@ import { FaChevronLeft, FaTimes } from "react-icons/fa";
 
 const Cart = () => {
   const { products, router, cartItems, updateCartQuantity, getCartCount } = useAppContext();
+  // Initialize inputQuantities with empty object to start
   const [inputQuantities, setInputQuantities] = useState({});
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Sync inputQuantities with cartItems whenever cartItems changes
+  // Only sync inputQuantities with cartItems once on initial load
+  // and when cartItems changes
   useEffect(() => {
-    const newInputQuantities = {};
-    Object.keys(cartItems).forEach(itemId => {
-      newInputQuantities[itemId] = cartItems[itemId];
-    });
-    setInputQuantities(newInputQuantities);
+    if (cartItems) {
+      const newInputQuantities = {};
+      Object.keys(cartItems).forEach(itemId => {
+        // Ensure all values are strings for input fields
+        newInputQuantities[itemId] = cartItems[itemId].toString();
+      });
+      setInputQuantities(newInputQuantities);
+      setIsInitialized(true);
+    }
   }, [cartItems]);
 
   const decreaseQuantity = (productId, currentQuantity) => {
     if (currentQuantity > 1) {
       const newQuantity = currentQuantity - 1;
       updateCartQuantity(productId, newQuantity);
+      setInputQuantities({
+        ...inputQuantities,
+        [productId]: newQuantity.toString()
+      });
     }
   };
 
   const increaseQuantity = (productId, currentQuantity) => {
     const newQuantity = currentQuantity + 1;
     updateCartQuantity(productId, newQuantity);
+    setInputQuantities({
+      ...inputQuantities,
+      [productId]: newQuantity.toString()
+    });
   };
 
   const handleQuantityChange = (productId, value) => {
-    // Allow empty value for clearing the input
+    // Always store input value as string
     setInputQuantities({
       ...inputQuantities,
       [productId]: value
@@ -42,14 +57,21 @@ const Cart = () => {
 
   const handleQuantityBlur = (productId) => {
     // When input field loses focus, update the cart
-    const newQuantity = parseInt(inputQuantities[productId]);
+    const inputValue = inputQuantities[productId];
+    const newQuantity = parseInt(inputValue);
+
     if (!isNaN(newQuantity) && newQuantity > 0) {
       updateCartQuantity(productId, newQuantity);
+      // Ensure the displayed value is consistent
+      setInputQuantities({
+        ...inputQuantities,
+        [productId]: newQuantity.toString()
+      });
     } else {
       // Reset the input field if value is invalid
       setInputQuantities({
         ...inputQuantities,
-        [productId]: cartItems[productId]
+        [productId]: (cartItems[productId] || 0).toString()
       });
     }
   };
@@ -62,6 +84,18 @@ const Cart = () => {
   };
 
   const isCartEmpty = getCartCount() === 0;
+
+  // Don't render inputs until we have initialized values
+  if (!isInitialized) {
+    return (
+      <>
+        <Navbar />
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-pulse">Loading cart...</div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -142,7 +176,7 @@ const Cart = () => {
                                 type="text"
                                 inputMode="numeric"
                                 pattern="[0-9]*"
-                                value={inputQuantities[itemId]}
+                                value={inputQuantities[itemId] || ""}
                                 onChange={(e) => handleQuantityChange(product._id, e.target.value)}
                                 onBlur={() => handleQuantityBlur(product._id)}
                                 onKeyPress={(e) => handleKeyPress(e, product._id)}

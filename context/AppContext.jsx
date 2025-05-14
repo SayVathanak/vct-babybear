@@ -78,7 +78,6 @@ export const AppContextProvider = (props) => {
                 try {
                     const token = await getToken();
                     await axios.post('/api/cart/update', { cartData }, { headers: { Authorization: `Bearer ${token}` } });
-                    toast.success(`${quantity} item(s) added to cart`);
                 } catch (error) {
                     toast.error(error.message);
                 }
@@ -108,12 +107,16 @@ export const AppContextProvider = (props) => {
         }
     }
 
+    // Fix: Modified increaseQty to ensure it only increments by 1
     const increaseQty = (productId, quantity = 1, e) => {
         if (e) {
             e.stopPropagation();
             e.preventDefault();
         }
-        addToCart(productId, quantity);
+
+        // Always increment by 1, ignoring the quantity parameter
+        const currentQty = cartItems[productId] || 0;
+        updateCartQuantity(productId, currentQty + 1);
     }
 
     const decreaseQty = (productId, currentQuantity, e) => {
