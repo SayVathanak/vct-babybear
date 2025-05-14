@@ -70,7 +70,7 @@ const ProductCard = ({ product }) => {
     };
 
     return (
-        <div className="group flex flex-col rounded-lg overflow-hidden border border-gray-100 hover:shadow-md transition duration-300">
+        <div className="flex flex-col rounded-lg overflow-hidden border border-gray-100">
             {/* Product image container */}
             <div
                 className={`cursor-pointer relative bg-white w-full h-52 flex items-center justify-center overflow-hidden ${!isAvailable ? 'opacity-70' : ''
@@ -88,14 +88,14 @@ const ProductCard = ({ product }) => {
                 <Image
                     src={product.image?.[0] || "/fallback-image.jpg"}
                     alt={product.name || "Product Image"}
-                    className="group-hover:scale-105 transition-transform duration-500 object-contain w-4/5 h-4/5"
+                    className="object-contain w-4/5 h-4/5"
                     width={800}
                     height={800}
                 />
 
                 {/* Wishlist button */}
                 <button
-                    className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md"
                     onClick={handleWishlist}
                     aria-label="Add to wishlist"
                 >
@@ -111,7 +111,7 @@ const ProductCard = ({ product }) => {
             <div className="flex flex-col p-3 flex-grow">
                 {/* Product name */}
                 <h3
-                    className={`text-sm md:text-base font-medium mb-1 line-clamp-2 cursor-pointer hover:text-sky-600 transition ${!isAvailable ? 'text-gray-400' : 'text-gray-800'
+                    className={`text-sm md:text-base font-medium mb-1 line-clamp-2 cursor-pointer ${!isAvailable ? 'text-gray-400' : 'text-gray-800'
                         }`}
                     onClick={handleCardClick}
                 >
@@ -166,11 +166,9 @@ const ProductCard = ({ product }) => {
                         <button
                             onClick={handleAddToCart}
                             disabled={isAddingToCart}
-                            className={`w-full px-4 py-2 text-white rounded-md text-sm flex items-center justify-center transition-colors duration-200 ${isAddingToCart
-                                // ? "bg-sky-300/70 opacity-70"
-                                // : "bg-sky-500 active:bg-sky-600 focus:bg-sky-600"
+                            className={`w-full px-4 py-2 text-white rounded-md text-sm flex items-center justify-center ${isAddingToCart
                                 ? "bg-blue-300"
-                                : "bg-blue-500 active:bg-blue-200 focus:bg-sky-600"
+                                : "bg-blue-500"
                                 }`}
                         >
                             {isAddingToCart ? (
@@ -208,7 +206,7 @@ const ProductCard = ({ product }) => {
                         <div className="quantity-selector w-full h-full flex items-center justify-between border border-sky-200 rounded-md bg-white">
                             <button
                                 onClick={(e) => decreaseQty(product._id, currentQuantity, e)}
-                                className="px-4 py-2 text-sky-500 flex-1 text-center active:bg-sky-100"
+                                className="px-4 py-2 text-sky-500 flex-1 text-center"
                                 aria-label="Decrease quantity"
                             >
                                 <FaMinus className="w-2.5 h-2.5 inline-block" />
@@ -221,7 +219,7 @@ const ProductCard = ({ product }) => {
                                     // Fix: Pass 1 as quantity parameter instead of currentQuantity + 1
                                     increaseQty(product._id, 1, e);
                                 }}
-                                className="px-4 py-2 text-sky-500 flex-1 text-center active:bg-sky-100"
+                                className="px-4 py-2 text-sky-500 flex-1 text-center"
                                 aria-label="Increase quantity"
                             >
                                 <FaPlus className="w-2.5 h-2.5 inline-block" />
