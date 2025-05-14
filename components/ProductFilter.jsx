@@ -23,7 +23,12 @@ const ProductFilter = ({
         "PowderedMilk": "Formula & Powdered Milk",
         "LiquidMilk": "Ready-to-Feed Milk",
         "Bottles": "Bottles & Sippy Cups",
-        // Add your categories here
+        "Tumblers": "Toddler Tumblers & Cups",
+        "FeedingTools": "Feeding Sets & Utensils",
+        "Accessories": "Baby Essentials & Accessories",
+        "Vitamins": "Nutrition & Supplements",
+        "Diapers": "Diapers & Wipes",
+        "NurseryItems": "Nursery & Sleep Essentials"
     };
 
     const sortOptions = [
@@ -80,8 +85,8 @@ const ProductFilter = ({
                             <button
                                 onClick={() => setSelectedCategory(category)}
                                 className={`w-full text-left py-2 px-1 rounded-md transition hover:text-blue-500 ${selectedCategory === category
-                                        ? 'text-blue-600 font-medium'
-                                        : 'text-gray-700'
+                                    ? 'text-blue-600 font-medium'
+                                    : 'text-gray-700'
                                     }`}
                             >
                                 {categoryDisplayNames[category] || category}

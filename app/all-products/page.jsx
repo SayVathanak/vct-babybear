@@ -321,7 +321,6 @@
 
 // export default AllProducts;
 
-// app/shop/page.jsx
 "use client";
 import { useState, useEffect } from "react";
 import { useAppContext } from "@/context/AppContext";
@@ -425,7 +424,7 @@ const AllProducts = () => {
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div className="flex items-center justify-between mb-6">
-                    <h1 className="text-2xl font-medium text-gray-800">Shop</h1>
+                    <h1 className="text-2xl font-medium text-blue-500">Baby Essentials</h1>
 
                     <div className="flex items-center gap-3">
                         <div className="hidden lg:block">

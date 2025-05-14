@@ -167,8 +167,10 @@ const ProductCard = ({ product }) => {
                             onClick={handleAddToCart}
                             disabled={isAddingToCart}
                             className={`w-full px-4 py-2 text-white rounded-md text-sm flex items-center justify-center transition-colors duration-200 ${isAddingToCart
-                                ? "bg-sky-300/70 opacity-70"
-                                : "bg-sky-500 active:bg-sky-600 focus:bg-sky-600"
+                                // ? "bg-sky-300/70 opacity-70"
+                                // : "bg-sky-500 active:bg-sky-600 focus:bg-sky-600"
+                                ? "bg-blue-300"
+                                : "bg-blue-500 active:bg-blue-200 focus:bg-sky-600"
                                 }`}
                         >
                             {isAddingToCart ? (

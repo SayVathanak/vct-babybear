@@ -3,13 +3,14 @@ import "./globals.css";
 import { AppContextProvider } from "@/context/AppContext";
 import { Toaster } from "react-hot-toast";
 import { ClerkProvider } from "@clerk/nextjs";
-import CartPopup from "@/components/CartPopup"; // Import the CartPopup component
+import CartPopup from "@/components/CartPopup";
+import TelegramPopup from "@/components/TelegramPopup"; // Import the new TelegramPopup component
 
-const outfit = Outfit({ subsets: ["latin"], weight: ["300", "400", "500"] });
+const outfit = Outfit({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] });
 
 export const metadata = {
   title: "Home | Baby Bear",
-  description: "VCT Baby Bear",
+  description: "Premium Imported Baby Products - Baby Bear",
 };
 
 export default function RootLayout({ children }) {
@@ -20,7 +21,8 @@ export default function RootLayout({ children }) {
           <Toaster />
           <AppContextProvider>
             {children}
-            <CartPopup /> {/* Add the CartPopup component here */}
+            <CartPopup />
+            <TelegramPopup /> {/* Add the TelegramPopup component here */}
           </AppContextProvider>
         </body>
       </html>
