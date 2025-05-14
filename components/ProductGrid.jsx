@@ -72,10 +72,10 @@ const ProductGrid = ({ products, isLoading = false, title = "Products" }) => {
 
     if (products.length === 0) {
         return (
-            <div className="text-center py-8 sm:py-12 border border-gray-200 rounded-lg bg-gray-50 shadow-sm">
+            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-gray-400 mb-3"
+                    className="h-16 w-16 text-gray-300 mb-4"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -87,8 +87,8 @@ const ProductGrid = ({ products, isLoading = false, title = "Products" }) => {
                         d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
                     />
                 </svg>
-                <h3 className="text-lg sm:text-xl font-medium text-gray-700 mb-1">No products found</h3>
-                <p className="text-gray-500 text-sm sm:text-base">Try changing your search or filter criteria</p>
+                <h3 className="text-2xl font-medium text-gray-700 mb-2">No products found</h3>
+                <p className="text-gray-500">Try changing your search or filter criteria</p>
             </div>
         );
     }
