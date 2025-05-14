@@ -8,17 +8,16 @@ const ProductGrid = ({ products, isLoading = false, title = "Products" }) => {
     
     // Adjust skeleton count based on viewport size
     useEffect(() => {
+        // Handle responsive skeleton count
         const handleResize = () => {
             const width = window.innerWidth;
-            if (width < 640) { // Small mobile
-                setSkeletonCount(4);
-            } else if (width < 768) { // Mobile
+            if (width < 768) { // Mobile - always 2 columns, show 6 items
                 setSkeletonCount(6);
-            } else if (width < 1024) { // Tablet
+            } else if (width < 1024) { // Tablet - 3 columns
                 setSkeletonCount(9);
-            } else if (width < 1280) { // Small desktop
+            } else if (width < 1280) { // Small desktop - 4 columns
                 setSkeletonCount(12);
-            } else { // Large desktop
+            } else { // Large desktop - 5 columns
                 setSkeletonCount(15);
             }
         };
@@ -40,7 +39,7 @@ const ProductGrid = ({ products, isLoading = false, title = "Products" }) => {
                     <div className="animate-pulse h-7 bg-gray-200 rounded w-1/4"></div>
                     <div className="animate-pulse h-5 bg-gray-200 rounded w-16"></div>
                 </div>
-                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-5">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-5">
                     {[...Array(skeletonCount)].map((_, index) => (
                         <div key={index} className="animate-pulse flex flex-col rounded-lg overflow-hidden border border-gray-100">
                             {/* Image placeholder with proper aspect ratio */}
@@ -100,7 +99,7 @@ const ProductGrid = ({ products, isLoading = false, title = "Products" }) => {
                 <h2 className="text-lg sm:text-xl font-medium text-gray-800">{title}</h2>
                 <p className="text-sm text-gray-500">{products.length} {products.length === 1 ? 'product' : 'products'}</p>
             </div>
-            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-5">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-5">
                 {products.map((product, index) => (
                     <ProductCard key={product._id} product={product} index={index} />
                 ))}
