@@ -322,7 +322,7 @@
 // export default AllProducts;
 
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAppContext } from "@/context/AppContext";
 
 // Components
@@ -341,6 +341,7 @@ const AllProducts = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
     const [selectedBrands, setSelectedBrands] = useState([]);
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
 
     // Extract unique categories and brands
     const allCategories = ["All", ...new Set(products.map(product => product.category))];
@@ -359,10 +360,17 @@ const AllProducts = () => {
 
     const brands = getBrands();
 
-    // Apply filters and sorting
+    // Debounce search query to avoid rapid filtering
     useEffect(() => {
-        setIsLoading(true);
+        const timer = setTimeout(() => {
+            setDebouncedSearchQuery(searchQuery);
+        }, 300);
 
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    // Filter products function
+    const filterProducts = useCallback(() => {
         // Start with all products
         let result = [...products];
 
@@ -372,8 +380,8 @@ const AllProducts = () => {
         }
 
         // Apply search filter
-        if (searchQuery.trim() !== "") {
-            const query = searchQuery.toLowerCase();
+        if (debouncedSearchQuery.trim() !== "") {
+            const query = debouncedSearchQuery.toLowerCase();
             result = result.filter(product =>
                 product.name.toLowerCase().includes(query) ||
                 (product.description && product.description.toLowerCase().includes(query))
@@ -411,12 +419,30 @@ const AllProducts = () => {
                 break;
         }
 
-        // Simulate loading for smooth transitions
-        setTimeout(() => {
-            setFilteredProducts(result);
-            setIsLoading(false);
-        }, 300);
-    }, [selectedCategory, sortOption, products, searchQuery, priceRange, selectedBrands]);
+        return result;
+    }, [products, selectedCategory, debouncedSearchQuery, selectedBrands, priceRange, sortOption]);
+
+    // Initial load and when filter parameters change
+    useEffect(() => {
+        // Only show loading on initial load or major filter changes (not search)
+        if (products.length > 0 && filteredProducts.length === 0) {
+            setIsLoading(true);
+            
+            // Short timeout for initial load
+            setTimeout(() => {
+                setFilteredProducts(filterProducts());
+                setIsLoading(false);
+            }, 300);
+        } else {
+            // For subsequent filter changes, update without loading state
+            setFilteredProducts(filterProducts());
+        }
+    }, [products, filterProducts, filteredProducts.length]);
+
+    // Handle search input change
+    const handleSearchChange = (e) => {
+        setSearchQuery(e.target.value);
+    };
 
     return (
         <div className="min-h-screen flex flex-col">
@@ -506,7 +532,7 @@ const AllProducts = () => {
                                     type="text"
                                     placeholder="Search products..."
                                     value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onChange={handleSearchChange}
                                     className="w-full p-3 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                                 <svg
@@ -517,6 +543,16 @@ const AllProducts = () => {
                                 >
                                     <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
                                 </svg>
+                                {searchQuery && (
+                                    <button 
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        onClick={() => setSearchQuery('')}
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                        </svg>
+                                    </button>
+                                )}
                             </div>
                         </div>
 
