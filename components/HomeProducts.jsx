@@ -108,7 +108,7 @@ const HomeProducts = () => {
             <ProductCard key={product._id || index} product={product} />
           ))
         ) : (
-          <p className="text-gray-500 col-span-full text-center py-8">No products available</p>
+          <p className="text-gray-500 col-span-full text-center py-8">Loading Products...</p>
         )}
       </div>
 
