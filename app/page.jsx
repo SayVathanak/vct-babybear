@@ -9,7 +9,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import {
-  CiMenuFries,
+  CiGrid41,
   CiPillsBottle1,
   CiApple,
   CiStar,
@@ -62,15 +62,15 @@ const Home = () => {
 
         {/* Featured Categories */}
         <div className="py-8 md:py-12">
-          <h2 className="text-2xl md:text-3xl text-blue-500 mb-6 flex items-center gap-2 font-thin">
-            Shop by category <CiMenuFries className="text-2xl md:text-3xl" />
+          <h2 className="text-2xl md:text-3xl text-sky-300 mb-6 flex items-center gap-2 font-medium">
+             <CiGrid41 className="text-2xl md:text-3xl" />Shop by Category
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {categories.map((category, index) => (
               <Link href={category.link} key={index} className="block">
                 <div className="flex flex-col items-center cursor-pointer group">
-                  <div className="w-full aspect-square bg-blue-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-blue-200 transition-all">
-                    <div className="w-1/2 h-1/2 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+                  <div className="w-full aspect-square bg-blue-50 rounded-lg flex items-center justify-center mb-3 group-hover:bg-blue-100 transition-all">
+                    <div className="w-1/2 h-1/2 flex items-center justify-center text-sky-300 group-hover:scale-110 transition-transform">
                       {category.icon}
                     </div>
                   </div>

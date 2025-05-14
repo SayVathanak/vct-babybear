@@ -167,8 +167,8 @@ const ProductCard = ({ product }) => {
                             onClick={handleAddToCart}
                             disabled={isAddingToCart}
                             className={`w-full px-4 py-2 text-white rounded-md text-sm flex items-center justify-center ${isAddingToCart
-                                ? "bg-blue-300"
-                                : "bg-blue-500"
+                                ? "bg-sky-200"
+                                : "bg-sky-300"
                                 }`}
                         >
                             {isAddingToCart ? (

@@ -63,13 +63,13 @@ const TelegramPopup = () => {
 
                 {/* Header */}
                 <div className="bg-blue-500 text-white p-6 text-center">
-                    <h3 className="text-xl font-bold mb-1">បេប៊ីបែរ</h3>
-                    <h2 className="text-2xl font-bold mb-2">Baby Bear</h2>
+                    <h3 className="text-xl font-medium mb-1 font-kantumruy ">បេប៊ីបែរ</h3>
+                    <h2 className="text-2xl font-semibold mb-2">Baby Bear</h2>
                 </div>
 
                 {/* Content */}
                 <div className="p-6 text-center">
-                    <h3 className="text-xl font-semibold mb-4">Join Our Telegram Channel</h3>
+                    <h3 className="text-xl font-semibold mb-4">Telegram Channel</h3>
 
                     <div className="mb-6 flex justify-center">
                         <div className="bg-blue-100 rounded-full p-4">
@@ -98,13 +98,13 @@ const TelegramPopup = () => {
 
                     <button
                         onClick={handleTelegramJoin}
-                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full w-full transition-all"
+                        className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-8 rounded-full w-full transition-all"
                     >
                         Join Our Telegram Channel
                     </button>
 
                     <p className="text-xs text-gray-500 mt-4 font-kantumruy">
-                        ជាកន្លែងផ្តល់នៅ ទឹកដោះគោ 🇺🇸 នឹង សំភារៈរបស់កូនៗជាទីស្រលាញ់ ជាមួយគុណភាព នឹងទំនុកចិត្ត
+                        ហាងលក់ទឹកដោះគោ នឹង សំភារៈកូនតូច ជាមួយគុណភាព នឹងទំនុកចិត្ត
                     </p>
                 </div>
             </div>

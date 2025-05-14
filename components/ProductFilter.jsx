@@ -10,6 +10,7 @@ const ProductFilter = ({
     setSortOption,
     priceRange,
     setPriceRange,
+    maxPossiblePrice,  // New prop for maximum possible price
     brands,
     selectedBrands,
     setSelectedBrands
@@ -39,11 +40,25 @@ const ProductFilter = ({
     ];
 
     const handlePriceChange = (e, boundary) => {
-        const value = e.target.value ? Number(e.target.value) : (boundary === 'min' ? 0 : 1000);
-        setPriceRange({
-            ...priceRange,
-            [boundary]: value
-        });
+        const value = e.target.value ? Number(e.target.value) : (boundary === 'min' ? 0 : maxPossiblePrice);
+        
+        // Ensure min doesn't exceed max and max doesn't go below min
+        if (boundary === 'min' && value > priceRange.max) {
+            setPriceRange({
+                min: value,
+                max: value
+            });
+        } else if (boundary === 'max' && value < priceRange.min) {
+            setPriceRange({
+                min: value,
+                max: value
+            });
+        } else {
+            setPriceRange({
+                ...priceRange,
+                [boundary]: value
+            });
+        }
     };
 
     const handleBrandToggle = (brand) => {
@@ -85,7 +100,7 @@ const ProductFilter = ({
                             <button
                                 onClick={() => setSelectedCategory(category)}
                                 className={`w-full text-left py-2 px-1 rounded-md transition hover:text-blue-500 ${selectedCategory === category
-                                    ? 'text-blue-600 font-medium'
+                                    ? 'text-sky-300 font-medium'
                                     : 'text-gray-700'
                                     }`}
                             >
@@ -97,29 +112,7 @@ const ProductFilter = ({
             </FilterSection>
 
             {/* Brands */}
-            {/* <FilterSection
-                title="Brands"
-                isOpen={showBrands}
-                toggle={() => setShowBrands(!showBrands)}
-            >
-                <ul className="space-y-2">
-                    {brands.map(brand => (
-                        <li key={brand.name}>
-                            <label className="flex items-center">
-                                <input
-                                    type="checkbox"
-                                    checked={selectedBrands.includes(brand.name)}
-                                    onChange={() => handleBrandToggle(brand.name)}
-                                    className="rounded text-blue-500 focus:ring-blue-500 h-4 w-4"
-                                />
-                                <span className="ml-2 text-gray-700">
-                                    {brand.name} <span className="text-gray-400 text-sm">({brand.count})</span>
-                                </span>
-                            </label>
-                        </li>
-                    ))}
-                </ul>
-            </FilterSection> */}
+            {/* Commented out brands filter as in original code */}
 
             {/* Price Range */}
             <FilterSection
@@ -137,6 +130,7 @@ const ProductFilter = ({
                                 type="number"
                                 id="min-price"
                                 min="0"
+                                max={maxPossiblePrice}
                                 value={priceRange.min}
                                 onChange={(e) => handlePriceChange(e, 'min')}
                                 className="w-full p-2 border border-gray-300 rounded-md"
@@ -150,6 +144,7 @@ const ProductFilter = ({
                                 type="number"
                                 id="max-price"
                                 min="0"
+                                max={maxPossiblePrice}
                                 value={priceRange.max}
                                 onChange={(e) => handlePriceChange(e, 'max')}
                                 className="w-full p-2 border border-gray-300 rounded-md"
@@ -161,7 +156,7 @@ const ProductFilter = ({
                         <input
                             type="range"
                             min="0"
-                            max="1000"
+                            max={maxPossiblePrice}
                             value={priceRange.min}
                             onChange={(e) => handlePriceChange(e, 'min')}
                             className="w-full accent-blue-500"
@@ -169,12 +164,13 @@ const ProductFilter = ({
                         <input
                             type="range"
                             min="0"
-                            max="1000"
+                            max={maxPossiblePrice}
                             value={priceRange.max}
                             onChange={(e) => handlePriceChange(e, 'max')}
                             className="w-full accent-blue-500"
                         />
                     </div>
+                    
                 </div>
             </FilterSection>
         </div>

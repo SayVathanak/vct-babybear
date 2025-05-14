@@ -15,7 +15,7 @@
 //     const [sortOption, setSortOption] = useState("newest");
 //     const [searchQuery, setSearchQuery] = useState("");
 //     const [isSearchVisible, setIsSearchVisible] = useState(false);
-    
+
 //     // Category mapping for display names and icons
 //     const categoryDisplayNames = {
 //         "All": "All Products",
@@ -29,7 +29,7 @@
 //         "Diapers": "Diapers & Wipes",
 //         "NurseryItems": "Nursery & Sleep Essentials"
 //     };
-    
+
 //     // Commented out all the icon definitions
 //     /*
 //     const categoryIcons = {
@@ -52,22 +52,22 @@
 //             // ... other icons
 //     };
 //     */
-    
+
 //     // Get unique categories from products and add "All" option
 //     const allCategories = ["All", ...new Set(products.map(product => product.category))];
-    
+
 //     // Filter and sort products when category, sort option, or search query changes
 //     useEffect(() => {
 //         setIsLoading(true);
-        
+
 //         // Filter by category and search query
 //         let result = [...products];
-        
+
 //         // Apply category filter
 //         if (selectedCategory !== "All") {
 //             result = result.filter(product => product.category === selectedCategory);
 //         }
-        
+
 //         // Apply search filter
 //         if (searchQuery.trim() !== "") {
 //             const query = searchQuery.toLowerCase();
@@ -76,7 +76,7 @@
 //                 (product.description && product.description.toLowerCase().includes(query))
 //             );
 //         }
-        
+
 //         // Sort products
 //         switch (sortOption) {
 //             case "priceAsc":
@@ -95,7 +95,7 @@
 //             default:
 //                 break;
 //         }
-        
+
 //         // Simulate loading for smooth transitions
 //         setTimeout(() => {
 //             setFilteredProducts(result);
@@ -125,7 +125,7 @@
 //     return (
 //         <div className="min-h-screen flex flex-col">
 //             <Navbar />
-            
+
 //             {/* Main Content Area */}
 //             <div className="flex flex-1 relative">
 //                 {/* Sidebar Overlay - Mobile only */}
@@ -135,7 +135,7 @@
 //                     }`}
 //                     onClick={toggleSidebar}
 //                 ></div>
-                
+
 //                 {/* Sidebar */}
 //                 <div
 //                     className={`fixed md:sticky top-0 left-0 h-screen bg-white md:bg-gray-50 w-72 transform transition-transform duration-300 ease-in-out z-30 shadow-lg md:shadow-none ${
@@ -156,7 +156,7 @@
 
 //                         {/* <div className="h-1 bg-black w-full my-4 rounded-full bg-gradient-to-r from-blue-300 via-blue-600 to-purple-600 shadow-sm"></div> */}
 //                         <div className="h-px w-full my-4 bg-gray-200"></div>
-                        
+
 //                         {/* Category Section - Updated to remove icon spaces and make text even */}
 //                         <div className="mb-8">
 //                             <div className="flex flex-col space-y-2">
@@ -181,13 +181,13 @@
 //                         </div>
 //                     </div>
 //                 </div>
-                
+
 //                 {/* Main Content */}
 //                 <div className="flex-1 px-4 md:px-8 lg:px-12 py-6">
 //                     {/* Header with Title, Search Icon and Menu Icon */}
 //                     <div className="flex justify-between items-center">
 //                         <h1 className="text-2xl">{categoryDisplayNames[selectedCategory] || selectedCategory}</h1>
-                        
+
 //                         <div className="flex items-center space-x-3">
 //                             {/* Mobile menu button */}
 //                             <button
@@ -222,7 +222,7 @@
 //                     <p className="text-gray-400 font-light text-xs md:text-sm mb-2">
 //                         Showing {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
 //                     </p>
-                    
+
 //                     {/* Animated Search Box - shows/hides based on isSearchVisible */}
 //                     <div
 //                         className={`transition-all duration-300 ease-in-out overflow-hidden mb-4 md:mb-6 ${
@@ -252,7 +252,7 @@
 //                             </svg>
 //                         </div>
 //                     </div>
-                    
+
 //                     {/* Products Grid with Loading State */}
 //                     <div className={`transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
 //                         {isLoading ? (
@@ -292,7 +292,7 @@
 //                     </div>
 //                 </div>
 //             </div>
-            
+
 //             {/* Mobile Floating Action Button for Filter */}
 //             <button
 //                 onClick={toggleSidebar}
@@ -302,9 +302,9 @@
 //                     <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
 //                 </svg>
 //             </button>
-            
+
 //             <Footer />
-            
+
 //             {/* Add global styles for animations */}
 //             <style jsx global>{`
 //                 @keyframes fadeIn {
@@ -339,7 +339,17 @@ const AllProducts = () => {
     const [sortOption, setSortOption] = useState("newest");
     const [searchQuery, setSearchQuery] = useState("");
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
+    const calculatePriceRange = useCallback(() => {
+        if (products.length === 0) return { min: 0, max: 1000 };
+
+        const prices = products.map(product => product.offerPrice);
+        const minPrice = Math.floor(Math.min(...prices));
+        const maxPrice = Math.ceil(Math.max(...prices));
+
+        return { min: minPrice, max: maxPrice };
+    }, [products]);
+    const [priceRange, setPriceRange] = useState(() => calculatePriceRange());
+    const [maxPossiblePrice, setMaxPossiblePrice] = useState(1000);
     const [selectedBrands, setSelectedBrands] = useState([]);
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
 
@@ -359,6 +369,18 @@ const AllProducts = () => {
     };
 
     const brands = getBrands();
+
+    useEffect(() => {
+        const range = calculatePriceRange();
+        setMaxPossiblePrice(range.max);
+
+        // Only reset the price range if the current max is higher than the new calculated max
+        // This prevents resetting user's selected range when it's within the valid bounds
+        setPriceRange(prev => ({
+            min: prev.min,
+            max: prev.max > range.max ? range.max : prev.max
+        }));
+    }, [products, calculatePriceRange]);
 
     // Debounce search query to avoid rapid filtering
     useEffect(() => {
@@ -427,7 +449,7 @@ const AllProducts = () => {
         // Only show loading on initial load or major filter changes (not search)
         if (products.length > 0 && filteredProducts.length === 0) {
             setIsLoading(true);
-            
+
             // Short timeout for initial load
             setTimeout(() => {
                 setFilteredProducts(filterProducts());
@@ -450,7 +472,7 @@ const AllProducts = () => {
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div className="flex items-center justify-between mb-6">
-                    <h1 className="text-2xl font-medium text-blue-500">Baby Essentials</h1>
+                    <h1 className="text-2xl font-medium text-sky-300">Baby Essentials</h1>
 
                     <div className="flex items-center gap-3">
                         <div className="hidden lg:block">
@@ -508,6 +530,7 @@ const AllProducts = () => {
                             setSortOption={setSortOption}
                             priceRange={priceRange}
                             setPriceRange={setPriceRange}
+                            maxPossiblePrice={maxPossiblePrice}
                             brands={brands}
                             selectedBrands={selectedBrands}
                             setSelectedBrands={setSelectedBrands}
@@ -544,7 +567,7 @@ const AllProducts = () => {
                                     <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
                                 </svg>
                                 {searchQuery && (
-                                    <button 
+                                    <button
                                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                                         onClick={() => setSearchQuery('')}
                                     >

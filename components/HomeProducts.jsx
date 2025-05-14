@@ -48,20 +48,7 @@ const HomeProducts = () => {
 
   return (
     <div className="flex flex-col items-center pt-6 md:pt-12 w-full overflow-hidden">
-      {/* Scrolling Text Animation */}
-      {/* <div className="w-full overflow-hidden py-3 mb-6">
-        <div className="marquee-container">
-          <div className="animate-marquee">
-            <p className="whitespace-nowrap pr-10 text-xl text-blue-500">
-              Baby Bear - Premium Imported Milk and Baby Essentials from the USA. Pure, Nutritious, and Safe for Your Little One.
-            </p>
-            <p className="whitespace-nowrap pr-10 text-xl text-white font-medium">
-              Baby Bear - Premium Imported Milk and Baby Essentials from the USA. Pure, Nutritious, and Safe for Your Little One.
-            </p>
-          </div>
-        </div>
-      </div> */}
-
+      
       {/* Scrolling Text Animation */}
       <div className="w-full overflow-hidden py-3 mb-6">
         <div className="marquee-container">
@@ -86,17 +73,17 @@ const HomeProducts = () => {
       </div>
 
       {/* Category Navigation Buttons */}
-      {/* <div className="w-full overflow-x-auto mb-8">
+      <div className="w-full overflow-x-auto mb-8">
         <div className="flex space-x-4 py-2 min-w-max">
           {categoryButtons.map((button, index) => (
             <Link href={button.link} key={index}>
-              <button className="px-6 py-3 rounded-full bg-blue-100 text-blue-700 transition-all flex items-center gap-2">
+              <button className="px-6 py-3 rounded-sm bg-sky-50 text-sky-300 transition-all flex items-center gap-2">
                 {button.icon} {button.name}
               </button>
             </Link>
           ))}
         </div>
-      </div> */}
+      </div>
 
       {/* Featured Products Section */}
       {/* <h2 className="text-2xl text-blue-500 self-start mb-6 flex items-center gap-2">
@@ -116,7 +103,7 @@ const HomeProducts = () => {
         onClick={() => {
           router.push("/all-products");
         }}
-        className="px-12 py-3 text-sm font-medium rounded-full bg-blue-600 text-white transition-all shadow-md mb-12 flex items-center gap-2"
+        className="px-12 py-3 text-sm font-medium rounded-full bg-sky-300 text-white transition-all shadow-md mb-12 flex items-center gap-2"
       >
         <CiShoppingCart className="text-lg" /> View All Products
       </button>
