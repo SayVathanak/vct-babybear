@@ -73,12 +73,12 @@ const HomeProducts = () => {
       </div>
 
       {/* Category Navigation Buttons */}
-      <div className="w-full overflow-x-auto mb-8">
+      <div className="w-full overflow-x-auto mb-6">
         <div className="flex space-x-4 py-2 min-w-max">
           {categoryButtons.map((button, index) => (
             <Link href={button.link} key={index}>
-              <button className="px-6 py-3 rounded-sm bg-sky-50 text-sky-300 transition-all flex items-center gap-2">
-                {button.icon} {button.name}
+              <button className="px-4 py-2 rounded-sm bg-sky-50 text-sky-300 transition-all flex items-center gap-2">
+                <span className="p-1 rounded-sm">{button.icon}</span> {button.name}
               </button>
             </Link>
           ))}
