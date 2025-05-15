@@ -50,7 +50,7 @@ const HomeProducts = () => {
     <div className="flex flex-col items-center pt-6 md:pt-12 w-full overflow-hidden">
       
       {/* Scrolling Text Animation */}
-      <div className="w-full overflow-hidden py-3 mb-6">
+      <div className="w-full overflow-hidden py-3 mb-2">
         <div className="marquee-container">
           <div className="animate-marquee">
             <p className="whitespace-nowrap pr-10 text-xl text-sky-200 font-prata font-medium">
@@ -73,7 +73,7 @@ const HomeProducts = () => {
       </div>
 
       {/* Category Navigation Buttons */}
-      <div className="w-full overflow-x-auto mb-6">
+      <div className="w-full overflow-x-auto mb-2">
         <div className="flex space-x-4 py-2 min-w-max">
           {categoryButtons.map((button, index) => (
             <Link href={button.link} key={index}>
