@@ -99,7 +99,7 @@ const ProductGrid = ({ products, isLoading = false, title = "Products" }) => {
                 <h2 className="text-lg sm:text-xl font-medium text-gray-800">{title}</h2>
                 <p className="text-sm text-gray-500">{products.length} {products.length === 1 ? 'product' : 'products'}</p>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-5">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
                 {products.map((product, index) => (
                     <ProductCard key={product._id} product={product} index={index} />
                 ))}

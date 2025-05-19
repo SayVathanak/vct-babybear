@@ -320,7 +320,6 @@
 // };
 
 // export default AllProducts;
-
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useAppContext } from "@/context/AppContext";
@@ -336,7 +335,7 @@ const AllProducts = () => {
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [sortOption, setSortOption] = useState("newest");
+    const [sortOption, setSortOption] = useState("nameAsc");
     const [searchQuery, setSearchQuery] = useState("");
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const calculatePriceRange = useCallback(() => {
@@ -425,6 +424,12 @@ const AllProducts = () => {
 
         // Apply sorting
         switch (sortOption) {
+            case "nameAsc":
+                result.sort((a, b) => a.name.localeCompare(b.name));
+                break;
+            case "nameDesc":
+                result.sort((a, b) => b.name.localeCompare(a.name));
+                break;
             case "priceAsc":
                 result.sort((a, b) => a.offerPrice - b.offerPrice);
                 break;
@@ -482,6 +487,8 @@ const AllProducts = () => {
                                 className="p-2 border border-gray-300 rounded-md text-sm"
                             >
                                 <option value="newest">Newest</option>
+                                <option value="nameAsc">Name: A to Z</option>
+                                <option value="nameDesc">Name: Z to A</option>
                                 <option value="priceAsc">Price: Low to High</option>
                                 <option value="priceDesc">Price: High to Low</option>
                                 <option value="popular">Popularity</option>

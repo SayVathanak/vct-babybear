@@ -1,5 +1,5 @@
 // components/ProductFilter.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 
 const ProductFilter = ({
@@ -10,7 +10,7 @@ const ProductFilter = ({
     setSortOption,
     priceRange,
     setPriceRange,
-    maxPossiblePrice,  // New prop for maximum possible price
+    maxPossiblePrice,
     brands,
     selectedBrands,
     setSelectedBrands
@@ -18,6 +18,12 @@ const ProductFilter = ({
     const [showCategories, setShowCategories] = useState(true);
     const [showBrands, setShowBrands] = useState(true);
     const [showPrice, setShowPrice] = useState(true);
+    const [localPriceRange, setLocalPriceRange] = useState(priceRange);
+
+    // Sync local price range with props when component mounts or priceRange prop changes
+    useEffect(() => {
+        setLocalPriceRange(priceRange);
+    }, [priceRange]);
 
     const categoryDisplayNames = {
         "All": "All Products",
@@ -34,6 +40,8 @@ const ProductFilter = ({
 
     const sortOptions = [
         { value: "newest", label: "Newest" },
+        { value: "nameAsc", label: "Name: A to Z" },
+        { value: "nameDesc", label: "Name: Z to A" },
         { value: "priceAsc", label: "Price: Low to High" },
         { value: "priceDesc", label: "Price: High to Low" },
         { value: "popular", label: "Popularity" },
@@ -42,23 +50,38 @@ const ProductFilter = ({
     const handlePriceChange = (e, boundary) => {
         const value = e.target.value ? Number(e.target.value) : (boundary === 'min' ? 0 : maxPossiblePrice);
         
+        // Update local state first
+        let newLocalRange;
+        
         // Ensure min doesn't exceed max and max doesn't go below min
-        if (boundary === 'min' && value > priceRange.max) {
-            setPriceRange({
+        if (boundary === 'min' && value > localPriceRange.max) {
+            newLocalRange = {
                 min: value,
                 max: value
-            });
-        } else if (boundary === 'max' && value < priceRange.min) {
-            setPriceRange({
+            };
+        } else if (boundary === 'max' && value < localPriceRange.min) {
+            newLocalRange = {
                 min: value,
                 max: value
-            });
+            };
         } else {
-            setPriceRange({
-                ...priceRange,
+            newLocalRange = {
+                ...localPriceRange,
                 [boundary]: value
-            });
+            };
         }
+        
+        setLocalPriceRange(newLocalRange);
+    };
+
+    // Apply price range changes to parent state
+    const applyPriceRange = () => {
+        setPriceRange(localPriceRange);
+    };
+
+    // Handle price range change when slider or input loses focus
+    const handlePriceInputBlur = () => {
+        applyPriceRange();
     };
 
     const handleBrandToggle = (brand) => {
@@ -99,10 +122,11 @@ const ProductFilter = ({
                         <li key={category}>
                             <button
                                 onClick={() => setSelectedCategory(category)}
-                                className={`w-full text-left py-2 px-1 rounded-md transition hover:text-blue-500 ${selectedCategory === category
+                                className={`w-full text-left py-2 px-1 rounded-md transition hover:text-sky-200 ${
+                                    selectedCategory === category
                                     ? 'text-sky-300 font-medium'
                                     : 'text-gray-700'
-                                    }`}
+                                }`}
                             >
                                 {categoryDisplayNames[category] || category}
                             </button>
@@ -112,7 +136,28 @@ const ProductFilter = ({
             </FilterSection>
 
             {/* Brands */}
-            {/* Commented out brands filter as in original code */}
+            <FilterSection
+                title="Brands"
+                isOpen={showBrands}
+                toggle={() => setShowBrands(!showBrands)}
+            >
+                <ul className="space-y-2 max-h-60 overflow-y-auto">
+                    {brands.map(brand => (
+                        <li key={brand.name} className="flex items-center">
+                            <input
+                                type="checkbox"
+                                id={`brand-${brand.name}`}
+                                checked={selectedBrands.includes(brand.name)}
+                                onChange={() => handleBrandToggle(brand.name)}
+                                className="h-4 w-4 text-blue-500 focus:ring-blue-400 border-gray-300 rounded"
+                            />
+                            <label htmlFor={`brand-${brand.name}`} className="ml-2 text-sm text-gray-700">
+                                {brand.name} ({brand.count})
+                            </label>
+                        </li>
+                    ))}
+                </ul>
+            </FilterSection>
 
             {/* Price Range */}
             <FilterSection
@@ -131,8 +176,9 @@ const ProductFilter = ({
                                 id="min-price"
                                 min="0"
                                 max={maxPossiblePrice}
-                                value={priceRange.min}
+                                value={localPriceRange.min}
                                 onChange={(e) => handlePriceChange(e, 'min')}
+                                onBlur={handlePriceInputBlur}
                                 className="w-full p-2 border border-gray-300 rounded-md"
                             />
                         </div>
@@ -145,32 +191,45 @@ const ProductFilter = ({
                                 id="max-price"
                                 min="0"
                                 max={maxPossiblePrice}
-                                value={priceRange.max}
+                                value={localPriceRange.max}
                                 onChange={(e) => handlePriceChange(e, 'max')}
+                                onBlur={handlePriceInputBlur}
                                 className="w-full p-2 border border-gray-300 rounded-md"
                             />
                         </div>
                     </div>
 
-                    <div className="pt-2">
+                    <div className="pt-2 space-y-2">
                         <input
                             type="range"
                             min="0"
                             max={maxPossiblePrice}
-                            value={priceRange.min}
+                            value={localPriceRange.min}
                             onChange={(e) => handlePriceChange(e, 'min')}
+                            onMouseUp={applyPriceRange}
+                            onTouchEnd={applyPriceRange}
                             className="w-full accent-blue-500"
                         />
                         <input
                             type="range"
                             min="0"
                             max={maxPossiblePrice}
-                            value={priceRange.max}
+                            value={localPriceRange.max}
                             onChange={(e) => handlePriceChange(e, 'max')}
+                            onMouseUp={applyPriceRange}
+                            onTouchEnd={applyPriceRange}
                             className="w-full accent-blue-500"
                         />
                     </div>
                     
+                    <div className="flex justify-end">
+                        <button 
+                            onClick={applyPriceRange}
+                            className="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
+                        >
+                            Apply
+                        </button>
+                    </div>
                 </div>
             </FilterSection>
         </div>
