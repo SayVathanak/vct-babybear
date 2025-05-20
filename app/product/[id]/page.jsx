@@ -274,7 +274,6 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
 import { useAppContext } from "@/context/AppContext";
-import toast from "react-hot-toast";
 
 // Components
 import Navbar from "@/components/Navbar";
@@ -282,25 +281,17 @@ import Footer from "@/components/Footer";
 import Loading from "@/components/Loading";
 import ProductGallery from "@/components/ProductGallery";
 import ProductDetail from "@/components/ProductDetails";
+import RelatedProducts from "@/components/RelatedProducts";
 
 const Product = () => {
     const { id } = useParams();
     const { products, router, addToCart, user, cartItems } = useAppContext();
     const [productData, setProductData] = useState(null);
-    const [relatedProducts, setRelatedProducts] = useState([]);
     const { openSignIn } = useClerk();
 
     const fetchProductData = async () => {
         const product = products.find(product => product._id === id);
         setProductData(product);
-
-        // Find related products in the same category
-        if (product) {
-            const related = products
-                .filter(p => p.category === product.category && p._id !== id && p.isAvailable)
-                .slice(0, 5);
-            setRelatedProducts(related);
-        }
     };
 
     useEffect(() => {
@@ -308,6 +299,10 @@ const Product = () => {
             fetchProductData();
         }
     }, [id, products.length]);
+
+    const handleProductClick = (productId) => {
+        router.push(`/product/${productId}`);
+    };
 
     if (!productData) {
         return <Loading />;
@@ -322,6 +317,7 @@ const Product = () => {
         <>
             <Navbar />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Product Unavailable Notice */}
                 {!productData.isAvailable && (
                     <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md flex items-center gap-2 mb-6">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -331,6 +327,7 @@ const Product = () => {
                     </div>
                 )}
 
+                {/* Main Product Display */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
                     <ProductGallery
                         images={productData.image}
@@ -350,30 +347,12 @@ const Product = () => {
                     </div>
                 </div>
 
-                <div className="mt-16 mb-12">
-                    {relatedProducts.length > 0 && (
-                        <div className="space-y-6">
-                            <h2 className="text-xl font-medium text-center">You might also like</h2>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-                                {relatedProducts.map((product, index) => (
-                                    <div key={index} className="cursor-pointer" onClick={() => router.push(`/product/${product._id}`)}>
-                                        <div className="bg-white p-2 rounded-md">
-                                            <img
-                                                src={product.image[0]}
-                                                alt={product.name}
-                                                className="w-full h-auto object-contain mix-blend-multiply aspect-square"
-                                            />
-                                        </div>
-                                        <div className="mt-2">
-                                            <h3 className="text-sm line-clamp-2">{product.name}</h3>
-                                            <p className="text-sm font-medium mt-1">${product.offerPrice}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
+                {/* Related Products Section */}
+                <RelatedProducts
+                    currentProduct={productData}
+                    allProducts={products}
+                    maxProducts={8}
+                />
             </div>
             <Footer />
         </>
