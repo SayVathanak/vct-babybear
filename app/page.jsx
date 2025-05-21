@@ -74,7 +74,7 @@ const Home = () => {
                       {category.icon}
                     </div>
                   </div>
-                  <span className="text-gray-800 font-medium text-sm md:text-base group-hover:text-blue-600 transition-all">{category.name}</span>
+                  <span className="text-gray-800 font-medium text-sm md:text-base group-hover:text-sky-500 transition-all">{category.name}</span>
                 </div>
               </Link>
             ))}
