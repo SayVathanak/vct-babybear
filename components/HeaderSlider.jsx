@@ -498,7 +498,7 @@ const HeaderSlider = () => {
   return (
     <div
       ref={sliderRef}
-      className="relative w-full mt-6 group focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:ring-offset-2 rounded-2xl"
+      className="relative w-full mt-6 mb-12 group focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:ring-offset-2 rounded-2xl"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -509,15 +509,7 @@ const HeaderSlider = () => {
       aria-label="Image carousel"
       aria-live="polite"
     >
-      {/* Progress Bar */}
-      {sliderData.length > 1 && !isAutoplayPaused && (
-        <div className="absolute top-0 left-0 right-0 h-1 bg-black/10 backdrop-blur-sm rounded-t-2xl z-10 overflow-hidden">
-          <div 
-            className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-75 ease-linear rounded-full shadow-lg"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      )}
+
 
       {/* Main Slider Container */}
       <div className="overflow-hidden relative w-full rounded-2xl shadow-2xl bg-gradient-to-br from-slate-50 to-white">
@@ -617,8 +609,8 @@ const HeaderSlider = () => {
             <ChevronRight size={20} strokeWidth={2.5} className="mr-0.5" />
           </button>
 
-          {/* Enhanced Slide Indicators - Much smaller dots */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 bg-black/20 backdrop-blur-md rounded-full px-3 py-2">
+          {/* Enhanced Slide Indicators - Much smaller dots positioned below image */}
+          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex space-x-2 bg-black/20 backdrop-blur-md rounded-full px-3 py-2">
             {sliderData.map((_, index) => (
               <button
                 key={index}
