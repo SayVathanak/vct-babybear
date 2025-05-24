@@ -70,7 +70,7 @@ const ProductCard = ({ product }) => {
     };
 
     return (
-        <div className="flex flex-col rounded-lg overflow-hidden border border-gray-100">
+        <div className="flex flex-col rounded-lg overflow-hidden shadow-lg bg-white">
             {/* Product image container */}
             <div
                 className={`cursor-pointer relative bg-white w-full h-52 flex items-center justify-center overflow-hidden ${!isAvailable ? 'opacity-70' : ''
@@ -158,7 +158,7 @@ const ProductCard = ({ product }) => {
                     {!isAvailable ? (
                         <button
                             disabled
-                            className="w-full px-4 py-2 text-gray-400 bg-gray-100 border border-gray-200 rounded-md text-sm flex items-center justify-center cursor-not-allowed"
+                            className="w-full px-4 py-2 text-gray-400 bg-gray-100 rounded-md text-sm flex items-center justify-center cursor-not-allowed"
                         >
                             Not Available
                         </button>
