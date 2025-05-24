@@ -111,7 +111,7 @@ const ProductCard = ({ product }) => {
             <div className="flex flex-col p-3 flex-grow">
                 {/* Product name */}
                 <h3
-                    className={`text-sm md:text-base font-medium mb-1 line-clamp-2 cursor-pointer ${!isAvailable ? 'text-gray-400' : 'text-gray-800'
+                    className={`text-md md:text-base font-medium mb-1 line-clamp-2 cursor-pointer ${!isAvailable ? 'text-gray-400' : 'text-gray-800'
                         }`}
                     onClick={handleCardClick}
                 >
