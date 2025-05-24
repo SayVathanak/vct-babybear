@@ -17,10 +17,7 @@ export async function POST(request) {
         const isSeller = await authSeller(userId);
 
         if (!isSeller) {
-            return NextResponse.json({
-                success: false,
-                message: 'Not Authorized'
-            }, { status: 403 });
+            return NextResponse.json({ success: false, message: 'Not Authorized' }, { status: 403 });
         }
 
         const formData = await request.formData();
@@ -30,21 +27,14 @@ export async function POST(request) {
         const imgSrcMd = formData.get('imgSrcMd');
 
         if (!sliderId) {
-            return NextResponse.json({
-                success: false,
-                message: 'Slider ID is required'
-            }, { status: 400 });
+            return NextResponse.json({ success: false, message: 'Slider ID is required' }, { status: 400 });
         }
 
         await connectDB();
 
-        // Find existing slider
-        const existingSlider = await Slider.findOne({ _id: sliderId, userId });
+        const existingSlider = await Slider.findById(sliderId);
         if (!existingSlider) {
-            return NextResponse.json({
-                success: false,
-                message: 'Slider not found or unauthorized'
-            }, { status: 404 });
+            return NextResponse.json({ success: false, message: 'Slider not found' }, { status: 404 });
         }
 
         const updateData = {
@@ -52,10 +42,8 @@ export async function POST(request) {
             updatedAt: new Date()
         };
 
-        // If new images are provided, upload them
         if (imgSrcSm || imgSrcMd) {
             const filesToUpload = [];
-
             if (imgSrcSm) filesToUpload.push(imgSrcSm);
             if (imgSrcMd) filesToUpload.push(imgSrcMd);
 
@@ -66,16 +54,10 @@ export async function POST(request) {
 
                     return new Promise((resolve, reject) => {
                         const stream = cloudinary.uploader.upload_stream(
-                            {
-                                resource_type: 'auto',
-                                folder: 'sliders'
-                            },
+                            { resource_type: 'auto', folder: 'sliders' },
                             (error, result) => {
-                                if (error) {
-                                    reject(error);
-                                } else {
-                                    resolve(result);
-                                }
+                                if (error) reject(error);
+                                else resolve(result);
                             }
                         );
                         stream.end(buffer);
@@ -83,7 +65,6 @@ export async function POST(request) {
                 })
             );
 
-            // Update the data with new image URLs
             if (imgSrcSm) {
                 updateData.imgSrcSm = result[0].secure_url;
                 updateData.cloudinaryIds = {
@@ -91,6 +72,7 @@ export async function POST(request) {
                     mobile: result[0].public_id
                 };
             }
+
             if (imgSrcMd) {
                 const mdResult = imgSrcSm ? result[1] : result[0];
                 updateData.imgSrcMd = mdResult.secure_url;
@@ -101,24 +83,11 @@ export async function POST(request) {
             }
         }
 
-        // Update the slider
-        const updatedSlider = await Slider.findByIdAndUpdate(
-            sliderId,
-            updateData,
-            { new: true }
-        );
+        const updatedSlider = await Slider.findByIdAndUpdate(sliderId, updateData, { new: true });
 
-        return NextResponse.json({
-            success: true,
-            message: "Slider updated successfully",
-            slider: updatedSlider
-        });
-
+        return NextResponse.json({ success: true, message: "Slider updated successfully", slider: updatedSlider });
     } catch (error) {
         console.error('Error updating slider:', error);
-        return NextResponse.json({
-            success: false,
-            message: error.message
-        }, { status: 500 });
+        return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     }
 }
