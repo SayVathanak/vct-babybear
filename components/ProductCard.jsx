@@ -70,7 +70,7 @@ const ProductCard = ({ product }) => {
     };
 
     return (
-        <div className="flex flex-col rounded-lg overflow-hidden shadow-lg bg-white">
+        <div className="flex flex-col rounded-lg overflow-hidden shadow-md bg-white">
             {/* Product image container */}
             <div
                 className={`cursor-pointer relative bg-white w-full h-52 flex items-center justify-center overflow-hidden ${!isAvailable ? 'opacity-70' : ''
