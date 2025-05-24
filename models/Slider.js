@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 
 const SliderSchema = new mongoose.Schema({
-    userId: { type: String, required: true },
     imgSrcSm: { type: String, required: true },
     imgSrcMd: { type: String, required: true },
     isActive: { type: Boolean, default: true },
