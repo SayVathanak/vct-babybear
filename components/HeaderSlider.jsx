@@ -1,116 +1,3 @@
-// import React, { useState, useEffect } from "react";
-// import { assets } from "@/assets/assets";
-// import Image from "next/image";
-
-// const HeaderSlider = () => {
-//   const sliderData = [
-//     {
-//       id: 1,
-//       title: "Experience Pure Sound - Your Perfect Headphones Awaits!",
-//       offer: "Limited Time Offer 30% Off",
-//       buttonText1: "Buy now",
-//       buttonText2: "Find more",
-//       imgSrcSm: assets.header_headphone_image_sm,
-//       imgSrcMd: assets.header_headphone_image_md,
-//     },
-//     {
-//       id: 2,
-//       title: "Next-Level Gaming Starts Here - Discover PlayStation 5 Today!",
-//       offer: "Hurry up only few lefts!",
-//       buttonText1: "Shop Now",
-//       buttonText2: "Explore Deals",
-//       imgSrcSm: assets.header_playstation_image_sm,
-//       imgSrcMd: assets.header_playstation_image_md,
-//     },
-//     {
-//       id: 3,
-//       title: "Power Meets Elegance - Apple MacBook Pro is Here for you!",
-//       offer: "Exclusive Deal 40% Off",
-//       buttonText1: "Order Now",
-//       buttonText2: "Learn More",
-//       imgSrcSm: assets.header_macbook_image_sm,
-//       imgSrcMd: assets.header_macbook_image_md,
-//     },
-//   ];
-
-//   const [currentSlide, setCurrentSlide] = useState(0);
-
-//   useEffect(() => {
-//     const interval = setInterval(() => {
-//       setCurrentSlide((prev) => (prev + 1) % sliderData.length);
-//     }, 3000);
-//     return () => clearInterval(interval);
-//   }, [sliderData.length]);
-
-//   const handleSlideChange = (index) => {
-//     setCurrentSlide(index);
-//   };
-
-//   return (
-//     <div className="sm:hidden overflow-hidden relative w-full">
-//       <div
-//         className="flex transition-transform duration-700 ease-in-out"
-//         style={{
-//           transform: `translateX(-${currentSlide * 100}%)`,
-//         }}
-//       >
-//         {sliderData.map((slide, index) => (
-//           <div
-//             key={slide.id}
-//             className="flex flex-col-reverse md:flex-row items-center justify-between bg-sky-50 md:py-8 md:px-14 mt-6 rounded-xl min-w-full"
-//           >
-//             {/* Hide this text content on mobile */}
-//             <div className="hidden md:block md:pl-8 mt-10 md:mt-0">
-//               <p className="md:text-base pb-1">{slide.offer}</p>
-//               <h1 className="max-w-lg md:text-[40px] md:leading-[48px] text-2xl font-prata font-medium">
-//                 {slide.title}
-//               </h1>
-//               <div className="flex items-center mt-4 md:mt-6">
-//                 <button className="md:px-10 px-7 md:py-2.5 py-2 bg-sky-100 rounded-full font-medium">
-//                   {slide.buttonText1}
-//                 </button>
-//                 <button className="group flex items-center gap-2 px-6 py-2.5 font-medium">
-//                   {slide.buttonText2}
-//                   <Image className="group-hover:translate-x-1 transition" src={assets.arrow_icon} alt="arrow_icon" />
-//                 </button>
-//               </div>
-//             </div>
-
-//             {/* Image is always visible */}
-//             <div className="relative w-full h-full rounded-md md:flex md:items-center md:flex-1 md:justify-center">
-//               <Image
-//                 className="hidden md:block w-72 object-cover rounded-md"
-//                 src={slide.imgSrcMd}
-//                 alt={`Slide ${index + 1} - Desktop`}
-//               />
-//               <Image
-//                 className="block md:hidden w-full object-cover rounded-md"
-//                 src={slide.imgSrcSm}
-//                 alt={`Slide ${index + 1} - Mobile`}
-//               />
-//             </div>
-
-//           </div>
-//         ))}
-//       </div>
-
-//       {/* Pagination Dots */}
-//       <div className="flex items-center justify-center gap-2 mt-6">
-//         {sliderData.map((_, index) => (
-//           <div
-//             key={index}
-//             onClick={() => handleSlideChange(index)}
-//             className={`h-1.5 w-1.5 rounded-full cursor-pointer ${currentSlide === index ? "bg-sky-300/70" : "bg-gray-300/30"
-//               }`}
-//           ></div>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default HeaderSlider;
-
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import axios from "axios";
@@ -133,11 +20,11 @@ const HeaderSlider = () => {
   const sliderRef = useRef(null);
   const hideControlsTimeoutRef = useRef(null);
 
-  // Configuration constants
+  // Configuration constants - Slower transitions
   const AUTOPLAY_DELAY = 5000;
   const MANUAL_PAUSE_DURATION = 10000;
   const SWIPE_THRESHOLD = 75;
-  const TRANSITION_DURATION = 800;
+  const TRANSITION_DURATION = 1200; // Increased from 800ms to 1200ms
   const CONTROLS_HIDE_DELAY = 3000;
 
   // Show controls and set auto-hide timer
@@ -429,7 +316,7 @@ const HeaderSlider = () => {
       {/* Main Slider Container */}
       <div className="overflow-hidden relative w-full rounded-md bg-gradient-to-br from-sky-50 to-white">
         <div
-          className="flex transition-transform duration-[800ms] ease-in-out will-change-transform"
+          className="flex transition-transform duration-[1200ms] ease-out will-change-transform"
           style={{
             transform: `translateX(-${currentSlide * 100}%)`,
             height: "auto",
@@ -447,7 +334,7 @@ const HeaderSlider = () => {
             >
               {/* Desktop Image */}
               <Image
-                className="hidden md:block object-cover transition-all duration-700 ease-out"
+                className="hidden md:block object-cover transition-all duration-1000 ease-out"
                 src={slide.imgSrcMd}
                 alt={slide.alt || `Promotional slide ${index + 1}`}
                 fill
@@ -460,7 +347,7 @@ const HeaderSlider = () => {
 
               {/* Mobile Image */}
               <Image
-                className="block md:hidden object-cover transition-all duration-700 ease-out"
+                className="block md:hidden object-cover transition-all duration-1000 ease-out"
                 src={slide.imgSrcSm}
                 alt={slide.alt || `Promotional slide ${index + 1}`}
                 fill
@@ -493,13 +380,13 @@ const HeaderSlider = () => {
         </div>
       </div>
 
-      {/* Navigation Buttons - Smooth animations */}
+      {/* Navigation Buttons - Slower, smoother animations */}
       {sliderData.length > 1 && (
         <>
           <button
             aria-label="Previous slide"
             onClick={() => goToPrevSlide()}
-            className={`absolute top-1/2 left-3 -translate-y-1/2 rounded-full bg-white/90 backdrop-blur-sm text-sky-600 p-3 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 transform hover:scale-110 transition-all duration-500 ease-out ${
+            className={`absolute top-1/2 left-3 -translate-y-1/2 rounded-full bg-white/90 backdrop-blur-sm text-sky-600 p-3 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 transform hover:scale-110 transition-all duration-700 ease-out ${
               showControls ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none'
             }`}
           >
@@ -509,22 +396,22 @@ const HeaderSlider = () => {
           <button
             aria-label="Next slide"
             onClick={() => goToNextSlide()}
-            className={`absolute top-1/2 right-3 -translate-y-1/2 rounded-full bg-white/90 backdrop-blur-sm text-sky-600 p-3 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 transform hover:scale-110 transition-all duration-500 ease-out ${
+            className={`absolute top-1/2 right-3 -translate-y-1/2 rounded-full bg-white/90 backdrop-blur-sm text-sky-600 p-3 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 transform hover:scale-110 transition-all duration-700 ease-out ${
               showControls ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'
             }`}
           >
             <ChevronRight size={24} strokeWidth={2.5} />
           </button>
 
-          {/* Autoplay Toggle - Smooth animations */}
+          {/* Autoplay Toggle - Slower, smoother animations */}
           <button
             aria-label={isAutoplayPaused ? "Play slideshow" : "Pause slideshow"}
             onClick={toggleAutoplay}
-            className={`absolute bottom-4 right-4 p-3 bg-white/90 backdrop-blur-sm rounded-full text-sky-600 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 transform hover:scale-110 transition-all duration-500 ease-out ${
+            className={`absolute bottom-4 right-4 p-3 bg-white/90 backdrop-blur-sm rounded-full text-sky-600 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 transform hover:scale-110 transition-all duration-700 ease-out ${
               showControls ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95 pointer-events-none'
             }`}
           >
-            <div className="transition-transform duration-300 ease-in-out">
+            <div className="transition-transform duration-400 ease-in-out">
               {isAutoplayPaused ? <Play size={20} strokeWidth={2.5} /> : <Pause size={20} strokeWidth={2.5} />}
             </div>
           </button>
