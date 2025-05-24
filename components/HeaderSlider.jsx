@@ -137,7 +137,7 @@ const HeaderSlider = () => {
   const AUTOPLAY_DELAY = 5000;
   const MANUAL_PAUSE_DURATION = 10000;
   const SWIPE_THRESHOLD = 75;
-  const TRANSITION_DURATION = 500;
+  const TRANSITION_DURATION = 800;
   const CONTROLS_HIDE_DELAY = 3000;
 
   // Show controls and set auto-hide timer
@@ -336,18 +336,26 @@ const HeaderSlider = () => {
     };
   }, [fetchSliders]);
 
-  // Autoplay logic
+  // Autoplay logic with smoother transitions
   useEffect(() => {
     if (sliderData.length > 1 && !isAutoplayPaused) {
       intervalRef.current = setInterval(() => {
-        setCurrentSlide(prev => (prev + 1) % sliderData.length);
+        setCurrentSlide(prev => {
+          const nextSlide = (prev + 1) % sliderData.length;
+          // Preload next image for smoother experience
+          if (sliderData[nextSlide]) {
+            preloadImage(sliderData[nextSlide].imgSrcMd);
+            preloadImage(sliderData[nextSlide].imgSrcSm);
+          }
+          return nextSlide;
+        });
       }, AUTOPLAY_DELAY);
     } else {
       clearInterval(intervalRef.current);
     }
 
     return () => clearInterval(intervalRef.current);
-  }, [sliderData.length, isAutoplayPaused]);
+  }, [sliderData.length, isAutoplayPaused, preloadImage]);
 
   // Keyboard event listeners
   useEffect(() => {
@@ -378,7 +386,7 @@ const HeaderSlider = () => {
         <p className="text-sm mb-2 font-medium">{error}</p>
         <button
           onClick={() => fetchSliders()}
-          className="px-6 py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white text-sm rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 transform hover:-translate-y-0.5"
+          className="px-6 py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white text-sm rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-300 transform hover:-translate-y-0.5 hover:scale-105"
         >
           Retry
         </button>
@@ -408,7 +416,7 @@ const HeaderSlider = () => {
   return (
     <div
       ref={sliderRef}
-      className="relative w-full mt-6 group focus-within:outline-none focus-within:ring-2 focus-within:ring-sky-400 focus-within:ring-offset-2 rounded-xl"
+      className="relative w-full mt-6 group focus-within:outline-none focus-within:ring-2 focus-within:ring-sky-400 focus-within:ring-offset-2 rounded-xl transition-all duration-300 ease-out"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -421,7 +429,7 @@ const HeaderSlider = () => {
       {/* Main Slider Container */}
       <div className="overflow-hidden relative w-full rounded-md bg-gradient-to-br from-sky-50 to-white">
         <div
-          className="flex transition-transform duration-500 ease-out"
+          className="flex transition-transform duration-[800ms] ease-in-out will-change-transform"
           style={{
             transform: `translateX(-${currentSlide * 100}%)`,
             height: "auto",
@@ -432,14 +440,14 @@ const HeaderSlider = () => {
           {sliderData.map((slide, index) => (
             <div
               key={slide._id || index}
-              className="relative min-w-full aspect-[21/9] md:aspect-[16/5] lg:aspect-[21/6]"
+              className="relative min-w-full aspect-[21/9] md:aspect-[16/5] lg:aspect-[21/6] will-change-transform"
               role="group"
               aria-roledescription="slide"
               aria-label={`Slide ${index + 1} of ${sliderData.length}`}
             >
               {/* Desktop Image */}
               <Image
-                className="hidden md:block object-cover transition-opacity duration-300"
+                className="hidden md:block object-cover transition-all duration-700 ease-out"
                 src={slide.imgSrcMd}
                 alt={slide.alt || `Promotional slide ${index + 1}`}
                 fill
@@ -452,7 +460,7 @@ const HeaderSlider = () => {
 
               {/* Mobile Image */}
               <Image
-                className="block md:hidden object-cover transition-opacity duration-300"
+                className="block md:hidden object-cover transition-all duration-700 ease-out"
                 src={slide.imgSrcSm}
                 alt={slide.alt || `Promotional slide ${index + 1}`}
                 fill
@@ -465,7 +473,7 @@ const HeaderSlider = () => {
 
               {/* Loading overlay for unloaded images */}
               {!loadedImages.has(slide.imgSrcMd) && !loadedImages.has(slide.imgSrcSm) && (
-                <div className="absolute inset-0 bg-gradient-to-br from-sky-100 to-white animate-pulse flex items-center justify-center">
+                <div className="absolute inset-0 bg-gradient-to-br from-sky-100 to-white animate-pulse flex items-center justify-center transition-opacity duration-500">
                   <div className="w-8 h-8 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin"></div>
                 </div>
               )}
@@ -476,7 +484,7 @@ const HeaderSlider = () => {
                   href={slide.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="absolute inset-0 focus:outline-none focus:ring-4 focus:ring-sky-400 rounded-xl"
+                  className="absolute inset-0 focus:outline-none focus:ring-4 focus:ring-sky-400 rounded-xl transition-all duration-300"
                   aria-label={`Go to ${slide.href}`}
                 />
               )}
@@ -485,14 +493,14 @@ const HeaderSlider = () => {
         </div>
       </div>
 
-      {/* Navigation Buttons - No shadows, clean design */}
+      {/* Navigation Buttons - Smooth animations */}
       {sliderData.length > 1 && (
         <>
           <button
             aria-label="Previous slide"
             onClick={() => goToPrevSlide()}
-            className={`absolute top-1/2 left-3 -translate-y-1/2 rounded-full bg-white/90 backdrop-blur-sm text-sky-600 p-3 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 transform hover:scale-110 transition-all duration-300 ${
-              showControls ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2 pointer-events-none'
+            className={`absolute top-1/2 left-3 -translate-y-1/2 rounded-full bg-white/90 backdrop-blur-sm text-sky-600 p-3 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 transform hover:scale-110 transition-all duration-500 ease-out ${
+              showControls ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none'
             }`}
           >
             <ChevronLeft size={24} strokeWidth={2.5} />
@@ -501,22 +509,24 @@ const HeaderSlider = () => {
           <button
             aria-label="Next slide"
             onClick={() => goToNextSlide()}
-            className={`absolute top-1/2 right-3 -translate-y-1/2 rounded-full bg-white/90 backdrop-blur-sm text-sky-600 p-3 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 transform hover:scale-110 transition-all duration-300 ${
-              showControls ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2 pointer-events-none'
+            className={`absolute top-1/2 right-3 -translate-y-1/2 rounded-full bg-white/90 backdrop-blur-sm text-sky-600 p-3 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 transform hover:scale-110 transition-all duration-500 ease-out ${
+              showControls ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'
             }`}
           >
             <ChevronRight size={24} strokeWidth={2.5} />
           </button>
 
-          {/* Autoplay Toggle - No shadows, clean design */}
+          {/* Autoplay Toggle - Smooth animations */}
           <button
             aria-label={isAutoplayPaused ? "Play slideshow" : "Pause slideshow"}
             onClick={toggleAutoplay}
-            className={`absolute bottom-4 right-4 p-3 bg-white/90 backdrop-blur-sm rounded-full text-sky-600 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 transform hover:scale-110 transition-all duration-300 ${
-              showControls ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
+            className={`absolute bottom-4 right-4 p-3 bg-white/90 backdrop-blur-sm rounded-full text-sky-600 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 transform hover:scale-110 transition-all duration-500 ease-out ${
+              showControls ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95 pointer-events-none'
             }`}
           >
-            {isAutoplayPaused ? <Play size={20} strokeWidth={2.5} /> : <Pause size={20} strokeWidth={2.5} />}
+            <div className="transition-transform duration-300 ease-in-out">
+              {isAutoplayPaused ? <Play size={20} strokeWidth={2.5} /> : <Pause size={20} strokeWidth={2.5} />}
+            </div>
           </button>
         </>
       )}
