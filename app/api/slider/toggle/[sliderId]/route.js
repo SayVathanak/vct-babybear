@@ -10,39 +10,26 @@ export async function PATCH(request, { params }) {
         const isSeller = await authSeller(userId);
 
         if (!isSeller) {
-            return NextResponse.json({
-                success: false,
-                message: 'Not Authorized'
-            }, { status: 403 });
+            return NextResponse.json({ success: false, message: 'Not Authorized' }, { status: 403 });
         }
 
         const { sliderId } = params;
         const { isActive } = await request.json();
 
         if (!sliderId) {
-            return NextResponse.json({
-                success: false,
-                message: 'Slider ID is required'
-            }, { status: 400 });
+            return NextResponse.json({ success: false, message: 'Slider ID is required' }, { status: 400 });
         }
 
         await connectDB();
 
-        // Update slider status
-        const updatedSlider = await Slider.findOneAndUpdate(
-            { _id: sliderId, userId },
-            {
-                isActive: isActive,
-                updatedAt: new Date()
-            },
+        const updatedSlider = await Slider.findByIdAndUpdate(
+            sliderId,
+            { isActive, updatedAt: new Date() },
             { new: true }
         );
 
         if (!updatedSlider) {
-            return NextResponse.json({
-                success: false,
-                message: 'Slider not found or unauthorized'
-            }, { status: 404 });
+            return NextResponse.json({ success: false, message: 'Slider not found' }, { status: 404 });
         }
 
         return NextResponse.json({
@@ -50,12 +37,8 @@ export async function PATCH(request, { params }) {
             message: `Slider ${isActive ? 'activated' : 'deactivated'} successfully`,
             slider: updatedSlider
         });
-
     } catch (error) {
         console.error('Error toggling slider status:', error);
-        return NextResponse.json({
-            success: false,
-            message: error.message
-        }, { status: 500 });
+        return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     }
 }
