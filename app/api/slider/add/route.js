@@ -7,7 +7,7 @@ import Slider from "@/models/Slider";
 
 // Configure environment variables
 cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    cloud_name: process.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
@@ -77,11 +77,10 @@ export async function POST(request) {
 
         const [smResult, mdResult] = result;
 
-        // Connect to database and create slider
+        // Connect to database and create slider (removed userId)
         await connectDB();
 
         const newSlider = await Slider.create({
-            userId,
             imgSrcSm: smResult.secure_url,
             imgSrcMd: mdResult.secure_url,
             isActive,
