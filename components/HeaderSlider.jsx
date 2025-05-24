@@ -143,25 +143,18 @@ const HeaderSlider = () => {
       setIsLoading(true);
       setError(null);
 
-      const { data } = await axios.get('/api/slider/list', {
+      // Use public endpoint for slider display
+      const { data } = await axios.get('/api/slider/public', {
         timeout: 10000, // 10 second timeout
       });
 
       if (data.success && data.sliders?.length > 0) {
-        const activeSliders = data.sliders.filter(slider =>
-          slider.isActive && slider.imgSrcMd && slider.imgSrcSm
-        );
-
-        if (activeSliders.length > 0) {
-          setSliderData(activeSliders);
-          // Preload first image
-          preloadImage(activeSliders[0].imgSrcMd);
-          preloadImage(activeSliders[0].imgSrcSm);
-        } else {
-          setError("No active sliders with valid images found");
-        }
+        setSliderData(data.sliders);
+        // Preload first image
+        preloadImage(data.sliders[0].imgSrcMd);
+        preloadImage(data.sliders[0].imgSrcSm);
       } else {
-        setError("No slider data available");
+        setError("No active sliders available");
       }
     } catch (error) {
       console.error('Failed to fetch sliders:', error);
@@ -172,7 +165,14 @@ const HeaderSlider = () => {
         return;
       }
 
-      setError("Failed to load slider content");
+      // Different error messages based on status
+      if (error.response?.status === 403) {
+        setError("Access denied");
+      } else if (error.response?.status >= 500) {
+        setError("Server error - please try again later");
+      } else {
+        setError("Failed to load slider content");
+      }
     } finally {
       setIsLoading(false);
     }
