@@ -498,7 +498,7 @@ const HeaderSlider = () => {
   return (
     <div
       ref={sliderRef}
-      className="relative w-full mt-6 mb-12 group focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:ring-offset-2 rounded-2xl"
+      className="relative w-full mt-6 mb-6 group focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:ring-offset-2 rounded-2xl"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -512,7 +512,7 @@ const HeaderSlider = () => {
 
 
       {/* Main Slider Container */}
-      <div className="overflow-hidden relative w-full rounded-2xl shadow-2xl bg-gradient-to-br from-slate-50 to-white">
+      <div className="overflow-hidden relative w-full rounded-md bg-gradient-to-br from-slate-50 to-white">
         <div
           className="flex transition-transform duration-500 ease-out"
           style={{
@@ -610,7 +610,7 @@ const HeaderSlider = () => {
           </button>
 
           {/* Enhanced Slide Indicators - Much smaller dots positioned below image */}
-          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex space-x-2 bg-black/20 backdrop-blur-md rounded-full px-3 py-2">
+          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex space-x-2 backdrop-blur-md rounded-full px-3 py-2">
             {sliderData.map((_, index) => (
               <button
                 key={index}
