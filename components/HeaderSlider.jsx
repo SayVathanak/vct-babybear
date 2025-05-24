@@ -378,7 +378,7 @@ const HeaderSlider = () => {
         <p className="text-sm mb-2 font-medium">{error}</p>
         <button
           onClick={() => fetchSliders()}
-          className="px-6 py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white text-sm rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+          className="px-6 py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white text-sm rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 transform hover:-translate-y-0.5"
         >
           Retry
         </button>
@@ -389,7 +389,7 @@ const HeaderSlider = () => {
   // Enhanced loading state with sky theme
   if (isLoading) {
     return (
-      <div className="relative w-full h-48 md:h-80 bg-gradient-to-br from-sky-50 to-white rounded-xl mt-6 overflow-hidden shadow-lg">
+      <div className="relative w-full h-48 md:h-80 bg-gradient-to-br from-sky-50 to-white rounded-xl mt-6 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-sky-100 via-sky-200 to-sky-100 animate-pulse">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-60 animate-slide"></div>
         </div>
@@ -485,13 +485,13 @@ const HeaderSlider = () => {
         </div>
       </div>
 
-      {/* Navigation Buttons - Hidden by default, shown on hover/interaction */}
+      {/* Navigation Buttons - No shadows, clean design */}
       {sliderData.length > 1 && (
         <>
           <button
             aria-label="Previous slide"
             onClick={() => goToPrevSlide()}
-            className={`absolute top-1/2 left-3 -translate-y-1/2 rounded-full bg-white/90 backdrop-blur-sm text-sky-600 p-3 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 ${
+            className={`absolute top-1/2 left-3 -translate-y-1/2 rounded-full bg-white/90 backdrop-blur-sm text-sky-600 p-3 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 transform hover:scale-110 transition-all duration-300 ${
               showControls ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2 pointer-events-none'
             }`}
           >
@@ -501,18 +501,18 @@ const HeaderSlider = () => {
           <button
             aria-label="Next slide"
             onClick={() => goToNextSlide()}
-            className={`absolute top-1/2 right-3 -translate-y-1/2 rounded-full bg-white/90 backdrop-blur-sm text-sky-600 p-3 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 ${
+            className={`absolute top-1/2 right-3 -translate-y-1/2 rounded-full bg-white/90 backdrop-blur-sm text-sky-600 p-3 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 transform hover:scale-110 transition-all duration-300 ${
               showControls ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2 pointer-events-none'
             }`}
           >
             <ChevronRight size={24} strokeWidth={2.5} />
           </button>
 
-          {/* Autoplay Toggle - Hidden by default, shown on hover/interaction */}
+          {/* Autoplay Toggle - No shadows, clean design */}
           <button
             aria-label={isAutoplayPaused ? "Play slideshow" : "Pause slideshow"}
             onClick={toggleAutoplay}
-            className={`absolute bottom-4 right-4 p-3 bg-white/90 backdrop-blur-sm rounded-full text-sky-600 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 ${
+            className={`absolute bottom-4 right-4 p-3 bg-white/90 backdrop-blur-sm rounded-full text-sky-600 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 transform hover:scale-110 transition-all duration-300 ${
               showControls ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
             }`}
           >
