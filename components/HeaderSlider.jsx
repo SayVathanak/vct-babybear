@@ -448,7 +448,7 @@ const HeaderSlider = () => {
   // Error state with retry option
   if (error) {
     return (
-      <div className="w-full h-48 md:h-80 bg-gradient-to-br from-slate-50 via-white to-slate-50 rounded-2xl mt-6 flex flex-col items-center justify-center text-slate-600 shadow-lg border border-slate-200/50">
+      <div className="w-full h-48 md:h-80 bg-gradient-to-br from-slate-50 via-white to-slate-50 rounded-2xl mt-6 flex flex-col items-center justify-center text-slate-600 border border-slate-200/50">
         <div className="w-16 h-16 mb-4 bg-gradient-to-br from-red-100 to-red-50 rounded-full flex items-center justify-center">
           <div className="w-8 h-8 text-red-500">⚠</div>
         </div>
