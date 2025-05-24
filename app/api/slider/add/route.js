@@ -5,9 +5,9 @@ import { NextResponse } from "next/server";
 import connectDB from "@/config/db";
 import Slider from "@/models/Slider";
 
-// Configure environment variables
+// configure environment variables
 cloudinary.config({
-    cloud_name: process.CLOUDINARY_CLOUD_NAME,
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
@@ -38,7 +38,7 @@ export async function POST(request) {
             }, { status: 400 });
         }
 
-        // Validate file types (similar to product API pattern)
+        // Validate file types
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
         if (!allowedTypes.includes(imgSrcSm.type) || !allowedTypes.includes(imgSrcMd.type)) {
             return NextResponse.json({
@@ -47,7 +47,7 @@ export async function POST(request) {
             }, { status: 400 });
         }
 
-        // Upload images using the same pattern as product API
+        // Upload images
         const files = [imgSrcSm, imgSrcMd];
 
         const result = await Promise.all(
@@ -59,7 +59,6 @@ export async function POST(request) {
                     const stream = cloudinary.uploader.upload_stream(
                         {
                             resource_type: 'auto',
-                            // Simplified configuration like product API
                             folder: 'sliders'
                         },
                         (error, result) => {
@@ -77,7 +76,7 @@ export async function POST(request) {
 
         const [smResult, mdResult] = result;
 
-        // Connect to database and create slider (removed userId)
+        // Connect to database and create slider
         await connectDB();
 
         const newSlider = await Slider.create({
@@ -99,7 +98,6 @@ export async function POST(request) {
 
     } catch (error) {
         console.error('Slider creation error:', error);
-        // Return actual error message like product API
         return NextResponse.json({
             success: false,
             message: error.message
