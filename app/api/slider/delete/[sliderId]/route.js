@@ -17,66 +17,41 @@ export async function DELETE(request, { params }) {
         const isSeller = await authSeller(userId);
 
         if (!isSeller) {
-            return NextResponse.json({
-                success: false,
-                message: 'Not Authorized'
-            }, { status: 403 });
+            return NextResponse.json({ success: false, message: 'Not Authorized' }, { status: 403 });
         }
 
         const { sliderId } = params;
 
         if (!sliderId) {
-            return NextResponse.json({
-                success: false,
-                message: 'Slider ID is required'
-            }, { status: 400 });
+            return NextResponse.json({ success: false, message: 'Slider ID is required' }, { status: 400 });
         }
 
         await connectDB();
 
-        // Find the slider to get cloudinary IDs
-        const slider = await Slider.findOne({ _id: sliderId, userId });
-
+        const slider = await Slider.findById(sliderId);
         if (!slider) {
-            return NextResponse.json({
-                success: false,
-                message: 'Slider not found or unauthorized'
-            }, { status: 404 });
+            return NextResponse.json({ success: false, message: 'Slider not found' }, { status: 404 });
         }
 
-        // Delete images from Cloudinary if they exist
         const deletePromises = [];
 
         if (slider.cloudinaryIds?.mobile) {
-            deletePromises.push(
-                cloudinary.uploader.destroy(slider.cloudinaryIds.mobile)
-            );
+            deletePromises.push(cloudinary.uploader.destroy(slider.cloudinaryIds.mobile));
         }
 
         if (slider.cloudinaryIds?.desktop) {
-            deletePromises.push(
-                cloudinary.uploader.destroy(slider.cloudinaryIds.desktop)
-            );
+            deletePromises.push(cloudinary.uploader.destroy(slider.cloudinaryIds.desktop));
         }
 
-        // Execute cloudinary deletions
         if (deletePromises.length > 0) {
             await Promise.all(deletePromises);
         }
 
-        // Delete from database
         await Slider.findByIdAndDelete(sliderId);
 
-        return NextResponse.json({
-            success: true,
-            message: "Slider deleted successfully"
-        });
-
+        return NextResponse.json({ success: true, message: "Slider deleted successfully" });
     } catch (error) {
         console.error('Error deleting slider:', error);
-        return NextResponse.json({
-            success: false,
-            message: error.message
-        }, { status: 500 });
+        return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     }
 }
