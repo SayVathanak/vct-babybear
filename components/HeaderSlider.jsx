@@ -419,7 +419,7 @@ const HeaderSlider = () => {
       aria-live="polite"
     >
       {/* Main Slider Container */}
-      <div className="overflow-hidden relative w-full rounded-xl shadow-xl bg-gradient-to-br from-sky-50 to-white">
+      <div className="overflow-hidden relative w-full rounded-md bg-gradient-to-br from-sky-50 to-white">
         <div
           className="flex transition-transform duration-500 ease-out"
           style={{
