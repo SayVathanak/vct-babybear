@@ -114,7 +114,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import axios from "axios";
-import { ChevronLeft, ChevronRight, Play, Pause } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX } from "lucide-react";
 
 const HeaderSlider = () => {
   const [sliderData, setSliderData] = useState([]);
@@ -127,11 +127,15 @@ const HeaderSlider = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [loadedImages, setLoadedImages] = useState(new Set());
   const [showControls, setShowControls] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [isSoundEnabled, setIsSoundEnabled] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const intervalRef = useRef(null);
   const timeoutRef = useRef(null);
   const sliderRef = useRef(null);
   const hideControlsTimeoutRef = useRef(null);
+  const progressIntervalRef = useRef(null);
 
   // Configuration constants
   const AUTOPLAY_DELAY = 5000;
@@ -139,14 +143,38 @@ const HeaderSlider = () => {
   const SWIPE_THRESHOLD = 75;
   const TRANSITION_DURATION = 500;
   const CONTROLS_HIDE_DELAY = 3000;
+  const PROGRESS_UPDATE_INTERVAL = 50;
 
   // Show controls and set auto-hide timer
   const showControlsTemporarily = useCallback(() => {
     setShowControls(true);
     clearTimeout(hideControlsTimeoutRef.current);
     hideControlsTimeoutRef.current = setTimeout(() => {
-      setShowControls(false);
+      if (!isHovered) {
+        setShowControls(false);
+      }
     }, CONTROLS_HIDE_DELAY);
+  }, [isHovered]);
+
+  // Progress bar animation
+  const startProgress = useCallback(() => {
+    setProgress(0);
+    const startTime = Date.now();
+    
+    progressIntervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const newProgress = Math.min((elapsed / AUTOPLAY_DELAY) * 100, 100);
+      setProgress(newProgress);
+      
+      if (newProgress >= 100) {
+        clearInterval(progressIntervalRef.current);
+      }
+    }, PROGRESS_UPDATE_INTERVAL);
+  }, []);
+
+  const stopProgress = useCallback(() => {
+    clearInterval(progressIntervalRef.current);
+    setProgress(0);
   }, []);
 
   // Fetch sliders with error handling and retry logic
@@ -208,6 +236,18 @@ const HeaderSlider = () => {
     setIsTransitioning(true);
     setCurrentSlide(newIndex);
     showControlsTemporarily();
+    stopProgress();
+
+    // Sound effect (if enabled)
+    if (isSoundEnabled) {
+      try {
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBzuV2+/KeSsFJH7J8N2QQAoUXrTp66hVFApGn+DyvmEcBz');
+        audio.volume = 0.1;
+        audio.play().catch(() => {}); // Ignore errors for autoplay restrictions
+      } catch (e) {
+        // Ignore audio errors
+      }
+    }
 
     // Preload adjacent images
     const nextIndex = (newIndex + 1) % sliderData.length;
@@ -234,8 +274,11 @@ const HeaderSlider = () => {
     // Reset transition state
     setTimeout(() => {
       setIsTransitioning(false);
+      if (!isAutoplayPaused && sliderData.length > 1) {
+        startProgress();
+      }
     }, TRANSITION_DURATION);
-  }, [currentSlide, isTransitioning, sliderData, preloadImage, showControlsTemporarily]);
+  }, [currentSlide, isTransitioning, sliderData, preloadImage, showControlsTemporarily, stopProgress, startProgress, isAutoplayPaused, isSoundEnabled]);
 
   // Navigation functions
   const goToNextSlide = useCallback(() => {
@@ -264,8 +307,12 @@ const HeaderSlider = () => {
   const handleTouchMove = useCallback((e) => {
     if (e.touches.length === 1) {
       setTouchEnd(e.touches[0].clientX);
+      // Prevent scrolling during swipe
+      if (Math.abs(touchStart - e.touches[0].clientX) > 10) {
+        e.preventDefault();
+      }
     }
-  }, []);
+  }, [touchStart]);
 
   const handleTouchEnd = useCallback(() => {
     const swipeDistance = touchStart - touchEnd;
@@ -282,8 +329,13 @@ const HeaderSlider = () => {
 
   // Mouse enter/leave handlers
   const handleMouseEnter = useCallback(() => {
+    setIsHovered(true);
     showControlsTemporarily();
   }, [showControlsTemporarily]);
+
+  const handleMouseLeave = useCallback(() => {
+    setIsHovered(false);
+  }, []);
 
   const handleMouseMove = useCallback(() => {
     showControlsTemporarily();
@@ -321,8 +373,22 @@ const HeaderSlider = () => {
 
   // Toggle autoplay
   const toggleAutoplay = useCallback(() => {
-    setIsAutoplayPaused(prev => !prev);
+    setIsAutoplayPaused(prev => {
+      const newPaused = !prev;
+      if (newPaused) {
+        stopProgress();
+      } else {
+        startProgress();
+      }
+      return newPaused;
+    });
     clearTimeout(timeoutRef.current);
+    showControlsTemporarily();
+  }, [showControlsTemporarily, stopProgress, startProgress]);
+
+  // Toggle sound
+  const toggleSound = useCallback(() => {
+    setIsSoundEnabled(prev => !prev);
     showControlsTemporarily();
   }, [showControlsTemporarily]);
 
@@ -331,6 +397,7 @@ const HeaderSlider = () => {
     fetchSliders();
     return () => {
       clearInterval(intervalRef.current);
+      clearInterval(progressIntervalRef.current);
       clearTimeout(timeoutRef.current);
       clearTimeout(hideControlsTimeoutRef.current);
     };
@@ -339,15 +406,20 @@ const HeaderSlider = () => {
   // Autoplay logic
   useEffect(() => {
     if (sliderData.length > 1 && !isAutoplayPaused) {
+      startProgress();
       intervalRef.current = setInterval(() => {
         setCurrentSlide(prev => (prev + 1) % sliderData.length);
       }, AUTOPLAY_DELAY);
     } else {
       clearInterval(intervalRef.current);
+      stopProgress();
     }
 
-    return () => clearInterval(intervalRef.current);
-  }, [sliderData.length, isAutoplayPaused]);
+    return () => {
+      clearInterval(intervalRef.current);
+      stopProgress();
+    };
+  }, [sliderData.length, isAutoplayPaused, startProgress, stopProgress]);
 
   // Keyboard event listeners
   useEffect(() => {
@@ -360,7 +432,9 @@ const HeaderSlider = () => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
         clearInterval(intervalRef.current);
+        stopProgress();
       } else if (!isAutoplayPaused && sliderData.length > 1) {
+        startProgress();
         intervalRef.current = setInterval(() => {
           setCurrentSlide(prev => (prev + 1) % sliderData.length);
         }, AUTOPLAY_DELAY);
@@ -369,37 +443,48 @@ const HeaderSlider = () => {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [isAutoplayPaused, sliderData.length]);
+  }, [isAutoplayPaused, sliderData.length, startProgress, stopProgress]);
 
   // Error state with retry option
   if (error) {
     return (
-      <div className="w-full h-48 md:h-80 bg-gradient-to-br from-sky-50 to-white border-2 border-dashed border-sky-200 rounded-xl mt-6 flex flex-col items-center justify-center text-sky-600">
-        <p className="text-sm mb-2 font-medium">{error}</p>
+      <div className="w-full h-48 md:h-80 bg-gradient-to-br from-slate-50 via-white to-slate-50 rounded-2xl mt-6 flex flex-col items-center justify-center text-slate-600 shadow-lg border border-slate-200/50">
+        <div className="w-16 h-16 mb-4 bg-gradient-to-br from-red-100 to-red-50 rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 text-red-500">⚠</div>
+        </div>
+        <p className="text-sm mb-4 font-medium text-center max-w-sm">{error}</p>
         <button
           onClick={() => fetchSliders()}
-          className="px-6 py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white text-sm rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+          className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-full hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95"
         >
-          Retry
+          Try Again
         </button>
       </div>
     );
   }
 
-  // Enhanced loading state with sky theme
+  // Enhanced loading state
   if (isLoading) {
     return (
-      <div className="relative w-full h-48 md:h-80 bg-gradient-to-br from-sky-50 to-white rounded-xl mt-6 overflow-hidden shadow-lg">
-        <div className="absolute inset-0 bg-gradient-to-r from-sky-100 via-sky-200 to-sky-100 animate-pulse">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-60 animate-slide"></div>
+      <div className="relative w-full h-48 md:h-80 bg-gradient-to-br from-slate-100 via-white to-slate-100 rounded-2xl mt-6 overflow-hidden shadow-lg border border-slate-200/50">
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 animate-pulse"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/80 to-transparent -translate-x-full animate-[shimmer_2s_infinite] transform"></div>
         </div>
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="w-3 h-3 bg-sky-300 rounded-full animate-pulse"></div>
+            <div 
+              key={i} 
+              className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-pulse"
+              style={{ animationDelay: `${i * 0.2}s` }}
+            ></div>
           ))}
         </div>
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin"></div>
+          <div className="relative">
+            <div className="w-12 h-12 border-4 border-slate-200 rounded-full"></div>
+            <div className="absolute top-0 left-0 w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
         </div>
       </div>
     );
@@ -413,18 +498,29 @@ const HeaderSlider = () => {
   return (
     <div
       ref={sliderRef}
-      className="relative w-full mt-6 group focus-within:outline-none focus-within:ring-2 focus-within:ring-sky-400 focus-within:ring-offset-2 rounded-xl"
+      className="relative w-full mt-6 group focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:ring-offset-2 rounded-2xl"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       onMouseMove={handleMouseMove}
       role="region"
       aria-label="Image carousel"
       aria-live="polite"
     >
+      {/* Progress Bar */}
+      {sliderData.length > 1 && !isAutoplayPaused && (
+        <div className="absolute top-0 left-0 right-0 h-1 bg-black/10 backdrop-blur-sm rounded-t-2xl z-10 overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-75 ease-linear rounded-full shadow-lg"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      )}
+
       {/* Main Slider Container */}
-      <div className="overflow-hidden relative w-full rounded-xl shadow-xl bg-gradient-to-br from-sky-50 to-white border border-sky-100">
+      <div className="overflow-hidden relative w-full rounded-2xl shadow-2xl bg-gradient-to-br from-slate-50 to-white">
         <div
           className="flex transition-transform duration-500 ease-out"
           style={{
@@ -444,36 +540,44 @@ const HeaderSlider = () => {
             >
               {/* Desktop Image */}
               <Image
-                className="hidden md:block object-cover transition-opacity duration-300"
+                className="hidden md:block object-cover transition-all duration-700"
                 src={slide.imgSrcMd}
                 alt={slide.alt || `Promotional slide ${index + 1}`}
                 fill
                 sizes="(max-width: 768px) 100vw, 100vw"
                 priority={index === 0}
                 loading={index === 0 ? "eager" : "lazy"}
-                quality={85}
+                quality={90}
                 onLoad={() => setLoadedImages(prev => new Set([...prev, slide.imgSrcMd]))}
               />
 
               {/* Mobile Image */}
               <Image
-                className="block md:hidden object-cover transition-opacity duration-300"
+                className="block md:hidden object-cover transition-all duration-700"
                 src={slide.imgSrcSm}
                 alt={slide.alt || `Promotional slide ${index + 1}`}
                 fill
                 sizes="100vw"
                 priority={index === 0}
                 loading={index === 0 ? "eager" : "lazy"}
-                quality={85}
+                quality={90}
                 onLoad={() => setLoadedImages(prev => new Set([...prev, slide.imgSrcSm]))}
               />
 
               {/* Loading overlay for unloaded images */}
               {!loadedImages.has(slide.imgSrcMd) && !loadedImages.has(slide.imgSrcSm) && (
-                <div className="absolute inset-0 bg-gradient-to-br from-sky-100 to-white animate-pulse flex items-center justify-center">
-                  <div className="w-8 h-8 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-slate-100 animate-pulse flex items-center justify-center">
+                  <div className="relative">
+                    <div className="w-10 h-10 border-4 border-slate-200 rounded-full"></div>
+                    <div className="absolute top-0 left-0 w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
                 </div>
               )}
+
+              {/* Slide Number Indicator */}
+              <div className="absolute top-4 right-4 bg-black/20 backdrop-blur-md text-white text-xs font-medium px-3 py-1.5 rounded-full">
+                {index + 1} / {sliderData.length}
+              </div>
 
               {/* Optional Link Overlay */}
               {slide.href && (
@@ -481,7 +585,7 @@ const HeaderSlider = () => {
                   href={slide.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="absolute inset-0 focus:outline-none focus:ring-4 focus:ring-sky-400 rounded-xl"
+                  className="absolute inset-0 focus:outline-none focus:ring-4 focus:ring-blue-500/50 rounded-2xl"
                   aria-label={`Go to ${slide.href}`}
                 />
               )}
@@ -490,56 +594,68 @@ const HeaderSlider = () => {
         </div>
       </div>
 
-      {/* Navigation Buttons - Hidden by default, shown on hover/interaction */}
+      {/* Navigation Buttons - Enhanced design */}
       {sliderData.length > 1 && (
         <>
           <button
             aria-label="Previous slide"
             onClick={() => goToPrevSlide()}
-            className={`absolute top-1/2 left-3 -translate-y-1/2 rounded-full bg-white/90 backdrop-blur-sm text-sky-600 p-3 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 ${
-              showControls ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2 pointer-events-none'
+            className={`absolute top-1/2 left-4 -translate-y-1/2 w-12 h-12 rounded-full bg-white/95 backdrop-blur-md text-slate-700 hover:bg-white hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 border border-white/20 ${
+              showControls ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none'
             }`}
           >
-            <ChevronLeft size={24} strokeWidth={2.5} />
+            <ChevronLeft size={20} strokeWidth={2.5} className="ml-0.5" />
           </button>
           
           <button
             aria-label="Next slide"
             onClick={() => goToNextSlide()}
-            className={`absolute top-1/2 right-3 -translate-y-1/2 rounded-full bg-white/90 backdrop-blur-sm text-sky-600 p-3 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 ${
-              showControls ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2 pointer-events-none'
+            className={`absolute top-1/2 right-4 -translate-y-1/2 w-12 h-12 rounded-full bg-white/95 backdrop-blur-md text-slate-700 hover:bg-white hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 border border-white/20 ${
+              showControls ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'
             }`}
           >
-            <ChevronRight size={24} strokeWidth={2.5} />
+            <ChevronRight size={20} strokeWidth={2.5} className="mr-0.5" />
           </button>
 
-          {/* Slide Indicators - Always visible but with sky theme */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-3 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2">
+          {/* Enhanced Slide Indicators - Much smaller dots */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 bg-black/20 backdrop-blur-md rounded-full px-3 py-2">
             {sliderData.map((_, index) => (
               <button
                 key={index}
                 aria-label={`Go to slide ${index + 1}`}
                 aria-current={currentSlide === index ? "true" : undefined}
-                className={`w-3 h-3 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-sky-400 hover:scale-125 ${
+                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400/50 hover:scale-150 ${
                   currentSlide === index 
-                    ? "bg-sky-500 shadow-lg scale-110" 
-                    : "bg-white/70 hover:bg-white/90"
+                    ? "bg-white shadow-lg scale-125" 
+                    : "bg-white/60 hover:bg-white/80"
                 }`}
                 onClick={() => goToSlide(index)}
               />
             ))}
           </div>
 
-          {/* Autoplay Toggle - Hidden by default, shown on hover/interaction */}
-          <button
-            aria-label={isAutoplayPaused ? "Play slideshow" : "Pause slideshow"}
-            onClick={toggleAutoplay}
-            className={`absolute bottom-4 right-4 p-3 bg-white/90 backdrop-blur-sm rounded-full text-sky-600 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 ${
-              showControls ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
-            }`}
-          >
-            {isAutoplayPaused ? <Play size={20} strokeWidth={2.5} /> : <Pause size={20} strokeWidth={2.5} />}
-          </button>
+          {/* Control Panel - Enhanced with more options */}
+          <div className={`absolute bottom-4 right-4 flex gap-2 transition-all duration-300 ${
+            showControls ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
+          }`}>
+            {/* Sound Toggle */}
+            <button
+              aria-label={isSoundEnabled ? "Disable sound effects" : "Enable sound effects"}
+              onClick={toggleSound}
+              className="w-10 h-10 bg-white/95 backdrop-blur-md rounded-full text-slate-700 hover:bg-white hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400/50 shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 border border-white/20"
+            >
+              {isSoundEnabled ? <Volume2 size={16} strokeWidth={2.5} /> : <VolumeX size={16} strokeWidth={2.5} />}
+            </button>
+
+            {/* Autoplay Toggle */}
+            <button
+              aria-label={isAutoplayPaused ? "Play slideshow" : "Pause slideshow"}
+              onClick={toggleAutoplay}
+              className="w-10 h-10 bg-white/95 backdrop-blur-md rounded-full text-slate-700 hover:bg-white hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400/50 shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 border border-white/20"
+            >
+              {isAutoplayPaused ? <Play size={16} strokeWidth={2.5} className="ml-0.5" /> : <Pause size={16} strokeWidth={2.5} />}
+            </button>
+          </div>
         </>
       )}
     </div>
