@@ -265,7 +265,7 @@ const ProductList = () => {
           <div className="w-full px-4 py-6 sm:px-6 lg:px-8 max-w-full">
             <div className="flex flex-col mb-2">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4">
-                <h1 className="text-lg md:text-3xl font-prata font-medium text-gray-800 mb-4 sm:mb-0">All Products</h1>
+                <h1 className="text-lg md:text-3xl font-medium text-gray-800 mb-4 sm:mb-0">Product List</h1>
                 <button
                   onClick={() => router.push('/seller')}
                   className="inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
