@@ -70,7 +70,7 @@ const ProductCard = ({ product }) => {
     };
 
     return (
-        <div className="flex flex-col rounded-lg overflow-hidden border border-gray-200 bg-white hover:border-gray-300 transition-colors">
+        <div className="flex flex-col rounded-lg overflow-hidden bg-white shadow-[0_0_10px_rgba(0,0,0,0.1)] hover:shadow-[0_0_15px_rgba(0,0,0,0.15)] transition-shadow">
             {/* Product image container */}
             <div
                 className={`cursor-pointer relative bg-white w-full h-52 flex items-center justify-center overflow-hidden ${!isAvailable ? 'opacity-70' : ''
@@ -95,7 +95,7 @@ const ProductCard = ({ product }) => {
 
                 {/* Wishlist button */}
                 <button
-                    className="absolute top-2 right-2 bg-white p-2 rounded-full border border-gray-200"
+                    className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.1)]"
                     onClick={handleWishlist}
                     aria-label="Add to wishlist"
                 >
