@@ -1,9 +1,9 @@
-'use client';
+// Save this file as HeaderSlider.jsx or HeaderSlider.tsx
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import Image from 'next/image';
-import axios from 'axios';
-import { ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import Image from "next/image";
+import axios from "axios";
+import { ChevronLeft, ChevronRight, Play, Pause } from "lucide-react";
 
 const HeaderSlider = () => {
   const [sliderData, setSliderData] = useState([]);
@@ -19,10 +19,9 @@ const HeaderSlider = () => {
 
   const intervalRef = useRef(null);
   const timeoutRef = useRef(null);
-  const hideControlsTimeoutRef = useRef(null);
   const sliderRef = useRef(null);
+  const hideControlsTimeoutRef = useRef(null);
 
-  // === CONFIG ===
   const AUTOPLAY_DELAY = 5000;
   const MANUAL_PAUSE_DURATION = 10000;
   const SWIPE_THRESHOLD = 75;
@@ -37,43 +36,67 @@ const HeaderSlider = () => {
     }, CONTROLS_HIDE_DELAY);
   }, []);
 
-  const preloadImage = useCallback((src) => {
-    if (loadedImages.has(src)) return;
-
-    const img = new Image();
-    img.onload = () => setLoadedImages(prev => new Set(prev).add(src));
-    img.src = src;
-  }, [loadedImages]);
-
-  const fetchSliders = useCallback(async () => {
+  const fetchSliders = useCallback(async (retryCount = 0) => {
     try {
       setIsLoading(true);
       setError(null);
-      const { data } = await axios.get('/api/slider/public', { timeout: 10000 });
+      const { data } = await axios.get('/api/slider/public', {
+        timeout: 10000,
+      });
 
       if (data.success && data.sliders?.length > 0) {
         setSliderData(data.sliders);
         preloadImage(data.sliders[0].imgSrcMd);
         preloadImage(data.sliders[0].imgSrcSm);
       } else {
-        setError('No active sliders available');
+        setError("No active sliders available");
       }
-    } catch (err) {
-      console.error(err);
-      setError('Failed to load slider content');
+    } catch (error) {
+      console.error('Failed to fetch sliders:', error);
+      if (retryCount < 2 && (error.code === 'NETWORK_ERROR' || error.code === 'ECONNABORTED')) {
+        setTimeout(() => fetchSliders(retryCount + 1), 2000);
+        return;
+      }
+      if (error.response?.status === 403) {
+        setError("Access denied");
+      } else if (error.response?.status >= 500) {
+        setError("Server error - please try again later");
+      } else {
+        setError("Failed to load slider content");
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [preloadImage]);
+  }, []);
 
-  const changeSlide = useCallback((newIndex, pause = true) => {
+  const preloadImage = useCallback((src) => {
+    if (loadedImages.has(src)) return;
+    const img = new window.Image();
+    img.onload = () => {
+      setLoadedImages(prev => new Set([...prev, src]));
+    };
+    img.src = src;
+  }, [loadedImages]);
+
+  const changeSlide = useCallback((newIndex, pauseAutoplay = true) => {
     if (isTransitioning || newIndex === currentSlide) return;
-
     setIsTransitioning(true);
     setCurrentSlide(newIndex);
     showControlsTemporarily();
 
-    if (sliderData.length > 1 && pause) {
+    const nextIndex = (newIndex + 1) % sliderData.length;
+    const prevIndex = (newIndex - 1 + sliderData.length) % sliderData.length;
+
+    if (sliderData[nextIndex]) {
+      preloadImage(sliderData[nextIndex].imgSrcMd);
+      preloadImage(sliderData[nextIndex].imgSrcSm);
+    }
+    if (sliderData[prevIndex]) {
+      preloadImage(sliderData[prevIndex].imgSrcMd);
+      preloadImage(sliderData[prevIndex].imgSrcSm);
+    }
+
+    if (pauseAutoplay && sliderData.length > 1) {
       setIsAutoplayPaused(true);
       clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => {
@@ -81,50 +104,62 @@ const HeaderSlider = () => {
       }, MANUAL_PAUSE_DURATION);
     }
 
-    const nextIndex = (newIndex + 1) % sliderData.length;
-    const prevIndex = (newIndex - 1 + sliderData.length) % sliderData.length;
-
-    preloadImage(sliderData[nextIndex]?.imgSrcMd);
-    preloadImage(sliderData[nextIndex]?.imgSrcSm);
-    preloadImage(sliderData[prevIndex]?.imgSrcMd);
-    preloadImage(sliderData[prevIndex]?.imgSrcSm);
-
     setTimeout(() => {
       setIsTransitioning(false);
     }, TRANSITION_DURATION);
-  }, [isTransitioning, currentSlide, sliderData, preloadImage, showControlsTemporarily]);
+  }, [currentSlide, isTransitioning, sliderData, preloadImage, showControlsTemporarily]);
 
   const goToNextSlide = useCallback(() => {
-    changeSlide((currentSlide + 1) % sliderData.length);
+    const nextIndex = (currentSlide + 1) % sliderData.length;
+    changeSlide(nextIndex);
   }, [currentSlide, sliderData.length, changeSlide]);
 
   const goToPrevSlide = useCallback(() => {
-    changeSlide((currentSlide - 1 + sliderData.length) % sliderData.length);
+    const prevIndex = (currentSlide - 1 + sliderData.length) % sliderData.length;
+    changeSlide(prevIndex);
   }, [currentSlide, sliderData.length, changeSlide]);
 
-  const handleTouchStart = (e) => {
+  const goToSlide = useCallback((index) => {
+    changeSlide(index);
+  }, [changeSlide]);
+
+  const handleTouchStart = useCallback((e) => {
     if (e.touches.length === 1) {
       setTouchStart(e.touches[0].clientX);
       setTouchEnd(e.touches[0].clientX);
       showControlsTemporarily();
     }
-  };
+  }, [showControlsTemporarily]);
 
-  const handleTouchMove = (e) => {
+  const handleTouchMove = useCallback((e) => {
     if (e.touches.length === 1) {
       setTouchEnd(e.touches[0].clientX);
     }
-  };
+  }, []);
 
-  const handleTouchEnd = () => {
-    const distance = touchStart - touchEnd;
-    if (Math.abs(distance) > SWIPE_THRESHOLD) {
-      distance > 0 ? goToNextSlide() : goToPrevSlide();
+  const handleTouchEnd = useCallback(() => {
+    const swipeDistance = touchStart - touchEnd;
+    const absSwipeDistance = Math.abs(swipeDistance);
+
+    if (absSwipeDistance > SWIPE_THRESHOLD) {
+      if (swipeDistance > 0) {
+        goToNextSlide();
+      } else {
+        goToPrevSlide();
+      }
     }
-  };
+  }, [touchStart, touchEnd, goToNextSlide, goToPrevSlide]);
 
-  const handleKeyDown = (e) => {
-    if (!sliderRef.current?.contains(document.activeElement)) return;
+  const handleMouseEnter = useCallback(() => {
+    showControlsTemporarily();
+  }, [showControlsTemporarily]);
+
+  const handleMouseMove = useCallback(() => {
+    showControlsTemporarily();
+  }, [showControlsTemporarily]);
+
+  const handleKeyDown = useCallback((e) => {
+    if (!sliderRef.current?.contains(e.target)) return;
     showControlsTemporarily();
 
     switch (e.key) {
@@ -140,13 +175,22 @@ const HeaderSlider = () => {
         e.preventDefault();
         setIsAutoplayPaused(prev => !prev);
         break;
+      case 'Home':
+        e.preventDefault();
+        goToSlide(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        goToSlide(sliderData.length - 1);
+        break;
     }
-  };
+  }, [goToPrevSlide, goToNextSlide, goToSlide, sliderData.length, showControlsTemporarily]);
 
-  const toggleAutoplay = () => {
+  const toggleAutoplay = useCallback(() => {
     setIsAutoplayPaused(prev => !prev);
+    clearTimeout(timeoutRef.current);
     showControlsTemporarily();
-  };
+  }, [showControlsTemporarily]);
 
   useEffect(() => {
     fetchSliders();
@@ -160,113 +204,169 @@ const HeaderSlider = () => {
   useEffect(() => {
     if (sliderData.length > 1 && !isAutoplayPaused) {
       intervalRef.current = setInterval(() => {
-        setCurrentSlide(prev => (prev + 1) % sliderData.length);
+        setCurrentSlide(prev => {
+          const nextSlide = (prev + 1) % sliderData.length;
+          if (sliderData[nextSlide]) {
+            preloadImage(sliderData[nextSlide].imgSrcMd);
+            preloadImage(sliderData[nextSlide].imgSrcSm);
+          }
+          return nextSlide;
+        });
       }, AUTOPLAY_DELAY);
+    } else {
+      clearInterval(intervalRef.current);
     }
     return () => clearInterval(intervalRef.current);
-  }, [sliderData.length, isAutoplayPaused]);
+  }, [sliderData.length, isAutoplayPaused, preloadImage]);
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        clearInterval(intervalRef.current);
+      } else if (!isAutoplayPaused && sliderData.length > 1) {
+        intervalRef.current = setInterval(() => {
+          setCurrentSlide(prev => (prev + 1) % sliderData.length);
+        }, AUTOPLAY_DELAY);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isAutoplayPaused, sliderData.length]);
+
   if (error) {
     return (
-      <div className="w-full h-48 md:h-80 bg-gradient-to-br from-sky-50 to-white mt-6 flex items-center justify-center text-sky-600">
-        <p className="text-sm">{error}</p>
-        <button onClick={fetchSliders} className="ml-4 px-4 py-2 bg-sky-500 text-white rounded hover:bg-sky-600">Retry</button>
+      <div className="w-full h-48 md:h-80 bg-gradient-to-br from-sky-50 to-white rounded-xl mt-6 flex flex-col items-center justify-center text-sky-600">
+        <p className="text-sm mb-2 font-medium">{error}</p>
+        <button
+          onClick={() => fetchSliders()}
+          className="px-6 py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white text-sm rounded-lg hover:from-sky-600 hover:to-sky-700 transition-all duration-300 transform hover:-translate-y-0.5 hover:scale-105"
+        >
+          Retry
+        </button>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="w-full h-48 md:h-80 bg-gradient-to-br from-sky-50 to-white mt-6 flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-sky-300 border-t-sky-600 rounded-full animate-spin" />
+      <div className="relative w-full h-48 md:h-80 bg-gradient-to-br from-sky-50 to-white rounded-xl mt-6 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-sky-100 via-sky-200 to-sky-100 animate-pulse">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-60 animate-slide"></div>
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin"></div>
+        </div>
       </div>
     );
   }
 
-  if (sliderData.length === 0) return null;
+  if (sliderData.length === 0) {
+    return null;
+  }
 
   return (
     <div
       ref={sliderRef}
-      className="relative w-full mt-6 overflow-hidden rounded-xl"
+      className="relative w-full mt-6 group focus-within:outline-none focus-within:ring-2 focus-within:ring-sky-400 focus-within:ring-offset-2 rounded-xl transition-all duration-300 ease-out"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onMouseEnter={handleMouseEnter}
+      onMouseMove={handleMouseMove}
+      role="region"
+      aria-label="Image carousel"
+      aria-live="polite"
     >
-      <div
-        className="flex transition-transform duration-[1200ms] ease-in-out"
-        style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-      >
-        {sliderData.map((slide, index) => (
-          <div
-            key={slide._id || index}
-            className="relative min-w-full aspect-[21/9] md:aspect-[16/5] lg:aspect-[21/6]"
-          >
-            <Image
-              className="hidden md:block object-cover transition-all duration-1000 ease-out"
-              src={slide.imgSrcMd}
-              alt={slide.alt || `Slide ${index + 1}`}
-              fill
-              priority={index === 0}
-              sizes="100vw"
-              quality={85}
-            />
-            <Image
-              className="block md:hidden object-cover transition-all duration-1000 ease-out"
-              src={slide.imgSrcSm}
-              alt={slide.alt || `Slide ${index + 1}`}
-              fill
-              priority={index === 0}
-              sizes="100vw"
-              quality={85}
-            />
-            {slide.href && (
-              <a
-                href={slide.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="absolute inset-0 z-10"
+      <div className="overflow-hidden relative w-full rounded-md bg-gradient-to-br from-sky-50 to-white">
+        <div
+          className="flex transition-transform duration-[1200ms] ease-out will-change-transform"
+          style={{
+            transform: `translateX(-${currentSlide * 100}%)`,
+            height: "auto",
+          }}
+        >
+          {sliderData.map((slide, index) => (
+            <div
+              key={slide._id || index}
+              className="relative min-w-full aspect-[21/9] md:aspect-[16/5] lg:aspect-[21/6]"
+            >
+              <Image
+                className="hidden md:block object-cover transition-all duration-1000 ease-out"
+                src={slide.imgSrcMd}
+                alt={slide.alt || `Slide ${index + 1}`}
+                fill
+                sizes="(max-width: 768px) 100vw, 100vw"
+                priority={index === 0}
+                loading={index === 0 ? "eager" : "lazy"}
+                quality={85}
+                onLoad={() => setLoadedImages(prev => new Set([...prev, slide.imgSrcMd]))}
               />
-            )}
-          </div>
-        ))}
+              <Image
+                className="block md:hidden object-cover transition-all duration-1000 ease-out"
+                src={slide.imgSrcSm}
+                alt={slide.alt || `Slide ${index + 1}`}
+                fill
+                sizes="100vw"
+                priority={index === 0}
+                loading={index === 0 ? "eager" : "lazy"}
+                quality={85}
+                onLoad={() => setLoadedImages(prev => new Set([...prev, slide.imgSrcSm]))}
+              />
+              {!loadedImages.has(slide.imgSrcMd) && !loadedImages.has(slide.imgSrcSm) && (
+                <div className="absolute inset-0 bg-gradient-to-br from-sky-100 to-white animate-pulse flex items-center justify-center">
+                  <div className="w-8 h-8 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin"></div>
+                </div>
+              )}
+              {slide.href && (
+                <a
+                  href={slide.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute inset-0 focus:outline-none focus:ring-4 focus:ring-sky-400 rounded-xl transition-all duration-300"
+                  aria-label={`Go to ${slide.href}`}
+                />
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {sliderData.length > 1 && (
         <>
           <button
+            aria-label="Previous slide"
             onClick={goToPrevSlide}
-            aria-label="Previous"
-            className={`absolute top-1/2 left-3 -translate-y-1/2 z-10 p-3 bg-white/90 backdrop-blur-sm rounded-full text-sky-600 hover:text-sky-800 hover:bg-white shadow transition-all duration-700 ease-out ${
-              showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            className={`absolute top-1/2 left-3 -translate-y-1/2 rounded-full bg-white/90 backdrop-blur-sm text-sky-600 p-3 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 transform hover:scale-110 transition-all duration-700 ease-out ${
+              showControls ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none'
             }`}
           >
-            <ChevronLeft size={22} />
+            <ChevronLeft size={24} strokeWidth={2.5} />
           </button>
 
           <button
+            aria-label="Next slide"
             onClick={goToNextSlide}
-            aria-label="Next"
-            className={`absolute top-1/2 right-3 -translate-y-1/2 z-10 p-3 bg-white/90 backdrop-blur-sm rounded-full text-sky-600 hover:text-sky-800 hover:bg-white shadow transition-all duration-700 ease-out ${
-              showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            className={`absolute top-1/2 right-3 -translate-y-1/2 rounded-full bg-white/90 backdrop-blur-sm text-sky-600 p-3 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 transform hover:scale-110 transition-all duration-700 ease-out ${
+              showControls ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'
             }`}
           >
-            <ChevronRight size={22} />
+            <ChevronRight size={24} strokeWidth={2.5} />
           </button>
 
           <button
+            aria-label={isAutoplayPaused ? "Play slideshow" : "Pause slideshow"}
             onClick={toggleAutoplay}
-            aria-label={isAutoplayPaused ? 'Play' : 'Pause'}
-            className={`absolute bottom-4 right-4 p-3 bg-white/90 backdrop-blur-sm rounded-full text-sky-600 hover:text-sky-800 shadow transition-all duration-700 ease-out ${
-              showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            className={`absolute bottom-4 right-4 p-3 bg-white/90 backdrop-blur-sm rounded-full text-sky-600 hover:bg-white hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 transform hover:scale-110 transition-all duration-700 ease-out ${
+              showControls ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95 pointer-events-none'
             }`}
           >
-            {isAutoplayPaused ? <Play size={20} /> : <Pause size={20} />}
+            {isAutoplayPaused ? <Play size={20} strokeWidth={2.5} /> : <Pause size={20} strokeWidth={2.5} />}
           </button>
         </>
       )}
