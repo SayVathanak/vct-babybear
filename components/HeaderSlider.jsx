@@ -20,10 +20,10 @@ const HeaderSlider = () => {
   const sliderRef = useRef(null);
   const hideControlsTimeoutRef = useRef(null);
 
-  const AUTOPLAY_DELAY = 5000;
+  const AUTOPLAY_DELAY = 6000;
   const MANUAL_PAUSE_DURATION = 10000;
   const SWIPE_THRESHOLD = 75;
-  const TRANSITION_DURATION = 1200;
+  const TRANSITION_DURATION = 1800;
   const CONTROLS_HIDE_DELAY = 3000;
 
   const showControlsTemporarily = useCallback(() => {
@@ -283,7 +283,7 @@ const HeaderSlider = () => {
     >
       <div className="overflow-hidden relative w-full rounded-md bg-gradient-to-br from-sky-50 to-white">
         <div
-          className="flex transition-transform duration-[1200ms] ease-out will-change-transform"
+          className="flex transition-transform duration-[1800ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] will-change-transform"
           style={{
             transform: `translateX(-${currentSlide * 100}%)`,
             height: "auto",
