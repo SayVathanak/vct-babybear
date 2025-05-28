@@ -18,7 +18,7 @@ const HeaderSlider = () => {
       setIsLoading(true);
       setError(null);
       const { data } = await axios.get('/api/slider/public', {
-        timeout: 10000,
+        timeout: 18000,
       });
 
       if (data.success && data.sliders?.length > 0) {
