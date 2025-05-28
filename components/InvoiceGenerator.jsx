@@ -1,7 +1,7 @@
 // components/InvoiceGenerator.jsx
 'use client';
 import React, { useRef } from 'react';
-import { Download, FileText, Calendar, MapPin, Phone, Package } from 'lucide-react';
+import { Download, FileText, Loader } from 'lucide-react';
 
 const InvoiceGenerator = ({ order, currency, user }) => {
     const invoiceRef = useRef(null);
@@ -31,24 +31,24 @@ const InvoiceGenerator = ({ order, currency, user }) => {
             const jsPDF = (await import('jspdf')).default;
             const html2canvas = (await import('html2canvas')).default;
 
-            // Create invoice content
+            // Create invoice content with improved minimalist design
             const invoiceContent = `
                 <div style="
-                    font-family: Arial, sans-serif;
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
                     padding: 40px;
                     max-width: 800px;
                     margin: 0 auto;
                     background: white;
-                    color: #333;
+                    color: #111827;
                     line-height: 1.6;
                 ">
                     <!-- Header -->
-                    <div style="border-bottom: 3px solid #333; padding-bottom: 30px; margin-bottom: 40px;">
+                    <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 30px; margin-bottom: 40px;">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <div>
-                                <h1 style="font-size: 36px; font-weight: bold; margin: 0 0 10px 0;">INVOICE</h1>
-                                <p style="font-size: 18px; margin: 0 0 10px 0; color: #666;">Baby Bear</p>
-                                <div style="font-size: 14px; color: #666; line-height: 1.4;">
+                                <h1 style="font-size: 32px; font-weight: 600; margin: 0 0 10px 0; letter-spacing: -0.025em;">INVOICE</h1>
+                                <p style="font-size: 16px; margin: 0 0 10px 0; color: #4b5563;">Baby Bear</p>
+                                <div style="font-size: 14px; color: #6b7280; line-height: 1.4;">
                                     Street 230 Sangkat Beoung Salang<br/>
                                     Khan Toul Kork, Phnom Penh<br/>
                                     Phone: 078 333 929<br/>
@@ -56,11 +56,11 @@ const InvoiceGenerator = ({ order, currency, user }) => {
                                 </div>
                             </div>
                             <div style="text-align: right;">
-                                <div style="background: #333; color: white; padding: 15px; border-radius: 5px; margin-bottom: 10px;">
-                                    <div style="font-size: 12px;">Invoice #</div>
-                                    <div style="font-size: 20px; font-weight: bold;">${getInvoiceNumber(order._id, order.date)}</div>
+                                <div style="background: #f9fafb; padding: 16px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 10px;">
+                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Invoice #</div>
+                                    <div style="font-size: 18px; font-weight: 600;">${getInvoiceNumber(order._id, order.date)}</div>
                                 </div>
-                                <div style="font-size: 14px; color: #666;">
+                                <div style="font-size: 14px; color: #6b7280;">
                                     Date: ${formatDate(order.date)}
                                 </div>
                             </div>
@@ -68,32 +68,33 @@ const InvoiceGenerator = ({ order, currency, user }) => {
                     </div>
 
                     <!-- Customer & Order Info -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">
                         <div>
-                            <h2 style="font-size: 18px; font-weight: bold; margin: 0 0 15px 0; color: #333;">Bill To</h2>
-                            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                                <p style="font-weight: bold; margin: 0 0 10px 0; font-size: 16px;">${order.address.fullName}</p>
-                                <div style="color: #666; font-size: 14px;">
-                                    📍 ${order.address.area}, ${order.address.state}<br/>
-                                    📞 ${order.address.phoneNumber}
+                            <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 12px 0; color: #374151;">Bill To</h2>
+                            <div style="background: #f9fafb; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                <p style="font-weight: 600; margin: 0 0 8px 0; font-size: 16px;">${order.address.fullName}</p>
+                                <div style="color: #6b7280; font-size: 14px;">
+                                    ${order.address.area}, ${order.address.state}<br/>
+                                    ${order.address.phoneNumber}
                                 </div>
                             </div>
                         </div>
 
                         <div>
-                            <h2 style="font-size: 18px; font-weight: bold; margin: 0 0 15px 0; color: #333;">Order Details</h2>
-                            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                                <div style="margin-bottom: 8px;">
-                                    <strong>Order ID:</strong> #${order._id.substring(order._id.length - 6)}
-                                </div>
-                                <div style="margin-bottom: 8px;">
-                                    <strong>Order Date:</strong> ${formatDate(order.date)}
-                                </div>
-                                <div style="margin-bottom: 8px;">
-                                    <strong>Status:</strong> ${order.status || 'Pending'}
-                                </div>
-                                <div>
-                                    <strong>Payment Method:</strong> Cash on Delivery
+                            <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 12px 0; color: #374151;">Order Details</h2>
+                            <div style="background: #f9fafb; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 12px;">
+                                    <div style="color: #6b7280;">Order ID:</div>
+                                    <div style="font-weight: 500;">#${order._id.substring(order._id.length - 6)}</div>
+                                    
+                                    <div style="color: #6b7280;">Order Date:</div>
+                                    <div style="font-weight: 500;">${formatDate(order.date)}</div>
+                                    
+                                    <div style="color: #6b7280;">Status:</div>
+                                    <div style="font-weight: 500;">${order.status || 'Pending'}</div>
+                                    
+                                    <div style="color: #6b7280;">Payment:</div>
+                                    <div style="font-weight: 500;">Cash on Delivery</div>
                                 </div>
                             </div>
                         </div>
@@ -101,30 +102,30 @@ const InvoiceGenerator = ({ order, currency, user }) => {
 
                     <!-- Items Table -->
                     <div style="margin-bottom: 40px;">
-                        <h2 style="font-size: 18px; font-weight: bold; margin: 0 0 20px 0; color: #333;">Order Items</h2>
-                        <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+                        <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 16px 0; color: #374151;">Order Items</h2>
+                        <table style="width: 100%; border-collapse: collapse;">
                             <thead>
-                                <tr style="background: #f8f9fa;">
-                                    <th style="padding: 15px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;">Item</th>
-                                    <th style="padding: 15px; text-align: right; border-bottom: 1px solid #ddd; font-weight: bold;">Unit Price</th>
-                                    <th style="padding: 15px; text-align: right; border-bottom: 1px solid #ddd; font-weight: bold;">Qty</th>
-                                    <th style="padding: 15px; text-align: right; border-bottom: 1px solid #ddd; font-weight: bold;">Total</th>
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #4b5563; font-size: 14px;">Item</th>
+                                    <th style="padding: 12px 16px; text-align: right; font-weight: 600; color: #4b5563; font-size: 14px;">Unit Price</th>
+                                    <th style="padding: 12px 16px; text-align: right; font-weight: 600; color: #4b5563; font-size: 14px;">Qty</th>
+                                    <th style="padding: 12px 16px; text-align: right; font-weight: 600; color: #4b5563; font-size: 14px;">Total</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${order.items.map((item, idx) => `
-                                    <tr style="background: ${idx % 2 === 0 ? 'white' : '#f8f9fa'};">
-                                        <td style="padding: 15px; border-bottom: 1px solid #eee;">
-                                            <div style="font-weight: bold;">${item.product.name}</div>
-                                            <div style="font-size: 12px; color: #666;">SKU: ${item.product._id.substring(0, 8)}</div>
+                                    <tr style="border-bottom: 1px solid #f3f4f6;">
+                                        <td style="padding: 16px; color: #111827;">
+                                            <div style="font-weight: 500;">${item.product.name}</div>
+                                            <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">SKU: ${item.product._id.substring(0, 8)}</div>
                                         </td>
-                                        <td style="padding: 15px; text-align: right; border-bottom: 1px solid #eee;">
+                                        <td style="padding: 16px; text-align: right; color: #374151;">
                                             ${currency}${item.product.offerPrice}
                                         </td>
-                                        <td style="padding: 15px; text-align: right; border-bottom: 1px solid #eee;">
+                                        <td style="padding: 16px; text-align: right; color: #374151;">
                                             ${item.quantity}
                                         </td>
-                                        <td style="padding: 15px; text-align: right; font-weight: bold; border-bottom: 1px solid #eee;">
+                                        <td style="padding: 16px; text-align: right; font-weight: 500; color: #111827;">
                                             ${currency}${(item.product.offerPrice * item.quantity).toFixed(2)}
                                         </td>
                                     </tr>
@@ -136,31 +137,31 @@ const InvoiceGenerator = ({ order, currency, user }) => {
                     <!-- Totals -->
                     <div style="display: flex; justify-content: flex-end; margin-bottom: 40px;">
                         <div style="width: 300px;">
-                            <div style="background: #f8f9fa; padding: 25px; border-radius: 8px;">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                                    <span>Subtotal:</span>
-                                    <span style="font-weight: bold;">${currency}${order.subtotal || order.amount}</span>
+                            <div style="background: #f9fafb; padding: 24px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #4b5563;">
+                                    <span>Subtotal</span>
+                                    <span style="font-weight: 500; color: #111827;">${currency}${order.subtotal || order.amount}</span>
                                 </div>
                                 
                                 ${order.promoCode && order.discount > 0 ? `
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: #28a745;">
-                                    <span>Discount (${typeof order.promoCode === 'string' ? order.promoCode : order.promoCode?.code}):</span>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #10b981;">
+                                    <span>Discount${typeof order.promoCode === 'string' ? ` (${order.promoCode})` : order.promoCode?.code ? ` (${order.promoCode.code})` : ''}</span>
                                     <span>-${currency}${order.discount.toFixed(2)}</span>
                                 </div>
                                 ` : ''}
                                 
                                 ${order.deliveryFee !== undefined ? `
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                                    <span>Delivery Fee:</span>
-                                    <span style="font-weight: bold;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #4b5563;">
+                                    <span>Delivery Fee</span>
+                                    <span style="color: #111827;">
                                         ${order.deliveryFee === 0 ? "Free" : `${currency}${order.deliveryFee.toFixed(2)}`}
                                     </span>
                                 </div>
                                 ` : ''}
                                 
-                                <div style="border-top: 2px solid #333; padding-top: 15px; margin-top: 15px;">
-                                    <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: bold;">
-                                        <span>Total:</span>
+                                <div style="border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 12px;">
+                                    <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 600; color: #111827;">
+                                        <span>Total</span>
                                         <span>${currency}${(order.total || order.amount).toFixed(2)}</span>
                                     </div>
                                 </div>
@@ -169,10 +170,10 @@ const InvoiceGenerator = ({ order, currency, user }) => {
                     </div>
 
                     <!-- Footer -->
-                    <div style="border-top: 1px solid #ddd; padding-top: 30px; text-align: center; color: #666; font-size: 14px;">
-                        <p style="margin: 0 0 10px 0; font-weight: bold;">Thank you for your business!</p>
-                        <p style="margin: 0 0 20px 0;">For questions about this invoice, contact us at orders@yourcompany.com or (555) 123-4567</p>
-                        <p style="margin: 0; font-size: 12px; color: #999;">This is a computer-generated invoice and does not require a signature.</p>
+                    <div style="border-top: 1px solid #e5e7eb; padding-top: 24px; text-align: center; color: #6b7280; font-size: 14px;">
+                        <p style="margin: 0 0 8px 0; font-weight: 500; color: #4b5563;">Thank you for your business!</p>
+                        <p style="margin: 0 0 16px 0;">For questions about this invoice, contact us at orders@babybear.com or 078 333 929</p>
+                        <p style="margin: 0; font-size: 12px; color: #9ca3af;">This is a computer-generated invoice and does not require a signature.</p>
                     </div>
                 </div>
             `;
@@ -293,34 +294,34 @@ Thank you for your business!
 
     return (
         <div className="mt-4">
-            <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
-                <FileText className="h-5 w-5 mr-2" />
+            <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                <FileText className="h-4 w-4 mr-2 text-gray-500" />
                 Invoice
             </h3>
-            <div className="bg-white rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="font-medium text-gray-900">
-                            Invoice #{getInvoiceNumber(order._id, order.date)}
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="space-y-1">
+                        <p className="font-medium text-gray-900 text-sm">
+                            {getInvoiceNumber(order._id, order.date)}
                         </p>
-                        <p className="text-sm text-gray-500">
-                            Generated for order placed on {formatDate(order.date)}
+                        <p className="text-xs text-gray-500">
+                            {formatDate(order.date)}
                         </p>
                     </div>
                     <button
                         onClick={generatePDF}
                         disabled={isGenerating}
-                        className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors duration-200"
+                        className="flex items-center justify-center px-4 py-2 bg-gray-800 hover:bg-gray-900 disabled:bg-gray-400 text-white text-sm rounded-md transition-colors duration-200 font-medium w-full sm:w-auto"
                     >
                         {isGenerating ? (
                             <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                Generating...
+                                <Loader className="h-4 w-4 mr-2 animate-spin" />
+                                <span>Generating</span>
                             </>
                         ) : (
                             <>
                                 <Download className="h-4 w-4 mr-2" />
-                                Download Invoice
+                                <span>Download Invoice</span>
                             </>
                         )}
                     </button>
