@@ -36,7 +36,7 @@ const ProvinceSelector = ({ provinces, address, setAddress, errors, setErrors })
     const handleProvinceSelect = (e, province) => {
         e.preventDefault(); // Prevent form submission
         e.stopPropagation(); // Stop event propagation
-        
+
         setAddress({ ...address, state: province });
         // Clear the state error when a province is selected
         if (errors && setErrors && errors.state) {
@@ -54,11 +54,11 @@ const ProvinceSelector = ({ provinces, address, setAddress, errors, setErrors })
                 onClick={toggleDropdown}
             >
                 <span>{address.state || "ជ្រើសរើសខេត្ដមួយ"}</span>
-                <svg 
+                <svg
                     className={`w-5 h-5 inline float-right transition-transform duration-200 ${isOpen ? "rotate-0" : "-rotate-90"}`}
-                    xmlns="http://www.w3.org/2000/svg" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
                     stroke="#6B7280"
                 >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
@@ -103,24 +103,24 @@ const AddAddress = () => {
     });
     // Add this new state for validation errors
     const [errors, setErrors] = useState({});
-    
+
     // Updated onSubmitHandler with validation
     const onSubmitHandler = async (e) => {
         e.preventDefault();
-        
+
         // Validate form only when submitting
         const validationErrors = {};
         if (!address.fullName) validationErrors.fullName = "Full name is required";
         if (!address.phoneNumber) validationErrors.phoneNumber = "Phone number is required";
         if (!address.area) validationErrors.area = "Address is required";
         if (!address.state) validationErrors.state = "Province is required";
-        
+
         // If there are validation errors, show them and stop submission
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors);
             return;
         }
-        
+
         try {
             const token = await getToken();
             const { data } = await axios.post("/api/user/add-address", { address }, { headers: { Authorization: `Bearer ${token}` } });
@@ -161,7 +161,7 @@ const AddAddress = () => {
                             {errors.fullName && (
                                 <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>
                             )}
-                            
+
                             <label className="font-kantumruy flex items-center gap-2">
                                 <FaPhoneAlt /> លេខទូរស័ព្ទ:*
                             </label>
@@ -176,10 +176,10 @@ const AddAddress = () => {
                                 <p className="text-red-500 text-xs mt-1">{errors.phoneNumber}</p>
                             )}
                         </div>
-                    {/* </div> */}
+                        {/* </div> */}
 
-                    {/* Delivery Information */}
-                    {/* <div className="p-6 rounded-lg shadow-md"> */}
+                        {/* Delivery Information */}
+                        {/* <div className="p-6 rounded-lg shadow-md"> */}
                         <h3 className="font-kantumruy text-md font-semibold pt-6 mb-4">ព័ត៌មានដឹកជញ្ជូន</h3>
                         <div className="space-y-3 text-sm">
                             <label className="font-kantumruy flex items-center gap-2">
@@ -198,12 +198,12 @@ const AddAddress = () => {
                             <label className="font-kantumruy flex items-center gap-2">
                                 <FaLocationArrow /> ខេត្ត:*
                             </label>
-                            <ProvinceSelector 
-                                provinces={provinces} 
-                                address={address} 
+                            <ProvinceSelector
+                                provinces={provinces}
+                                address={address}
                                 setAddress={setAddress}
                                 errors={errors}
-                                setErrors={setErrors} 
+                                setErrors={setErrors}
                             />
                             {errors.state && (
                                 <p className="text-red-500 text-xs mt-1">{errors.state}</p>

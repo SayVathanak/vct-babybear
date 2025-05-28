@@ -632,14 +632,14 @@ const MyOrders = () => {
                             </h3>
                             <div className="bg-white rounded-lg p-4">
                               <p className="font-medium text-gray-900 mb-2">{order.address.fullName}</p>
-                              <div className="space-y-2 text-gray-600">
+                              <div className="space-y-2 text-gray-600 font-kantumruy">
                                 <div className="flex items-start">
                                   <MapPin className="h-4 w-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
                                   <p className="text-sm">{order.address.area}, {order.address.state}</p>
                                 </div>
                                 <div className="flex items-center">
                                   <Phone className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                                  <p className="text-sm">{order.address.phoneNumber}</p>
+                                  <p className="text-sm">0{order.address.phoneNumber}</p>
                                 </div>
                               </div>
                             </div>
