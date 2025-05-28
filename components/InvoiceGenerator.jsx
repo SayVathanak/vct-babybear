@@ -88,7 +88,7 @@ const InvoiceGenerator = ({ order, currency, user }) => {
                             <div>
                                 <strong>${order.address.fullName}</strong><br/>
                                 ${order.address.area}, ${order.address.state}<br/>
-                                Phone: ${order.address.phoneNumber}
+                                Phone: 0${order.address.phoneNumber}
                             </div>
                         </div>
                         
