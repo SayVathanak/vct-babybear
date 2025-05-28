@@ -2,10 +2,10 @@ Folder PATH listing
 Volume serial number is D2A3-B43A
 C:.
 |   favicon.ico
-|   folder_structure.txt
 |   globals.css
 |   layout.js
 |   page.jsx
+|   project-structure.txt
 |   
 +---add-address
 |       page.jsx
@@ -78,6 +78,28 @@ C:.
 |   +---send-order-email.js
 |   |       route.js
 |   |       
+|   +---slider
+|   |   +---add
+|   |   |       route.js
+|   |   |       
+|   |   +---delete
+|   |   |   \---[sliderId]
+|   |   |           route.js
+|   |   |           
+|   |   +---list
+|   |   |       route.js
+|   |   |       
+|   |   +---public
+|   |   |       route.js
+|   |   |       
+|   |   +---toggle
+|   |   |   \---[sliderId]
+|   |   |           route.js
+|   |   |           
+|   |   \---update
+|   |           route.js
+|   |           
+|   +---sms
 |   \---user
 |       +---add-address
 |       |       route.js
@@ -114,6 +136,9 @@ C:.
     +---product-list
     |       page.jsx
     |       
-    \---promo-codes
+    +---promo-codes
+    |       page.jsx
+    |       
+    \---promotion-slider
             page.jsx
             
