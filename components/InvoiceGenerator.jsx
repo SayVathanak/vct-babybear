@@ -47,12 +47,12 @@ const InvoiceGenerator = ({ order, currency, user }) => {
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <div>
                                 <h1 style="font-size: 36px; font-weight: bold; margin: 0 0 10px 0;">INVOICE</h1>
-                                <p style="font-size: 18px; margin: 0 0 10px 0; color: #666;">Your Company Name</p>
+                                <p style="font-size: 18px; margin: 0 0 10px 0; color: #666;">Baby Bear</p>
                                 <div style="font-size: 14px; color: #666; line-height: 1.4;">
-                                    123 Business Street<br/>
-                                    City, State 12345<br/>
-                                    Phone: (555) 123-4567<br/>
-                                    Email: orders@yourcompany.com
+                                    Street 230 Sangkat Beoung Salang<br/>
+                                    Khan Toul Kork, Phnom Penh<br/>
+                                    Phone: 078 333 929<br/>
+                                    Email: vct@babybear.com
                                 </div>
                             </div>
                             <div style="text-align: right;">
