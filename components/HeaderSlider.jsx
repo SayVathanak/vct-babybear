@@ -131,12 +131,12 @@ const HeaderSlider = () => {
 
   return (
     <div
-      className="relative w-full mt-6 rounded-xl overflow-hidden"
+      className="relative w-full mt-6 rounded-lg overflow-hidden"
       role="region"
       aria-label="Image carousel"
       aria-live="polite"
     >
-      <div className="relative w-full aspect-[21/9] md:aspect-[16/5] lg:aspect-[21/6] bg-gradient-to-br from-sky-50 to-white rounded-md overflow-hidden">
+      <div className="relative w-full aspect-[21/9] bg-gradient-to-br from-sky-50 to-white rounded-md overflow-hidden">
         {sliderData.map((slide, index) => (
           <div
             key={slide._id || index}

@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { FiX, FiShoppingCart, FiPlus, FiMinus } from "react-icons/fi";
 import { useAppContext } from "@/context/AppContext";
 import { useClerk } from "@clerk/nextjs";
+import InstallButton from "../InstallButton";
 
 const CartPanel = ({ isOpen, onClose }) => {
     const cartPanelRef = useRef(null);
@@ -178,7 +179,7 @@ const CartPanel = ({ isOpen, onClose }) => {
                                     {user ? "Proceed to Checkout" : "Sign In to Checkout"}
                                 </button>
                                 <div className="text-xs text-gray-500 text-center mt-2">
-                                    Secure checkout powered by Stripe
+                                    <InstallButton/>
                                 </div>
                             </div>
                         )}

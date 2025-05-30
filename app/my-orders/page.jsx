@@ -227,58 +227,61 @@ const MyOrders = () => {
   }, [formatDate]);
 
   // Optimized fetch function with retry logic
-  const fetchOrders = useCallback(async (retryAttempt = 0) => {
-    try {
-      setError(null);
-      if (retryAttempt === 0) setLoading(true);
-      
-      const token = await getToken();
-      if (!token) {
-        throw new Error('Authentication token not available');
-      }
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-
-      const { data } = await axios.get('/api/order/list', { 
-        headers: { Authorization: `Bearer ${token}` },
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (data.success) {
-        const sortedOrders = data.orders.reverse();
-        setOrders(sortedOrders);
-        
-        if (sortedOrders.length > 0) {
-          setExpandedOrder(sortedOrders[0]._id);
-        }
-        
-        setRetryCount(0);
-      } else {
-        throw new Error(data.message || 'Failed to fetch orders');
-      }
-    } catch (error) {
-      console.error('Fetch orders error:', error);
-      
-      if (error.name === 'AbortError') {
-        setError('Request timed out. Please check your connection.');
-      } else if (retryAttempt < 2) {
-        // Retry up to 2 times with exponential backoff
-        setTimeout(() => {
-          setRetryCount(retryAttempt + 1);
-          fetchOrders(retryAttempt + 1);
-        }, Math.pow(2, retryAttempt) * 1000);
-        return;
-      } else {
-        setError(error.message || 'Failed to load orders');
-        toast.error(error.message || 'Failed to load orders');
-      }
-    } finally {
-      setLoading(false);
+  // Replace your current fetchOrders function with this:
+const fetchOrders = useCallback(async (retryAttempt = 0) => {
+  try {
+    setError(null);
+    if (retryAttempt === 0) setLoading(true);
+    
+    const token = await getToken();
+    if (!token) {
+      throw new Error('Authentication token not available');
     }
-  }, [getToken]);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+    const { data } = await axios.get('/api/order/list', { 
+      headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (data.success) {
+      // Sort orders by date to ensure newest first
+      const sortedOrders = data.orders.sort((a, b) => new Date(b.date) - new Date(a.date));
+      setOrders(sortedOrders);
+      
+      // Expand the newest order (first in the sorted array)
+      if (sortedOrders.length > 0) {
+        setExpandedOrder(sortedOrders[0]._id);
+      }
+      
+      setRetryCount(0);
+    } else {
+      throw new Error(data.message || 'Failed to fetch orders');
+    }
+  } catch (error) {
+    console.error('Fetch orders error:', error);
+    
+    if (error.name === 'AbortError') {
+      setError('Request timed out. Please check your connection.');
+    } else if (retryAttempt < 2) {
+      // Retry up to 2 times with exponential backoff
+      setTimeout(() => {
+        setRetryCount(retryAttempt + 1);
+        fetchOrders(retryAttempt + 1);
+      }, Math.pow(2, retryAttempt) * 1000);
+      return;
+    } else {
+      setError(error.message || 'Failed to load orders');
+      toast.error(error.message || 'Failed to load orders');
+    }
+  } finally {
+    setLoading(false);
+  }
+}, [getToken]);
 
   useEffect(() => {
     if (user) {

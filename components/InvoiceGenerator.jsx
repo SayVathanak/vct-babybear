@@ -18,63 +18,68 @@ const InvoiceGenerator = ({ order, currency, user }) => {
         return `INV-${year}-${orderShort}`;
     };
 
-    const generatePDF = async () => {
+    const generateImage = async () => {
         setIsGenerating(true);
 
         try {
             // Check browser environment
             if (typeof window === 'undefined') {
-                throw new Error('PDF generation only works in browser environment');
+                throw new Error('Image generation only works in browser environment');
             }
 
-            // Import libraries with timeout
-            const loadLibraries = async () => {
+            // Import html2canvas with timeout
+            const loadLibrary = async () => {
                 const timeout = new Promise((_, reject) => 
                     setTimeout(() => reject(new Error('Library loading timeout')), 10000)
                 );
                 
-                const loadPromise = Promise.all([
-                    import('jspdf'),
-                    import('html2canvas')
-                ]);
+                const loadPromise = import('html2canvas');
                 
                 return Promise.race([loadPromise, timeout]);
             };
 
-            const [jsPDFModule, html2canvasModule] = await loadLibraries();
-            const jsPDF = jsPDFModule.default;
+            const html2canvasModule = await loadLibrary();
             const html2canvas = html2canvasModule.default;
 
-            // Simplified HTML structure with better performance
+            // Get device pixel ratio for sharp rendering
+            const pixelRatio = window.devicePixelRatio || 1;
+            const scaleFactor = Math.max(2, pixelRatio); // Minimum 2x for crisp text
+
+            // Optimized HTML structure with pixel-perfect sizing
             const invoiceHTML = `
                 <div id="invoice-content" style="
-                    font-family: Arial, sans-serif;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
                     width: 794px;
                     min-height: 1123px;
                     padding: 40px;
                     background: white;
                     color: #000;
                     box-sizing: border-box;
+                    -webkit-font-smoothing: antialiased;
+                    -moz-osx-font-smoothing: grayscale;
+                    text-rendering: optimizeLegibility;
+                    font-feature-settings: 'kern' 1;
+                    line-height: 1.4;
                 ">
                     <!-- Header -->
                     <div style="border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px;">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <div>
-                                <h1 style="font-size: 28px; font-weight: bold; margin: 0 0 10px 0;">INVOICE</h1>
-                                <div style="font-size: 14px; line-height: 1.4;">
-                                    <strong>Baby Bear</strong><br/>
-                                    Street 230 Sangkat Beoung Salang<br/>
-                                    Khan Toul Kork, Phnom Penh<br/>
-                                    Phone: 078 333 929<br/>
-                                    Email: vct@babybear.com
+                                <h1 style="font-size: 32px; font-weight: 700; margin: 0 0 12px 0; letter-spacing: -0.5px;">INVOICE</h1>
+                                <div style="font-size: 15px; line-height: 1.5; font-weight: 400;">
+                                    <div style="font-weight: 600; margin-bottom: 4px;">Baby Bear</div>
+                                    <div>Street 230 Sangkat Beoung Salang</div>
+                                    <div>Khan Toul Kork, Phnom Penh</div>
+                                    <div>Phone: 078 333 929</div>
+                                    <div>Email: vct@babybear.com</div>
                                 </div>
                             </div>
                             <div style="text-align: right;">
-                                <div style="border: 1px solid #000; padding: 15px; margin-bottom: 10px;">
-                                    <div style="font-size: 12px; margin-bottom: 5px;">Invoice #</div>
-                                    <div style="font-size: 16px; font-weight: bold;">${getInvoiceNumber(order._id, order.date)}</div>
+                                <div style="border: 2px solid #000; padding: 16px; margin-bottom: 12px; background: #f8f9fa;">
+                                    <div style="font-size: 13px; margin-bottom: 6px; color: #666; font-weight: 500;">Invoice #</div>
+                                    <div style="font-size: 18px; font-weight: 700; letter-spacing: 0.5px;">${getInvoiceNumber(order._id, order.date)}</div>
                                 </div>
-                                <div style="font-size: 14px;">
+                                <div style="font-size: 15px; font-weight: 500;">
                                     Date: ${formatDate(order.date)}
                                 </div>
                             </div>
@@ -82,52 +87,51 @@ const InvoiceGenerator = ({ order, currency, user }) => {
                     </div>
 
                     <!-- Customer Info -->
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
-                        <div style="width: 48%;">
-                            <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 10px 0; border-bottom: 1px solid #ccc; padding-bottom: 5px;">BILL TO</h3>
-                            <div>
-                                <strong>${order.address.fullName}</strong><br/>
-                                ${order.address.area}, ${order.address.state}<br/>
-                                Phone: 0${order.address.phoneNumber}
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 32px; gap: 40px;">
+                        <div style="flex: 1;">
+                            <h3 style="font-size: 15px; font-weight: 700; margin: 0 0 12px 0; border-bottom: 2px solid #e5e7eb; padding-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">BILL TO</h3>
+                            <div style="font-size: 15px; line-height: 1.5;">
+                                <div style="font-weight: 600; margin-bottom: 4px;">${order.address.fullName}</div>
+                                <div>${order.address.area}, ${order.address.state}</div>
+                                <div>Phone: 0${order.address.phoneNumber}</div>
                             </div>
                         </div>
                         
-                        <div style="width: 48%;">
-                            <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 10px 0; border-bottom: 1px solid #ccc; padding-bottom: 5px;">ORDER DETAILS</h3>
-                            <div style="font-size: 14px; line-height: 1.6;">
-                                <strong>Order ID:</strong> #${order._id.substring(order._id.length - 6)}<br/>
-                                <strong>Date:</strong> ${formatDate(order.date)}<br/>
-                                <strong>Status:</strong> ${order.status || 'Pending'}<br/>
-                                <strong>Payment:</strong> Cash on Delivery
+                        <div style="flex: 1;">
+                            <h3 style="font-size: 15px; font-weight: 700; margin: 0 0 12px 0; border-bottom: 2px solid #e5e7eb; padding-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">ORDER DETAILS</h3>
+                            <div style="font-size: 15px; line-height: 1.6;">
+                                <div style="margin-bottom: 4px;"><span style="font-weight: 600;">Order ID:</span> #${order._id.substring(order._id.length - 6)}</div>
+                                <div style="margin-bottom: 4px;"><span style="font-weight: 600;">Date:</span> ${formatDate(order.date)}</div>
+                                <div style="margin-bottom: 4px;"><span style="font-weight: 600;">Status:</span> ${order.status || 'Pending'}</div>
+                                <div><span style="font-weight: 600;">Payment:</span> Cash on Delivery</div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Items Table -->
-                    <div style="margin-bottom: 30px;">
-                        <table style="width: 100%; border-collapse: collapse; border: 1px solid #000;">
+                    <div style="margin-bottom: 32px;">
+                        <table style="width: 100%; border-collapse: collapse; border: 2px solid #000; font-size: 14px;">
                             <thead>
-                                <tr style="background-color: #f0f0f0;">
-                                    <th style="border: 1px solid #000; padding: 10px; text-align: left; font-weight: bold;">Item</th>
-                                    <th style="border: 1px solid #000; padding: 10px; text-align: right; font-weight: bold;">Unit Price</th>
-                                    <th style="border: 1px solid #000; padding: 10px; text-align: right; font-weight: bold;">Qty</th>
-                                    <th style="border: 1px solid #000; padding: 10px; text-align: right; font-weight: bold;">Total</th>
+                                <tr style="background-color: #f1f3f4;">
+                                    <th style="border: 1px solid #000; padding: 12px 16px; text-align: left; font-weight: 700; font-size: 14px;">Item</th>
+                                    <th style="border: 1px solid #000; padding: 12px 16px; text-align: right; font-weight: 700; font-size: 14px;">Unit Price</th>
+                                    <th style="border: 1px solid #000; padding: 12px 16px; text-align: right; font-weight: 700; font-size: 14px;">Qty</th>
+                                    <th style="border: 1px solid #000; padding: 12px 16px; text-align: right; font-weight: 700; font-size: 14px;">Total</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${order.items.map(item => `
                                     <tr>
-                                        <td style="border: 1px solid #000; padding: 10px;">
-                                            <strong>${item.product.name}</strong><br/>
-                                            <small>SKU: ${item.product._id.substring(0, 8)}</small>
+                                        <td style="border: 1px solid #000; padding: 12px 16px; vertical-align: top;">
+                                            <div style="font-weight: 600; margin-bottom: 2px;">${item.product.name}</div>
                                         </td>
-                                        <td style="border: 1px solid #000; padding: 10px; text-align: right;">
+                                        <td style="border: 1px solid #000; padding: 12px 16px; text-align: right; font-weight: 500;">
                                             ${currency}${item.product.offerPrice}
                                         </td>
-                                        <td style="border: 1px solid #000; padding: 10px; text-align: right;">
+                                        <td style="border: 1px solid #000; padding: 12px 16px; text-align: right; font-weight: 500;">
                                             ${item.quantity}
                                         </td>
-                                        <td style="border: 1px solid #000; padding: 10px; text-align: right; font-weight: bold;">
+                                        <td style="border: 1px solid #000; padding: 12px 16px; text-align: right; font-weight: 700;">
                                             ${currency}${(item.product.offerPrice * item.quantity).toFixed(2)}
                                         </td>
                                     </tr>
@@ -137,65 +141,67 @@ const InvoiceGenerator = ({ order, currency, user }) => {
                     </div>
 
                     <!-- Totals -->
-                    <div style="display: flex; justify-content: flex-end; margin-bottom: 30px;">
-                        <div style="width: 300px;">
-                            <table style="width: 100%; border-collapse: collapse;">
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 32px;">
+                        <div style="width: 320px;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 15px;">
                                 <tr>
-                                    <td style="padding: 5px 10px; text-align: right;"><strong>Subtotal:</strong></td>
-                                    <td style="padding: 5px 10px; text-align: right; font-weight: bold;">${currency}${order.subtotal || order.amount}</td>
+                                    <td style="padding: 8px 16px; text-align: right; font-weight: 600;">Subtotal:</td>
+                                    <td style="padding: 8px 16px; text-align: right; font-weight: 700;">${currency}${(order.subtotal || order.amount).toFixed(2)}</td>
                                 </tr>
                                 ${order.promoCode && order.discount > 0 ? `
-                                <tr style="color: green;">
-                                    <td style="padding: 5px 10px; text-align: right;">Discount${typeof order.promoCode === 'string' ? ` (${order.promoCode})` : order.promoCode?.code ? ` (${order.promoCode.code})` : ''}:</td>
-                                    <td style="padding: 5px 10px; text-align: right;">-${currency}${order.discount.toFixed(2)}</td>
+                                <tr style="color: #059669;">
+                                    <td style="padding: 8px 16px; text-align: right; font-weight: 500;">Discount${typeof order.promoCode === 'string' ? ` (${order.promoCode})` : order.promoCode?.code ? ` (${order.promoCode.code})` : ''}:</td>
+                                    <td style="padding: 8px 16px; text-align: right; font-weight: 600;">-${currency}${order.discount.toFixed(2)}</td>
                                 </tr>
                                 ` : ''}
                                 ${order.deliveryFee !== undefined ? `
                                 <tr>
-                                    <td style="padding: 5px 10px; text-align: right;">Delivery Fee:</td>
-                                    <td style="padding: 5px 10px; text-align: right;">
+                                    <td style="padding: 8px 16px; text-align: right; font-weight: 500;">Delivery Fee:</td>
+                                    <td style="padding: 8px 16px; text-align: right; font-weight: 600;">
                                         ${order.deliveryFee === 0 ? "Free" : `${currency}${order.deliveryFee.toFixed(2)}`}
                                     </td>
                                 </tr>
                                 ` : ''}
-                                <tr style="border-top: 2px solid #000;">
-                                    <td style="padding: 10px; text-align: right; font-size: 16px;"><strong>TOTAL:</strong></td>
-                                    <td style="padding: 10px; text-align: right; font-size: 16px; font-weight: bold;">${currency}${(order.total || order.amount).toFixed(2)}</td>
+                                <tr style="border-top: 2px solid #000; background-color: #f8f9fa;">
+                                    <td style="padding: 12px 16px; text-align: right; font-size: 17px; font-weight: 700;">TOTAL:</td>
+                                    <td style="padding: 12px 16px; text-align: right; font-size: 17px; font-weight: 700;">${currency}${(order.total || order.amount).toFixed(2)}</td>
                                 </tr>
                             </table>
                         </div>
                     </div>
 
                     <!-- Footer -->
-                    <div style="border-top: 1px solid #ccc; padding-top: 20px; text-align: center; font-size: 12px; color: #666;">
-                        <p style="margin: 0 0 10px 0; font-weight: bold;">Thank you for your business!</p>
-                        <p style="margin: 0 0 10px 0;">For questions, contact us at orders@babybear.com or 078 333 929</p>
-                        <p style="margin: 0;">This is a computer-generated invoice.</p>
+                    <div style="border-top: 1px solid #d1d5db; padding-top: 24px; text-align: center; font-size: 13px; color: #6b7280;">
+                        <p style="margin: 0 0 8px 0; font-weight: 600;">Thank you for your business!</p>
+                        <p style="margin: 0 0 8px 0;">For questions, contact us at vct@babybear.com or 078 333 929</p>
                     </div>
                 </div>
             `;
 
-            // Create and append element more efficiently
+            // Create container with proper positioning
             const container = document.createElement('div');
             container.innerHTML = invoiceHTML;
             container.style.cssText = `
                 position: fixed;
-                top: -10000px;
-                left: 0;
+                top: -20000px;
+                left: -20000px;
                 width: 794px;
                 background: white;
-                z-index: -1;
+                z-index: -1000;
+                pointer-events: none;
+                transform: scale(1);
+                transform-origin: top left;
             `;
             
             document.body.appendChild(container);
             const element = container.firstElementChild;
 
-            // Short delay for rendering
-            await new Promise(resolve => setTimeout(resolve, 100));
+            // Wait for fonts and rendering
+            await new Promise(resolve => setTimeout(resolve, 200));
 
-            // Optimized html2canvas options
+            // High-quality html2canvas options for sharp text
             const canvas = await html2canvas(element, {
-                scale: 1.5, // Reduced from 2 for better performance
+                scale: scaleFactor, // Use device pixel ratio or minimum 2x
                 useCORS: true,
                 allowTaint: false,
                 backgroundColor: '#ffffff',
@@ -203,52 +209,79 @@ const InvoiceGenerator = ({ order, currency, user }) => {
                 height: 1123,
                 scrollX: 0,
                 scrollY: 0,
-                removeContainer: true,
-                imageTimeout: 5000 // 5 second timeout
+                windowWidth: 794,
+                windowHeight: 1123,
+                removeContainer: false, // Keep container until we're done
+                imageTimeout: 8000,
+                logging: false,
+                letterRendering: true, // Better text rendering
+                fontFaces: true, // Include custom fonts
+                ignoreElements: (element) => {
+                    // Skip elements that might cause issues
+                    return element.tagName === 'SCRIPT' || element.tagName === 'STYLE';
+                }
             });
 
-            // Clean up immediately
+            // Clean up container
             document.body.removeChild(container);
 
-            // Create PDF efficiently
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4'
-            });
-
-            const imgData = canvas.toDataURL('image/jpeg', 0.8); // Use JPEG with compression
+            // Convert canvas to high-quality PNG
+            const imgData = canvas.toDataURL('image/png', 1.0);
             
-            // Calculate dimensions
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            const imgAspectRatio = canvas.height / canvas.width;
-            const pdfAspectRatio = pdfHeight / pdfWidth;
-
-            let imgWidth, imgHeight, x, y;
-
-            if (imgAspectRatio > pdfAspectRatio) {
-                // Image is taller, fit to height
-                imgHeight = pdfHeight - 20; // 10mm margin
-                imgWidth = imgHeight / imgAspectRatio;
-                x = (pdfWidth - imgWidth) / 2;
-                y = 10;
-            } else {
-                // Image is wider, fit to width
-                imgWidth = pdfWidth - 20; // 10mm margin
-                imgHeight = imgWidth * imgAspectRatio;
-                x = 10;
-                y = (pdfHeight - imgHeight) / 2;
-            }
-
-            pdf.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight);
-
-            // Generate filename and download
+            // Create download link
             const orderShort = order._id.substring(order._id.length - 6);
             const date = new Date(order.date).toISOString().split('T')[0];
-            const filename = `Invoice-${orderShort}-${date}.pdf`;
+            const filename = `Invoice-${orderShort}-${date}.png`;
 
-            pdf.save(filename);
+            // Detect if on mobile/iOS for different download behavior
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+            if (isMobile) {
+                // For mobile devices, open image in new tab/window
+                const newWindow = window.open();
+                if (newWindow) {
+                    newWindow.document.write(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>Invoice - ${filename}</title>
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <style>
+                                body { 
+                                    margin: 0; 
+                                    padding: 20px; 
+                                    background: #f5f5f5; 
+                                    text-align: center;
+                                    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+                                }
+                                img { 
+                                    max-width: 100%; 
+                                    height: auto; 
+                                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                                    background: white;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <img src="${imgData}" alt="Invoice ${filename}" />
+                        </body>
+                        </html>
+                    `);
+                    newWindow.document.close();
+                } else {
+                    // Fallback if popup blocked
+                    alert('Please allow popups for this site to download the invoice, or try the fallback method.');
+                    throw new Error('Popup blocked');
+                }
+            } else {
+                // Desktop download - works normally
+                const link = document.createElement('a');
+                link.href = imgData;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
 
         } catch (error) {
             console.error('PDF generation error:', error);
@@ -298,7 +331,7 @@ TOTAL: ${currency}${(order.total || order.amount).toFixed(2)}
 
 ==========================================
 Thank you for your business!
-For questions, contact: orders@babybear.com
+For questions, contact: vct@babybear.com
 ==========================================`;
 
             const blob = new Blob([fallbackContent], { type: 'text/plain;charset=utf-8' });
@@ -313,8 +346,8 @@ For questions, contact: orders@babybear.com
             
             // Show user-friendly error message
             const errorMsg = error.message.includes('timeout') 
-                ? 'PDF generation timed out. A text version has been downloaded instead.'
-                : 'PDF generation failed. A text version has been downloaded instead.';
+                ? 'Image generation timed out. A text version has been downloaded instead.'
+                : 'Image generation failed. A text version has been downloaded instead.';
             
             alert(errorMsg);
         } finally {
@@ -325,7 +358,7 @@ For questions, contact: orders@babybear.com
     return (
         <div className="mt-4">
             <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                <FileText className="h-4 w-4 mr-2 text-gray-500" />
+                <FileText className="h-4 w-4 mr-2 text-gray-500" />a5
                 Invoice
             </h3>
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -339,14 +372,14 @@ For questions, contact: orders@babybear.com
                         </p>
                     </div>
                     <button
-                        onClick={generatePDF}
+                        onClick={generateImage}
                         disabled={isGenerating}
                         className="flex items-center justify-center px-4 py-2 bg-gray-800 hover:bg-gray-900 disabled:bg-gray-400 text-white text-sm rounded-md transition-colors duration-200 font-medium w-full sm:w-auto"
                     >
                         {isGenerating ? (
                             <>
                                 <Loader className="h-4 w-4 mr-2 animate-spin" />
-                                <span>Generating PDF...</span>
+                                <span>Generating Image...</span>
                             </>
                         ) : (
                             <>

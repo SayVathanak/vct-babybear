@@ -55,10 +55,10 @@ const Home = () => {
   return (
     <>
       <Navbar />
-      <div className="px-4 md:px-12 lg:px-24 max-w-7xl mx-auto">
+      <div className="px-4 pt-12 md:px-12 lg:px-24 max-w-7xl mx-auto">
         <HeaderSlider />
 
-        <HomeProducts />
+        <HomeProducts/>
 
         {/* Featured Categories */}
         <div className="py-8 md:py-12">

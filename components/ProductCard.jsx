@@ -4,6 +4,7 @@ import { assets } from "@/assets/assets";
 import Image from "next/image";
 import { useAppContext } from "@/context/AppContext";
 import { FaShoppingCart, FaChevronLeft, FaPlus, FaMinus } from "react-icons/fa";
+import { CiShoppingCart } from "react-icons/ci";
 import { IoMdCheckmarkCircleOutline } from "react-icons/io";
 import { MdOutlineError } from "react-icons/md";
 import toast from "react-hot-toast";
@@ -70,7 +71,7 @@ const ProductCard = ({ product }) => {
     };
 
     return (
-        <div className="flex flex-col rounded-lg overflow-hidden bg-white shadow-[0_0_10px_rgba(0,0,0,0.1)] hover:shadow-[0_0_15px_rgba(0,0,0,0.15)] transition-shadow">
+        <div className="flex flex-col rounded-lg overflow-hidden bg-white shadow-md">
             {/* Product image container */}
             <div
                 className={`cursor-pointer relative bg-white w-full h-52 flex items-center justify-center overflow-hidden ${!isAvailable ? 'opacity-70' : ''
@@ -88,7 +89,7 @@ const ProductCard = ({ product }) => {
                 <Image
                     src={product.image?.[0] || "/fallback-image.jpg"}
                     alt={product.name || "Product Image"}
-                    className="object-contain w-4/5 h-4/5"
+                    className="object-contain w-full md:w-4/5 md:h-4/5"
                     width={800}
                     height={800}
                 />
@@ -119,9 +120,9 @@ const ProductCard = ({ product }) => {
                 </h3>
 
                 {/* Product description - hidden on small screens */}
-                <p className="w-full text-xs text-gray-500 max-sm:hidden line-clamp-1 mb-2">
+                {/* <p className="w-full text-xs text-gray-500 max-sm:hidden line-clamp-1 mb-2">
                     {product.description || "No description available"}
-                </p>
+                </p> */}
 
                 {/* Price and availability */}
                 <div className="flex items-center justify-between mb-3 mt-auto">
@@ -166,9 +167,9 @@ const ProductCard = ({ product }) => {
                         <button
                             onClick={handleAddToCart}
                             disabled={isAddingToCart}
-                            className={`w-full px-4 py-2 text-white rounded-md text-sm flex items-center justify-center ${isAddingToCart
-                                ? "bg-sky-200"
-                                : "bg-sky-300"
+                            className={`w-full px-4 py-2 text-sky-300 rounded-md text-sm flex items-center justify-center ${isAddingToCart
+                                ? "bg-white border border-sky-200"
+                                : "bg-white border border-sky-200"
                                 }`}
                         >
                             {isAddingToCart ? (
@@ -197,7 +198,8 @@ const ProductCard = ({ product }) => {
                                 </span>
                             ) : (
                                 <>
-                                    <FaShoppingCart className="mr-2" size={12} />
+                                    {/* <FaShoppingCart className="mr-2" size={16} /> */}
+                                    <CiShoppingCart  className="mr-2 text-sky-300" size={20} />
                                     Add to Cart
                                 </>
                             )}
@@ -206,7 +208,7 @@ const ProductCard = ({ product }) => {
                         <div className="quantity-selector w-full h-full flex items-center justify-between border border-sky-200 rounded-md bg-white">
                             <button
                                 onClick={(e) => decreaseQty(product._id, currentQuantity, e)}
-                                className="px-4 py-2 text-sky-500 flex-1 text-center"
+                                className="px-4 py-2 text-sky-300 flex-1 text-center"
                                 aria-label="Decrease quantity"
                             >
                                 <FaMinus className="w-2.5 h-2.5 inline-block" />
@@ -219,7 +221,7 @@ const ProductCard = ({ product }) => {
                                     // Fix: Pass 1 as quantity parameter instead of currentQuantity + 1
                                     increaseQty(product._id, 1, e);
                                 }}
-                                className="px-4 py-2 text-sky-500 flex-1 text-center"
+                                className="px-4 py-2 text-sky-300 flex-1 text-center"
                                 aria-label="Increase quantity"
                             >
                                 <FaPlus className="w-2.5 h-2.5 inline-block" />
