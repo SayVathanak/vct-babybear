@@ -6,15 +6,29 @@ import { ClerkProvider } from "@clerk/nextjs";
 import CartPopup from "@/components/CartPopup";
 import TelegramPopup from "@/components/TelegramPopup";
 
-const outfit = Outfit({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] });
+const outfit = Outfit({ 
+  subsets: ["latin"], 
+  weight: ["300", "400", "500", "600", "700"] 
+});
 
 export const metadata = {
   title: "Home | Baby Bear",
   description: "Premium Imported Baby Products - Baby Bear",
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Baby Bear',
+  },
+  icons: {
+    apple: '/icons/icon-192x192.png',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
 };
 
-// Separate viewport export (Next.js 14+ requirement)
+// Viewport export (Next.js 14+ requirement)
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -28,14 +42,30 @@ export default function RootLayout({ children }) {
     <ClerkProvider>
       <html lang="en">
         <head>
-          {/* PWA meta tags */}
+          {/* PWA Manifest */}
           <link rel="manifest" href="/manifest.json" />
+          
+          {/* Theme Colors */}
           <meta name="theme-color" content="#000000" />
+          <meta name="msapplication-TileColor" content="#000000" />
+          
+          {/* Apple Specific Meta Tags */}
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-status-bar-style" content="default" />
           <meta name="apple-mobile-web-app-title" content="Baby Bear" />
+          
+          {/* Apple Touch Icons */}
           <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-          <link rel="apple-touch-icon-precomposed" href="/icons/icon-192x192.png" />
+          <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
+          <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png" />
+          <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-167x167.png" />
+          
+          {/* Splash Screen for iOS */}
+          <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+          <link rel="apple-touch-startup-image" href="/icons/splash-2048x2732.png" />
+          
+          {/* Prevent zooming */}
+          <meta name="format-detection" content="telephone=no" />
         </head>
         <body className={`${outfit.className} antialiased text-gray-700`}>
           <Toaster />
