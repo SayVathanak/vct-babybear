@@ -17,7 +17,7 @@ export const metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
+    statusBarStyle: 'black-translucent',
     title: 'Baby Bear',
   },
   icons: {
@@ -51,7 +51,7 @@ export default function RootLayout({ children }) {
           
           {/* Apple Specific Meta Tags */}
           <meta name="apple-mobile-web-app-capable" content="yes" />
-          <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+          <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
           <meta name="apple-mobile-web-app-title" content="Baby Bear" />
           
           {/* Apple Touch Icons */}
@@ -61,7 +61,6 @@ export default function RootLayout({ children }) {
           <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-167x167.png" />
           
           {/* Splash Screen for iOS */}
-          <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
           <link rel="apple-touch-startup-image" href="/icons/splash-2048x2732.png" />
           
           {/* Prevent zooming */}
