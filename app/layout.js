@@ -17,7 +17,7 @@ export const metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'black-translucent',
+    statusBarStyle: 'black',
     title: 'Baby Bear',
   },
   icons: {
@@ -51,7 +51,7 @@ export default function RootLayout({ children }) {
           
           {/* Apple Specific Meta Tags */}
           <meta name="apple-mobile-web-app-capable" content="yes" />
-          <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+          <meta name="apple-mobile-web-app-status-bar-style" content="black" />
           <meta name="apple-mobile-web-app-title" content="Baby Bear" />
           
           {/* Apple Touch Icons */}
