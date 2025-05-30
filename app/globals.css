@@ -4,6 +4,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 * {
     scroll-behavior: smooth;
 }
@@ -73,26 +74,7 @@
   display: none;
 }
 
-/* @keyframes marquee {
-  0% {
-    transform: translateX(100%);
-  }
-
-  100% {
-    transform: translateX(-100%);
-  }
-}
-
-.animate-marquee {
-  display: flex;
-  animation: marquee 30s linear infinite;
-}
-
-.marquee-container {
-  overflow: hidden;
-  white-space: nowrap;
-} */
-
+/* Marquee animations */
 @keyframes marquee {
   0% {
     transform: translateX(0%);
@@ -113,6 +95,7 @@
   animation: marquee 20s linear infinite;
 }
 
+/* Slide up animation */
 @keyframes slideUp {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
@@ -132,6 +115,44 @@
   right: 0;
   z-index: 50;
   box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* iOS PWA Input Fixes */
+/* Fix iOS input issues in PWA */
+input, textarea, select {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+/* Ensure proper touch behavior */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Fix iOS Safari input zoom - prevents zoom but allows keyboard */
+input[type="text"],
+input[type="email"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+  font-size: 16px; /* Prevents auto-zoom on iOS while keeping keyboard functional */
+  transform: translateZ(0); /* Forces hardware acceleration */
+  -webkit-appearance: none; /* Remove iOS styling */
+}
+
+/* Specific fixes for iOS PWA mode */
+@supports (-webkit-touch-callout: none) {
+  input:focus,
+  textarea:focus,
+  select:focus {
+    -webkit-user-select: text;
+    user-select: text;
+  }
 }
 
 @layer base {

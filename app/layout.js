@@ -28,12 +28,12 @@ export const metadata = {
   },
 };
 
-// Viewport export (Next.js 14+ requirement)
+// Viewport export (Next.js 14+ requirement) - FIXED for iOS PWA keyboard input
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 1.1, // Allow slight zoom to enable keyboard input
+  userScalable: true, // Changed from false - this was blocking keyboard input
   themeColor: '#ffffff',
 };
 
