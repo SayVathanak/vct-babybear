@@ -1,5 +1,5 @@
 Folder PATH listing
-Volume serial number is D2A3-B43A
+Volume serial number is 908B-33F9
 C:.
 |   favicon.ico
 |   globals.css
@@ -99,7 +99,6 @@ C:.
 |   |   \---update
 |   |           route.js
 |   |           
-|   +---sms
 |   \---user
 |       +---add-address
 |       |       route.js
@@ -114,6 +113,9 @@ C:.
 |       page.jsx
 |       
 +---my-orders
+|       page.jsx
+|       
++---offline
 |       page.jsx
 |       
 +---order-placed

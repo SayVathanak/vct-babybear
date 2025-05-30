@@ -1,3 +1,4 @@
+// context/AppContext.jsx
 'use client'
 import { productsDummyData, userDummyData } from "@/assets/assets";
 import { useAuth, useUser } from "@clerk/nextjs";
@@ -24,6 +25,7 @@ export const AppContextProvider = (props) => {
     const [isSeller, setIsSeller] = useState(false);
     const [cartItems, setCartItems] = useState({});
     const [isAddingToCart, setIsAddingToCart] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
 
     const fetchProductData = async () => {
         try {
@@ -178,7 +180,9 @@ export const AppContextProvider = (props) => {
         getCartCount, getCartAmount,
         isAddingToCart, setIsAddingToCart,
         increaseQty, decreaseQty,
-        handlePayClick
+        handlePayClick,
+        searchOpen, 
+        setSearchOpen
     };
 
     return (

@@ -236,51 +236,110 @@ const InvoiceGenerator = ({ order, currency, user }) => {
             // Detect if on mobile/iOS for different download behavior
             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-            if (isMobile) {
-                // For mobile devices, open image in new tab/window
-                const newWindow = window.open();
-                if (newWindow) {
-                    newWindow.document.write(`
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <title>Invoice - ${filename}</title>
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            <style>
-                                body { 
-                                    margin: 0; 
-                                    padding: 20px; 
-                                    background: #f5f5f5; 
-                                    text-align: center;
-                                    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-                                }
-                                img { 
-                                    max-width: 100%; 
-                                    height: auto; 
-                                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-                                    background: white;
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <img src="${imgData}" alt="Invoice ${filename}" />
-                        </body>
-                        </html>
-                    `);
-                    newWindow.document.close();
-                } else {
-                    // Fallback if popup blocked
-                    alert('Please allow popups for this site to download the invoice, or try the fallback method.');
-                    throw new Error('Popup blocked');
-                }
-            } else {
-                // Desktop download - works normally
+            // Try direct download first (works on most modern mobile browsers)
+            try {
+                const orderShort = order._id.substring(order._id.length - 6);
+                const date = new Date(order.date).toISOString().split('T')[0];
+                const filename = `Invoice-${orderShort}-${date}.png`;
+
+                // Create download link - this should work on most devices
                 const link = document.createElement('a');
                 link.href = imgData;
                 link.download = filename;
+                
+                // For better mobile compatibility
+                link.style.display = 'none';
                 document.body.appendChild(link);
+                
+                // Trigger download
                 link.click();
+                
+                // Clean up
                 document.body.removeChild(link);
+                
+                // Show success message - Note: You'll need to import toast from your toast library
+                // toast.success('Invoice downloaded successfully!');
+                
+            } catch (downloadError) {
+                console.warn('Direct download failed, trying fallback method:', downloadError);
+                
+                // Fallback: Convert to blob and try again
+                try {
+                    // Convert base64 to blob
+                    const byteCharacters = atob(imgData.split(',')[1]);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    const blob = new Blob([byteArray], { type: 'image/png' });
+                    
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = filename;
+                    link.style.display = 'none';
+                    
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // Clean up blob URL
+                    URL.revokeObjectURL(url);
+                    
+                    // toast.success('Invoice downloaded successfully!');
+                    
+                } catch (blobError) {
+                    console.warn('Blob download also failed, using new window method:', blobError);
+                    
+                    // Final fallback: open in new window (your current mobile method)
+                    const newWindow = window.open();
+                    if (newWindow) {
+                        newWindow.document.write(`
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                                <title>Invoice - ${filename}</title>
+                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                <style>
+                                    body { 
+                                        margin: 0; 
+                                        padding: 20px; 
+                                        background: #f5f5f5; 
+                                        text-align: center;
+                                        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+                                    }
+                                    img { 
+                                        max-width: 100%; 
+                                        height: auto; 
+                                        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                                        background: white;
+                                    }
+                                    .download-btn {
+                                        display: inline-block;
+                                        margin: 20px 0;
+                                        padding: 12px 24px;
+                                        background: #0ea5e9;
+                                        color: white;
+                                        text-decoration: none;
+                                        border-radius: 8px;
+                                        font-weight: 500;
+                                    }
+                                </style>
+                            </head>
+                            <body>
+                                <a href="${imgData}" download="${filename}" class="download-btn">Download Invoice</a>
+                                <br>
+                                <img src="${imgData}" alt="Invoice ${filename}" />
+                            </body>
+                            </html>
+                        `);
+                        newWindow.document.close();
+                        // toast.info('Invoice opened in new window. Tap "Download Invoice" to save.');
+                    } else {
+                        // toast.error('Please allow popups to download the invoice.');
+                    }
+                }
             }
 
         } catch (error) {
@@ -358,7 +417,7 @@ For questions, contact: vct@babybear.com
     return (
         <div className="mt-4">
             <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                <FileText className="h-4 w-4 mr-2 text-gray-500" />a5
+                <FileText className="h-4 w-4 mr-2 text-gray-500" />
                 Invoice
             </h3>
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">

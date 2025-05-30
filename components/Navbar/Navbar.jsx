@@ -1,4 +1,3 @@
-// components/Navbar/Navbar.jsx
 "use client";
 import React, { useState } from "react";
 import { useAppContext } from "@/context/AppContext";
@@ -14,20 +13,24 @@ import NavActions from "./NavActions";
 
 const Navbar = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [searchOpen, setSearchOpen] = useState(false);
     const [showCartPanel, setShowCartPanel] = useState(false);
+    const { showCartPopup, setShowCartPopup, searchOpen, setSearchOpen } = useAppContext();
 
     const pathname = usePathname();
     const isAllProductsPage = pathname === "/all-products" || pathname.startsWith("/all-products?");
-
-    const { showCartPopup, setShowCartPopup } = useAppContext();
+    const isHomePage = pathname === "/";
 
     const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
-    const toggleSearch = () => setSearchOpen(!searchOpen);
+    const toggleSearch = () => {
+        // Enable search toggle ONLY for home page
+        if (isHomePage) {
+            setSearchOpen(!searchOpen);
+        }
+    };
 
     return (
         <>
-            <nav className="fixed top-0 left-0 right-0 z-[55] bg-white border-b border-gray-200 shadow-sm px-4 py-2 md:px-12 flex items-center justify-between">
+            <nav className="fixed top-0 left-0 right-0 z-[55] bg-white border-b border-gray-200 shadow-sm px-4 pt-3 pb-2 md:px-12 flex items-center justify-between">
                 {/* Mobile Menu Toggle */}
                 <div className="flex items-center gap-4">
                     <button
@@ -45,16 +48,19 @@ const Navbar = () => {
                 {/* Navigation Actions */}
                 <NavActions
                     isAllProductsPage={isAllProductsPage}
+                    isHomePage={isHomePage}
                     searchOpen={searchOpen}
                     onToggleSearch={toggleSearch}
                     onShowCart={() => setShowCartPanel(true)}
                 />
 
-                {/* Search Panel */}
-                <SearchPanel
-                    isOpen={searchOpen}
-                    onClose={() => setSearchOpen(false)}
-                />
+                {/* Search Panel - Only shown on home page */}
+                {isHomePage && (
+                    <SearchPanel
+                        isOpen={searchOpen}
+                        onClose={() => setSearchOpen(false)}
+                    />
+                )}
             </nav>
 
             {/* Mobile Menu */}

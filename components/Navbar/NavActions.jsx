@@ -3,14 +3,17 @@ import React from "react";
 import { FiSearch, FiX, FiShoppingCart } from "react-icons/fi";
 import { useAppContext } from "@/context/AppContext";
 
-const NavActions = ({ isAllProductsPage, searchOpen, onToggleSearch, onShowCart }) => {
+const NavActions = ({ isAllProductsPage, isHomePage, searchOpen, onToggleSearch, onShowCart }) => {
     const { getCartCount } = useAppContext();
     const cartCount = getCartCount();
 
+    // Show search button ONLY on home page
+    const showSearchButton = isHomePage;
+
     return (
         <div className="flex items-center gap-5">
-            {/* Search Toggle */}
-            {!isAllProductsPage && (
+            {/* Search Toggle - Only shown on home page */}
+            {showSearchButton && (
                 <button
                     onClick={onToggleSearch}
                     aria-label="Search"
