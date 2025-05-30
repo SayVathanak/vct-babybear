@@ -75,7 +75,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
                                 )}
                                 <button
                                     onClick={onClose}
-                                    className="p-1 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                                    className="p-1 rounded-md text-gray-500 hover:text-gray-700"
                                     aria-label="Close menu"
                                 >
                                     <FiX size={24} />

@@ -28,13 +28,12 @@ export const metadata = {
   },
 };
 
-// Viewport export (Next.js 14+ requirement) - FIXED for iOS PWA keyboard input
+// COMPLETELY REMOVE viewport restrictions for iOS PWA keyboard fix
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1.1, // Allow slight zoom to enable keyboard input
-  userScalable: true, // Changed from false - this was blocking keyboard input
   themeColor: '#ffffff',
+  // Removed maximumScale and userScalable entirely
 };
 
 export default function RootLayout({ children }) {
@@ -63,8 +62,11 @@ export default function RootLayout({ children }) {
           {/* Splash Screen for iOS */}
           <link rel="apple-touch-startup-image" href="/icons/splash-2048x2732.png" />
           
-          {/* Prevent zooming */}
-          <meta name="format-detection" content="telephone=no" />
+          {/* iOS PWA Keyboard Fix - Alternative viewport */}
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+          
+          {/* Remove format detection that might interfere */}
+          {/* <meta name="format-detection" content="telephone=no" /> */}
         </head>
         <body className={`${outfit.className} antialiased text-gray-700`}>
           <Toaster />

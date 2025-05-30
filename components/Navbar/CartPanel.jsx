@@ -79,7 +79,7 @@ const CartPanel = ({ isOpen, onClose }) => {
                             <h2 className="text-lg font-medium font-playfair flex-1 text-center">RECEIPT</h2>
                             <button
                                 onClick={onClose}
-                                className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
+                                className="p-1.5 rounded-full transition-colors"
                                 aria-label="Close cart"
                             >
                                 <FiX size={18} />
@@ -110,7 +110,7 @@ const CartPanel = ({ isOpen, onClose }) => {
                                                                     e.stopPropagation();
                                                                     decreaseQty(item.product._id, item.quantity);
                                                                 }}
-                                                                className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
+                                                                className="p-1 text-gray-500 hover:text-gray-700  rounded"
                                                             >
                                                                 <FiMinus size={12} />
                                                             </button>
@@ -120,7 +120,7 @@ const CartPanel = ({ isOpen, onClose }) => {
                                                                     e.stopPropagation();
                                                                     increaseQty(item.product._id);
                                                                 }}
-                                                                className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
+                                                                className="p-1 text-gray-500 hover:text-gray-700  rounded"
                                                             >
                                                                 <FiPlus size={12} />
                                                             </button>

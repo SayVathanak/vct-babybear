@@ -117,20 +117,21 @@
   box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-/* iOS PWA Input Fixes */
-/* Fix iOS input issues in PWA */
+/* ============================================
+   AGGRESSIVE iOS PWA KEYBOARD FIXES
+   ============================================ */
+
+/* Force iOS keyboard appearance - most aggressive approach */
 input, textarea, select {
-  -webkit-user-select: text;
-  user-select: text;
-  -webkit-touch-callout: default;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  border-radius: 0 !important; /* Remove iOS rounded corners that can interfere */
 }
 
-/* Ensure proper touch behavior */
-* {
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Fix iOS Safari input zoom - prevents zoom but allows keyboard */
+/* Force 16px font size to prevent zoom and ensure keyboard */
 input[type="text"],
 input[type="email"],
 input[type="search"],
@@ -140,19 +141,84 @@ input[type="password"],
 input[type="number"],
 textarea,
 select {
-  font-size: 16px; /* Prevents auto-zoom on iOS while keeping keyboard functional */
-  transform: translateZ(0); /* Forces hardware acceleration */
-  -webkit-appearance: none; /* Remove iOS styling */
+  font-size: 16px !important;
+  min-height: 44px; /* iOS touch target minimum */
+  padding: 12px !important;
+  transform: translateZ(0); /* Hardware acceleration */
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
-/* Specific fixes for iOS PWA mode */
+/* Remove any conflicting tap highlights */
+* {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-focus-ring-color: transparent !important;
+}
+
+/* iOS PWA specific fixes */
 @supports (-webkit-touch-callout: none) {
+  /* This targets iOS devices specifically */
+  
   input:focus,
   textarea:focus,
   select:focus {
-    -webkit-user-select: text;
-    user-select: text;
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    outline: none !important;
+    -webkit-appearance: none !important;
+    transform: translateZ(0) !important;
   }
+  
+  /* Force input container to be touchable */
+  .input-container,
+  form {
+    -webkit-touch-callout: default !important;
+    -webkit-user-select: text !important;
+    user-select: text !important;
+  }
+}
+
+/* Alternative approach - ensure inputs are always interactive */
+input, textarea, select {
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+}
+
+/* Remove any height restrictions that might hide keyboard */
+html, body {
+  height: auto !important;
+  min-height: 100vh;
+}
+
+/* Ensure proper stacking context */
+input, textarea, select {
+  position: relative;
+  z-index: 1;
+}
+
+/* Force input responsiveness on iOS */
+input:not([readonly]), 
+textarea:not([readonly]), 
+select:not([disabled]) {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+}
+
+/* Additional iOS fixes */
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+/* Force touch events to work */
+input, textarea, select {
+  -webkit-touch-callout: default !important;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-user-modify: read-write-plaintext-only;
 }
 
 @layer base {

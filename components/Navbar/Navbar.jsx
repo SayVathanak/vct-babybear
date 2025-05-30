@@ -33,7 +33,7 @@ const Navbar = () => {
                     <button
                         onClick={toggleMobileMenu}
                         aria-label="Toggle menu"
-                        className="focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors hover:bg-gray-100"
+                        className="focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors"
                     >
                         <FiMenu size={24} />
                     </button>
