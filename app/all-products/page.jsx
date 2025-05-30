@@ -325,7 +325,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAppContext } from "@/context/AppContext";
 
 // Components
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/Navbar/Navbar";
 import Footer from "@/components/Footer";
 import ProductGrid from "@/components/ProductGrid";
 import ProductFilter from "@/components/ProductFilter";

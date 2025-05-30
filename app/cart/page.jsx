@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { assets } from "@/assets/assets";
 import OrderSummary from "@/components/OrderSummary";
 import Image from "next/image";
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/Navbar/Navbar";
 import { useAppContext } from "@/context/AppContext";
 import { FaChevronLeft, FaTimes } from "react-icons/fa";
 

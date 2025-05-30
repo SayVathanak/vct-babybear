@@ -276,7 +276,7 @@ import { useClerk } from "@clerk/nextjs";
 import { useAppContext } from "@/context/AppContext";
 
 // Components
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/Navbar/Navbar";
 import Footer from "@/components/Footer";
 import Loading from "@/components/Loading";
 import ProductGallery from "@/components/ProductGallery";
