@@ -17,7 +17,7 @@ export const metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'black',
+    statusBarStyle: 'default',
     title: 'Baby Bear',
   },
   icons: {
@@ -34,7 +34,7 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#000000',
+  themeColor: '#ffffff',
 };
 
 export default function RootLayout({ children }) {
@@ -46,12 +46,12 @@ export default function RootLayout({ children }) {
           <link rel="manifest" href="/manifest.json" />
           
           {/* Theme Colors */}
-          <meta name="theme-color" content="#000000" />
-          <meta name="msapplication-TileColor" content="#000000" />
+          <meta name="theme-color" content="#ffffff" />
+          <meta name="msapplication-TileColor" content="#ffffff" />
           
           {/* Apple Specific Meta Tags */}
           <meta name="apple-mobile-web-app-capable" content="yes" />
-          <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+          <meta name="apple-mobile-web-app-status-bar-style" content="default" />
           <meta name="apple-mobile-web-app-title" content="Baby Bear" />
           
           {/* Apple Touch Icons */}
