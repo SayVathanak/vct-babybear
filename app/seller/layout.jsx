@@ -6,7 +6,7 @@ import React from 'react'
 const Layout = ({ children }) => {
   return (
     <div>
-      <Navbar />
+      <Navbar className="hidden" />
       <div className='flex w-full'>
         <Sidebar />
         {children}
