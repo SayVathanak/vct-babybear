@@ -11,7 +11,6 @@ const SearchPanel = ({ isOpen, onClose, searchInputRef }) => {
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [showAllResults, setShowAllResults] = useState(false);
 
-    // searchInputRef is now passed as a prop, no need for internal useRef
     const searchResultsRef = useRef(null);
 
     const { products, router, currency } = useAppContext();
