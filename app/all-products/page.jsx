@@ -477,7 +477,7 @@ const AllProducts = () => {
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div className="flex items-center justify-between mb-6">
-                    <h1 className="text-2xl font-medium text-sky-300">Baby Essentials</h1>
+                    <h1 className="text-2xl font-medium text-sky-300">ᥫ᭡αву єѕѕєηтιαℓѕ ⋆˙⟡</h1>
 
                     <div className="flex items-center gap-3">
                         <div className="hidden lg:block">
