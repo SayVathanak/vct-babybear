@@ -63,7 +63,7 @@ const Home = () => {
         {/* Featured Categories */}
         <div className="py-8 md:py-12">
           <h2 className="text-2xl md:text-3xl text-sky-300 mb-6 flex items-center gap-2 font-medium">
-             <CiGrid41 className="text-2xl md:text-3xl" />𝒮𝒽𝑜𝓅 𝒷𝓎 𝒞𝒶𝓉𝑒𝑔𝑜𝓇𝓎 ── .✦
+             <CiGrid41 className="text-2xl md:text-3xl" />𝒮𝒽𝑜𝓅 𝒷𝓎 𝒸𝒶𝓉𝑒𝑔𝑜𝓇𝓎 ── .✦
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {categories.map((category, index) => (
