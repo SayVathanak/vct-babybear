@@ -8,7 +8,6 @@ import Loading from "@/components/Loading";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { ChevronDown, ChevronUp, Package, Search, Filter, Calendar, Phone, MapPin } from "lucide-react";
-import OrderDetails from "@/components/OrderDetails";
 
 const Orders = () => {
     const { currency, getToken, user } = useAppContext();
