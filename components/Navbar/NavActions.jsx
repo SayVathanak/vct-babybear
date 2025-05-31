@@ -1,4 +1,5 @@
 // components/Navbar/NavActions.jsx - FIXED VERSION
+"use client";
 import React from "react";
 import { FiSearch, FiX, FiShoppingCart } from "react-icons/fi";
 import { useAppContext } from "@/context/AppContext";
