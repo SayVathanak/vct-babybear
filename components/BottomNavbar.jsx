@@ -1,5 +1,3 @@
-
-// BottomNavbar.jsx - FIXED VERSION
 'use client'
 import React, { useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';

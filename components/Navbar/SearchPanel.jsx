@@ -1,4 +1,4 @@
-// components/Navbar/SearchPanel.jsx - FIXED VERSION
+// components/Navbar/SearchPanel.jsx - MOBILE KEYBOARD & CLICK OUTSIDE FIX
 "use client";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
@@ -56,27 +56,91 @@ const SearchPanel = ({ isOpen, onClose, searchInputRef }) => {
         }
     }, [isOpen]);
 
-    // Handle click outside
+    // FIXED: Better click outside detection that doesn't interfere with search button
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (
-                searchResultsRef.current &&
-                !searchResultsRef.current.contains(event.target) &&
-                !event.target.closest('button[aria-label="Search"]')
-            ) {
-                onClose();
+            // Don't close if clicking on the search button or its icon
+            const searchButton = event.target.closest('button[aria-label*="search" i]');
+            if (searchButton) return;
+            
+            // Don't close if clicking inside the search panel
+            if (searchResultsRef.current && searchResultsRef.current.contains(event.target)) {
+                return;
             }
+            
+            // Don't close if clicking on input or its related elements
+            if (event.target.closest('input[type="text"]')) {
+                return;
+            }
+            
+            // Close the search panel
+            onClose();
         };
 
         if (isOpen) {
-            document.addEventListener("mousedown", handleClickOutside);
-            return () => document.removeEventListener("mousedown", handleClickOutside);
+            // Use a small delay to prevent immediate closing when opening
+            const timer = setTimeout(() => {
+                document.addEventListener("mousedown", handleClickOutside);
+                document.addEventListener("touchstart", handleClickOutside);
+            }, 100);
+            
+            return () => {
+                clearTimeout(timer);
+                document.removeEventListener("mousedown", handleClickOutside);
+                document.removeEventListener("touchstart", handleClickOutside);
+            };
         }
     }, [isOpen, onClose]);
+
+    // FIXED: Auto-focus when panel opens with better mobile support
+    useEffect(() => {
+        if (isOpen && searchInputRef?.current) {
+            // Multiple focus attempts for better mobile compatibility
+            const focusInput = () => {
+                const input = searchInputRef.current;
+                if (!input) return;
+
+                // Method 1: Standard focus
+                input.focus();
+                
+                // Method 2: iOS specific handling
+                if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                    input.setAttribute('readonly', true);
+                    input.focus();
+                    input.removeAttribute('readonly');
+                    
+                    // Force iOS keyboard
+                    setTimeout(() => {
+                        input.click();
+                        input.focus();
+                    }, 50);
+                }
+                
+                // Method 3: Android handling
+                if (/Android/.test(navigator.userAgent)) {
+                    input.focus();
+                    setTimeout(() => {
+                        input.setSelectionRange(0, 0);
+                        input.focus();
+                    }, 100);
+                }
+            };
+
+            // Multiple attempts with different timings
+            requestAnimationFrame(focusInput);
+            setTimeout(focusInput, 50);
+            setTimeout(focusInput, 150);
+        }
+    }, [isOpen, searchInputRef]);
 
     const handleProductClick = (productId) => {
         router.push(`/product/${productId}`);
         onClose();
+    };
+
+    // FIXED: Prevent input blur on mobile when clicking inside panel
+    const handlePanelClick = (e) => {
+        e.stopPropagation();
     };
 
     return (
@@ -87,6 +151,7 @@ const SearchPanel = ({ isOpen, onClose, searchInputRef }) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            onClick={handlePanelClick}
         >
             <div className="container mx-auto max-w-7xl px-4 py-4">
                 {/* Search Input */}
@@ -99,11 +164,27 @@ const SearchPanel = ({ isOpen, onClose, searchInputRef }) => {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         autoComplete="off"
-                        // iOS specific attributes
+                        autoCapitalize="off"
+                        autoCorrect="off"
+                        spellCheck="false"
+                        // FIXED: Mobile keyboard optimizations
                         inputMode="search"
-                        style={{ fontSize: '16px' }} // Prevents iOS zoom
+                        enterKeyHint="search"
+                        style={{ 
+                            fontSize: '16px', // Prevents iOS zoom
+                            lineHeight: '1.2',
+                            WebkitAppearance: 'none' // Remove iOS styling
+                        }}
+                        // Prevent losing focus on mobile
+                        onBlur={(e) => {
+                            // Don't blur if clicking inside the search panel
+                            const relatedTarget = e.relatedTarget;
+                            if (relatedTarget && searchResultsRef.current?.contains(relatedTarget)) {
+                                e.target.focus();
+                            }
+                        }}
                     />
-                    <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                    <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
                 </div>
 
                 {/* Search Results */}
@@ -113,8 +194,9 @@ const SearchPanel = ({ isOpen, onClose, searchInputRef }) => {
                             {(showAllResults ? filteredProducts : filteredProducts.slice(0, 10)).map((product) => (
                                 <div
                                     key={product._id}
-                                    className="bg-white rounded-lg shadow-sm transition-all cursor-pointer border border-gray-100 flex-shrink-0 w-48"
+                                    className="bg-white rounded-lg shadow-sm transition-all cursor-pointer border border-gray-100 flex-shrink-0 w-48 touch-manipulation"
                                     onClick={() => handleProductClick(product._id)}
+                                    style={{ touchAction: 'manipulation' }}
                                 >
                                     <div className="p-2">
                                         <div className="relative aspect-square bg-gray-50 rounded-md mb-2 overflow-hidden">
@@ -152,7 +234,8 @@ const SearchPanel = ({ isOpen, onClose, searchInputRef }) => {
                             <div className="flex justify-center mt-3">
                                 <button
                                     onClick={() => setShowAllResults(true)}
-                                    className="text-sky-600 text-sm font-medium px-4 py-2 rounded-md transition-colors"
+                                    className="text-sky-600 text-sm font-medium px-4 py-2 rounded-md transition-colors touch-manipulation"
+                                    style={{ touchAction: 'manipulation' }}
                                 >
                                     View all {filteredProducts.length} results
                                 </button>
@@ -178,7 +261,8 @@ const SearchPanel = ({ isOpen, onClose, searchInputRef }) => {
                                         router.push(`/all-products?category=${category.id}`);
                                         onClose();
                                     }}
-                                    className="px-3 py-1.5 text-sm bg-gray-50 rounded-md text-gray-700 transition-colors"
+                                    className="px-3 py-1.5 text-sm bg-gray-50 rounded-md text-gray-700 transition-colors touch-manipulation"
+                                    style={{ touchAction: 'manipulation' }}
                                 >
                                     {category.name}
                                 </button>

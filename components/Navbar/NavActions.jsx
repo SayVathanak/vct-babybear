@@ -1,4 +1,4 @@
-// components/Navbar/NavActions.jsx - FIXED VERSION
+// components/Navbar/NavActions.jsx - MOBILE KEYBOARD FIX
 "use client";
 import React from "react";
 import { FiSearch, FiX, FiShoppingCart } from "react-icons/fi";
@@ -10,18 +10,39 @@ const NavActions = ({ isAllProductsPage, isHomePage, searchOpen, onToggleSearch,
 
     const showSearchButton = isHomePage;
 
-    // CRITICAL FIX: Direct focus in the click handler
+    // FIXED: Better mobile keyboard handling
     const handleSearchClick = (event) => {
-        onToggleSearch();
+        event.preventDefault();
+        event.stopPropagation();
         
-        // IMMEDIATE focus - must be synchronous with user interaction
-        if (!searchOpen && searchInputRef?.current) {
-            // Use setTimeout with minimal delay to ensure DOM is updated
-            // but still maintain user gesture context
-            setTimeout(() => {
-                searchInputRef.current.focus();
-                searchInputRef.current.click(); // Additional iOS workaround
-            }, 10); // Minimal delay
+        if (searchOpen) {
+            // If search is open, close it
+            onToggleSearch();
+        } else {
+            // If search is closed, open it and focus input
+            onToggleSearch();
+            
+            // Multiple focus attempts for better mobile compatibility
+            requestAnimationFrame(() => {
+                if (searchInputRef?.current) {
+                    // Method 1: Direct focus
+                    searchInputRef.current.focus();
+                    
+                    // Method 2: iOS Safari specific
+                    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                        searchInputRef.current.click();
+                        searchInputRef.current.focus();
+                    }
+                    
+                    // Method 3: Android Chrome specific
+                    if (/Android/.test(navigator.userAgent)) {
+                        setTimeout(() => {
+                            searchInputRef.current.focus();
+                            searchInputRef.current.select();
+                        }, 100);
+                    }
+                }
+            });
         }
     };
 
@@ -31,9 +52,10 @@ const NavActions = ({ isAllProductsPage, isHomePage, searchOpen, onToggleSearch,
             {showSearchButton && (
                 <button
                     onClick={handleSearchClick}
-                    // Remove onTouchStart as it can interfere
-                    aria-label="Search"
-                    className="focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors hover:bg-gray-100"
+                    onTouchEnd={handleSearchClick} // Additional mobile support
+                    aria-label={searchOpen ? "Close search" : "Open search"}
+                    className="focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors hover:bg-gray-100 touch-manipulation"
+                    style={{ touchAction: 'manipulation' }} // Prevent iOS double-tap zoom
                 >
                     {searchOpen ? <FiX size={22} /> : <FiSearch size={22} />}
                 </button>
@@ -41,9 +63,10 @@ const NavActions = ({ isAllProductsPage, isHomePage, searchOpen, onToggleSearch,
 
             {/* Cart Icon */}
             <div
-                className="relative cursor-pointer transition-transform hover:scale-110"
+                className="relative cursor-pointer transition-transform hover:scale-110 touch-manipulation"
                 onClick={onShowCart}
                 aria-label="Shopping cart"
+                style={{ touchAction: 'manipulation' }}
             >
                 <FiShoppingCart size={22} />
                 {cartCount > 0 && (

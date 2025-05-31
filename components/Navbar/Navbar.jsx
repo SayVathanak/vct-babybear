@@ -1,4 +1,4 @@
-// components/Navbar/Navbar.jsx - FIXED VERSION
+// components/Navbar/Navbar.jsx - MOBILE KEYBOARD & SEARCH FIX
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { useAppContext } from "@/context/AppContext";
@@ -26,9 +26,63 @@ const Navbar = () => {
 
     const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
 
+    // FIXED: Better search toggle with proper mobile keyboard handling
     const toggleSearch = () => {
-        setSearchOpen(prevSearchOpen => !prevSearchOpen);
+        setSearchOpen(prevSearchOpen => {
+            const newSearchOpen = !prevSearchOpen;
+            
+            // If opening search, focus the input after state update
+            if (newSearchOpen) {
+                // Use multiple methods to ensure focus works on mobile
+                requestAnimationFrame(() => {
+                    if (searchInputRef?.current) {
+                        const input = searchInputRef.current;
+                        
+                        // Method 1: Standard focus
+                        input.focus();
+                        
+                        // Method 2: iOS Safari specific
+                        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                            setTimeout(() => {
+                                input.click();
+                                input.focus();
+                            }, 50);
+                        }
+                        
+                        // Method 3: Android Chrome specific  
+                        if (/Android/.test(navigator.userAgent)) {
+                            setTimeout(() => {
+                                input.focus();
+                                input.click();
+                            }, 100);
+                        }
+                    }
+                });
+            }
+            
+            return newSearchOpen;
+        });
     };
+
+    // FIXED: Prevent body scroll when search is open on mobile
+    useEffect(() => {
+        if (searchOpen) {
+            document.body.style.overflow = 'hidden';
+            // Prevent iOS Safari from bouncing
+            document.body.style.position = 'fixed';
+            document.body.style.width = '100%';
+        } else {
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.width = '';
+        }
+        
+        return () => {
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.width = '';
+        };
+    }, [searchOpen]);
 
     return (
         <>
@@ -38,7 +92,8 @@ const Navbar = () => {
                     <button
                         onClick={toggleMobileMenu}
                         aria-label="Toggle menu"
-                        className="focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors"
+                        className="focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors touch-manipulation"
+                        style={{ touchAction: 'manipulation' }}
                     >
                         <FiMenu size={24} />
                     </button>
@@ -57,15 +112,25 @@ const Navbar = () => {
                     searchInputRef={searchInputRef}
                 />
 
-                {/* Search Panel - Render without AnimatePresence for immediate display */}
-                {searchOpen && (
-                    <SearchPanel
-                        isOpen={searchOpen}
-                        onClose={() => setSearchOpen(false)}
-                        searchInputRef={searchInputRef}
-                    />
-                )}
+                {/* FIXED: Search Panel with proper AnimatePresence */}
+                <AnimatePresence>
+                    {searchOpen && (
+                        <SearchPanel
+                            isOpen={searchOpen}
+                            onClose={() => setSearchOpen(false)}
+                            searchInputRef={searchInputRef}
+                        />
+                    )}
+                </AnimatePresence>
             </nav>
+
+            {/* FIXED: Add overlay when search is open on mobile */}
+            {searchOpen && (
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-25 z-[50] md:hidden"
+                    onClick={() => setSearchOpen(false)}
+                />
+            )}
 
             {/* Mobile Menu */}
             <MobileMenu
