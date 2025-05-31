@@ -1,4 +1,4 @@
-// components/Navbar/Navbar.jsx
+// components/Navbar/Navbar.jsx - FIXED VERSION
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { useAppContext } from "@/context/AppContext";
@@ -18,7 +18,7 @@ const Navbar = () => {
     const [showCartPanel, setShowCartPanel] = useState(false);
     const { showCartPopup, setShowCartPopup, searchOpen, setSearchOpen } = useAppContext();
 
-    const searchInputRef = useRef(null); // Create a ref here to pass to SearchPanel
+    const searchInputRef = useRef(null);
 
     const pathname = usePathname();
     const isAllProductsPage = pathname === "/all-products" || pathname.startsWith("/all-products?");
@@ -27,17 +27,7 @@ const Navbar = () => {
     const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
 
     const toggleSearch = () => {
-        setSearchOpen(prevSearchOpen => {
-            const newState = !prevSearchOpen;
-            // If search is being opened, attempt to focus the input directly
-            if (newState) {
-                // Removed setTimeout here
-                if (searchInputRef.current) {
-                    searchInputRef.current.focus();
-                }
-            }
-            return newState;
-        });
+        setSearchOpen(prevSearchOpen => !prevSearchOpen);
     };
 
     return (
@@ -57,25 +47,24 @@ const Navbar = () => {
                 {/* Centered Logo */}
                 <Logo />
 
-                {/* Navigation Actions */}
+                {/* Navigation Actions - Pass searchInputRef */}
                 <NavActions
                     isAllProductsPage={isAllProductsPage}
                     isHomePage={isHomePage}
                     searchOpen={searchOpen}
                     onToggleSearch={toggleSearch}
                     onShowCart={() => setShowCartPanel(true)}
+                    searchInputRef={searchInputRef}
                 />
 
-                {/* Search Panel */}
-                <AnimatePresence>
-                    {searchOpen && (
-                        <SearchPanel
-                            isOpen={searchOpen}
-                            onClose={() => setSearchOpen(false)}
-                            searchInputRef={searchInputRef} // Pass the ref down
-                        />
-                    )}
-                </AnimatePresence>
+                {/* Search Panel - Render without AnimatePresence for immediate display */}
+                {searchOpen && (
+                    <SearchPanel
+                        isOpen={searchOpen}
+                        onClose={() => setSearchOpen(false)}
+                        searchInputRef={searchInputRef}
+                    />
+                )}
             </nav>
 
             {/* Mobile Menu */}
