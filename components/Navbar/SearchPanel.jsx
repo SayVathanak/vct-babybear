@@ -115,7 +115,8 @@ const SearchPanel = ({ isOpen, onClose }) => {
                                     {(showAllResults ? filteredProducts : filteredProducts.slice(0, 10)).map((product) => (
                                         <div
                                             key={product._id}
-                                            className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer border border-gray-100 flex-shrink-0 w-48"
+                                            // Removed hover:shadow-md
+                                            className="bg-white rounded-lg shadow-sm transition-all cursor-pointer border border-gray-100 flex-shrink-0 w-48"
                                             onClick={() => handleProductClick(product._id)}
                                         >
                                             <div className="p-2">
@@ -154,7 +155,8 @@ const SearchPanel = ({ isOpen, onClose }) => {
                                     <div className="flex justify-center mt-3">
                                         <button
                                             onClick={() => setShowAllResults(true)}
-                                            className="text-sky-600 hover:text-sky-700 text-sm font-medium px-4 py-2 rounded-md hover:bg-sky-50 transition-colors"
+                                            // Removed hover:text-sky-700 and hover:bg-sky-50
+                                            className="text-sky-600 text-sm font-medium px-4 py-2 rounded-md transition-colors"
                                         >
                                             View all {filteredProducts.length} results
                                         </button>
@@ -180,7 +182,8 @@ const SearchPanel = ({ isOpen, onClose }) => {
                                                 router.push(`/all-products?category=${category.id}`);
                                                 onClose();
                                             }}
-                                            className="px-3 py-1.5 text-sm bg-gray-50 hover:bg-gray-100 rounded-md text-gray-700 transition-colors"
+                                            // Removed hover:bg-gray-100
+                                            className="px-3 py-1.5 text-sm bg-gray-50 rounded-md text-gray-700 transition-colors"
                                         >
                                             {category.name}
                                         </button>
