@@ -1,4 +1,4 @@
-// components/Navbar/NavActions.jsx
+// components/Navbar/NavActions.jsx (example modification)
 import React from "react";
 import { FiSearch, FiX, FiShoppingCart } from "react-icons/fi";
 import { useAppContext } from "@/context/AppContext";
@@ -7,15 +7,23 @@ const NavActions = ({ isAllProductsPage, isHomePage, searchOpen, onToggleSearch,
     const { getCartCount } = useAppContext();
     const cartCount = getCartCount();
 
-    // Show search button ONLY on home page
     const showSearchButton = isHomePage;
+
+    // This part is new:
+    const handleSearchClick = (event) => {
+        // Prevent default touch behavior if it interferes with click
+        // event.preventDefault(); // Use with caution, can break other things
+        onToggleSearch();
+    };
 
     return (
         <div className="flex items-center gap-5">
             {/* Search Toggle - Only shown on home page */}
             {showSearchButton && (
                 <button
-                    onClick={onToggleSearch}
+                    onClick={handleSearchClick} // Use the new handler
+                    // Also add onTouchStart for iOS specific tap handling
+                    onTouchStart={handleSearchClick} // This can sometimes prevent the 300ms delay or tap issues
                     aria-label="Search"
                     className="focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors hover:bg-gray-100"
                 >
@@ -41,3 +49,4 @@ const NavActions = ({ isAllProductsPage, isHomePage, searchOpen, onToggleSearch,
 };
 
 export default NavActions;
+
