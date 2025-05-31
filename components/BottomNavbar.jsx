@@ -1,5 +1,7 @@
+
+// BottomNavbar.jsx - FIXED VERSION
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useUser, UserButton } from '@clerk/nextjs';
 import { 
@@ -17,6 +19,7 @@ export default function BottomNavbar() {
   const { user } = useUser();
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef(null);
 
   // Don't show navbar on seller pages
   if (pathname.startsWith('/seller')) {
@@ -42,7 +45,16 @@ export default function BottomNavbar() {
       id: 'search',
       label: 'Search',
       icon: Search,
-      action: () => setShowSearch(true),
+      action: () => {
+        setShowSearch(true);
+        // IMMEDIATE focus for iOS
+        setTimeout(() => {
+          if (searchInputRef.current) {
+            searchInputRef.current.focus();
+            searchInputRef.current.click();
+          }
+        }, 50);
+      },
       active: false
     },
     {
@@ -72,7 +84,6 @@ export default function BottomNavbar() {
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
-      // Navigate to all-products with search query
       router.push(`/all-products?search=${encodeURIComponent(searchQuery.trim())}`);
       setShowSearch(false);
       setSearchQuery('');
@@ -100,13 +111,14 @@ export default function BottomNavbar() {
               </button>
               <div className="flex-1">
                 <input
+                  ref={searchInputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={handleSearchKeyPress}
                   placeholder="Search products..."
                   className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  autoFocus
+                  inputMode="search"
                   style={{ fontSize: '16px' }} // Prevent iOS zoom
                 />
               </div>
