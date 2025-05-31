@@ -499,7 +499,7 @@ const AllProducts = () => {
     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
     className="lg:hidden px-3 py-2 text-sm flex items-center"
 >
-   Filters <CiFilter className="h-5 w-5" />
+    <CiFilter className="h-6 w-6" />
 </button>
 
                     </div>
