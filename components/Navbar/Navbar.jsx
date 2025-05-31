@@ -1,6 +1,6 @@
 // components/Navbar/Navbar.jsx
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react"; // Added useRef and useEffect
 import { useAppContext } from "@/context/AppContext";
 import { usePathname } from "next/navigation";
 import { FiMenu } from "react-icons/fi";
@@ -18,16 +18,28 @@ const Navbar = () => {
     const [showCartPanel, setShowCartPanel] = useState(false);
     const { showCartPopup, setShowCartPopup, searchOpen, setSearchOpen } = useAppContext();
 
+    const searchInputRef = useRef(null); // Create a ref here to pass to SearchPanel
+
     const pathname = usePathname();
     const isAllProductsPage = pathname === "/all-products" || pathname.startsWith("/all-products?");
     const isHomePage = pathname === "/";
 
     const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
+
     const toggleSearch = () => {
-        // You might want to allow search to open on any page,
-        // but only show the button on the home page as per your NavActions logic.
-        // Or keep it as is if search is strictly for home page.
-        setSearchOpen(!searchOpen);
+        setSearchOpen(prevSearchOpen => {
+            const newState = !prevSearchOpen;
+            // If search is being opened, attempt to focus the input after a slight delay
+            if (newState) {
+                // A small timeout helps with iOS Safari's strict focus requirements
+                setTimeout(() => {
+                    if (searchInputRef.current) {
+                        searchInputRef.current.focus();
+                    }
+                }, 100); // Give component time to mount and input to be ready
+            }
+            return newState;
+        });
     };
 
     return (
@@ -50,19 +62,19 @@ const Navbar = () => {
                 {/* Navigation Actions */}
                 <NavActions
                     isAllProductsPage={isAllProductsPage}
-                    isHomePage={isHomePage} // Keep this for showing/hiding the search button
+                    isHomePage={isHomePage}
                     searchOpen={searchOpen}
                     onToggleSearch={toggleSearch}
                     onShowCart={() => setShowCartPanel(true)}
                 />
 
                 {/* Search Panel */}
-                {/* Wrap the SearchPanel with AnimatePresence here as well */}
                 <AnimatePresence>
-                    {searchOpen && ( // Render based on searchOpen state, not isHomePage
+                    {searchOpen && (
                         <SearchPanel
                             isOpen={searchOpen}
                             onClose={() => setSearchOpen(false)}
+                            searchInputRef={searchInputRef} // Pass the ref down
                         />
                     )}
                 </AnimatePresence>
