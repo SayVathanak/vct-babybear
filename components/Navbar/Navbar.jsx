@@ -1,4 +1,4 @@
-// components/Navbar/Navbar.jsx - No significant changes needed here from previous, just re-confirming the setup
+// components/Navbar/Navbar.jsx
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { useAppContext } from "@/context/AppContext";
@@ -18,7 +18,7 @@ const Navbar = () => {
     const [showCartPanel, setShowCartPanel] = useState(false);
     const { showCartPopup, setShowCartPopup, searchOpen, setSearchOpen } = useAppContext();
 
-    const searchInputRef = useRef(null);
+    const searchInputRef = useRef(null); // Create a ref here to pass to SearchPanel
 
     const pathname = usePathname();
     const isAllProductsPage = pathname === "/all-products" || pathname.startsWith("/all-products?");
@@ -29,17 +29,12 @@ const Navbar = () => {
     const toggleSearch = () => {
         setSearchOpen(prevSearchOpen => {
             const newState = !prevSearchOpen;
-            if (newState) { // If search is being opened
-                // The crucial part: attempt to focus after the panel has mounted/animated in
-                setTimeout(() => {
-                    if (searchInputRef.current) {
-                        searchInputRef.current.focus();
-                        // This might also help for iOS:
-                        // If focus doesn't open keyboard, manually try to trigger it (less reliable)
-                        // This is more for older Androids, but sometimes helps with iOS too.
-                        // searchInputRef.current.setSelectionRange(0, 0);
-                    }
-                }, 100); // 100ms usually gives enough time for rendering
+            // If search is being opened, attempt to focus the input directly
+            if (newState) {
+                // Removed setTimeout here
+                if (searchInputRef.current) {
+                    searchInputRef.current.focus();
+                }
             }
             return newState;
         });
@@ -48,6 +43,7 @@ const Navbar = () => {
     return (
         <>
             <nav className="fixed top-0 left-0 right-0 z-[55] bg-white border-b border-gray-200 shadow-sm px-4 pt-3 pb-2 md:px-12 flex items-center justify-between">
+                {/* Mobile Menu Toggle */}
                 <div className="flex items-center gap-4">
                     <button
                         onClick={toggleMobileMenu}
@@ -58,8 +54,10 @@ const Navbar = () => {
                     </button>
                 </div>
 
+                {/* Centered Logo */}
                 <Logo />
 
+                {/* Navigation Actions */}
                 <NavActions
                     isAllProductsPage={isAllProductsPage}
                     isHomePage={isHomePage}
@@ -68,6 +66,7 @@ const Navbar = () => {
                     onShowCart={() => setShowCartPanel(true)}
                 />
 
+                {/* Search Panel */}
                 <AnimatePresence>
                     {searchOpen && (
                         <SearchPanel
@@ -79,16 +78,19 @@ const Navbar = () => {
                 </AnimatePresence>
             </nav>
 
+            {/* Mobile Menu */}
             <MobileMenu
                 isOpen={mobileMenuOpen}
                 onClose={() => setMobileMenuOpen(false)}
             />
 
+            {/* Cart Panel */}
             <CartPanel
                 isOpen={showCartPanel}
                 onClose={() => setShowCartPanel(false)}
             />
 
+            {/* Cart Notification */}
             <CartNotification
                 isVisible={showCartPopup}
                 onClose={() => setShowCartPopup(false)}
