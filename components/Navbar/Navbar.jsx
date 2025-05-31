@@ -1,8 +1,10 @@
+// components/Navbar/Navbar.jsx
 "use client";
 import React, { useState } from "react";
 import { useAppContext } from "@/context/AppContext";
 import { usePathname } from "next/navigation";
 import { FiMenu } from "react-icons/fi";
+import { AnimatePresence } from "framer-motion"; // Import AnimatePresence here
 
 import Logo from "./Logo";
 import SearchPanel from "./SearchPanel";
@@ -22,10 +24,10 @@ const Navbar = () => {
 
     const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
     const toggleSearch = () => {
-        // Enable search toggle ONLY for home page
-        if (isHomePage) {
-            setSearchOpen(!searchOpen);
-        }
+        // You might want to allow search to open on any page,
+        // but only show the button on the home page as per your NavActions logic.
+        // Or keep it as is if search is strictly for home page.
+        setSearchOpen(!searchOpen);
     };
 
     return (
@@ -48,19 +50,22 @@ const Navbar = () => {
                 {/* Navigation Actions */}
                 <NavActions
                     isAllProductsPage={isAllProductsPage}
-                    isHomePage={isHomePage}
+                    isHomePage={isHomePage} // Keep this for showing/hiding the search button
                     searchOpen={searchOpen}
                     onToggleSearch={toggleSearch}
                     onShowCart={() => setShowCartPanel(true)}
                 />
 
-                {/* Search Panel - Only shown on home page */}
-                {isHomePage && (
-                    <SearchPanel
-                        isOpen={searchOpen}
-                        onClose={() => setSearchOpen(false)}
-                    />
-                )}
+                {/* Search Panel */}
+                {/* Wrap the SearchPanel with AnimatePresence here as well */}
+                <AnimatePresence>
+                    {searchOpen && ( // Render based on searchOpen state, not isHomePage
+                        <SearchPanel
+                            isOpen={searchOpen}
+                            onClose={() => setSearchOpen(false)}
+                        />
+                    )}
+                </AnimatePresence>
             </nav>
 
             {/* Mobile Menu */}
