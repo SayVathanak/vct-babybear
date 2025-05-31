@@ -58,7 +58,7 @@ export default function RootLayout({ children }) {
           <Toaster />
           <AppContextProvider>
             <Navbar /> {/* Add your Navbar here */}
-            <main className="pt-12 md:pt-12"> {/* Adjust padding-top to match Navbar height */}
+            <main className="pt-12 pb-8"> {/* Adjust padding-top to match Navbar height */}
               {children}
             </main>
             <CartPopup />
