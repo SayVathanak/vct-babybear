@@ -5,12 +5,13 @@ import { FiSearch, FiShoppingCart } from "react-icons/fi";
 import Image from "next/image";
 import { useAppContext } from "@/context/AppContext";
 
-const SearchPanel = ({ isOpen, onClose }) => {
+// Accept searchInputRef as a prop
+const SearchPanel = ({ isOpen, onClose, searchInputRef }) => {
     const [searchTerm, setSearchTerm] = useState("");
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [showAllResults, setShowAllResults] = useState(false);
 
-    const searchInputRef = useRef(null);
+    // searchInputRef is now passed as a prop, no need for internal useRef
     const searchResultsRef = useRef(null);
 
     const { products, router, currency } = useAppContext();
@@ -48,16 +49,16 @@ const SearchPanel = ({ isOpen, onClose }) => {
         return () => clearTimeout(timer);
     }, [searchTerm, debouncedSearch]);
 
-    // Focus input when opened
+    // This useEffect is now solely for resetting state when closed,
+    // as focus is handled by the parent Navbar component.
     useEffect(() => {
-        if (isOpen) {
-            setTimeout(() => searchInputRef.current?.focus(), 100);
-        } else {
+        if (!isOpen) {
             setSearchTerm("");
             setFilteredProducts([]);
             setShowAllResults(false);
         }
     }, [isOpen]);
+
 
     // Handle click outside
     useEffect(() => {
@@ -97,7 +98,7 @@ const SearchPanel = ({ isOpen, onClose }) => {
                         {/* Search Input */}
                         <div className="relative mb-4">
                             <input
-                                ref={searchInputRef}
+                                ref={searchInputRef} // Attach the prop ref here
                                 type="text"
                                 placeholder="Search products..."
                                 className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-300 transition-all"
@@ -115,7 +116,6 @@ const SearchPanel = ({ isOpen, onClose }) => {
                                     {(showAllResults ? filteredProducts : filteredProducts.slice(0, 10)).map((product) => (
                                         <div
                                             key={product._id}
-                                            // Removed hover:shadow-md
                                             className="bg-white rounded-lg shadow-sm transition-all cursor-pointer border border-gray-100 flex-shrink-0 w-48"
                                             onClick={() => handleProductClick(product._id)}
                                         >
@@ -155,7 +155,6 @@ const SearchPanel = ({ isOpen, onClose }) => {
                                     <div className="flex justify-center mt-3">
                                         <button
                                             onClick={() => setShowAllResults(true)}
-                                            // Removed hover:text-sky-700 and hover:bg-sky-50
                                             className="text-sky-600 text-sm font-medium px-4 py-2 rounded-md transition-colors"
                                         >
                                             View all {filteredProducts.length} results
@@ -182,7 +181,6 @@ const SearchPanel = ({ isOpen, onClose }) => {
                                                 router.push(`/all-products?category=${category.id}`);
                                                 onClose();
                                             }}
-                                            // Removed hover:bg-gray-100
                                             className="px-3 py-1.5 text-sm bg-gray-50 rounded-md text-gray-700 transition-colors"
                                         >
                                             {category.name}
