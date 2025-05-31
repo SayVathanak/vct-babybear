@@ -52,13 +52,62 @@ export default function RootLayout({ children }) {
           <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png" />
           <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-167x167.png" />
           <link rel="apple-touch-startup-image" href="/icons/splash-2048x2732.png" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+          {/* IMPORTANT: Updated viewport to prevent iOS zoom while allowing keyboard functionality */}
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+          {/* iOS Safari keyboard fix - prevents automatic zoom on input focus */}
+          <style dangerouslySetInnerHTML={{
+            __html: `
+              @supports (-webkit-touch-callout: none) {
+                input[type="text"], input[type="search"], textarea {
+                  font-size: 16px !important;
+                }
+              }
+              
+              /* Prevent iOS Safari from hiding the keyboard when clicking outside inputs */
+              body {
+                -webkit-tap-highlight-color: transparent;
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                user-select: none;
+              }
+              
+              /* Allow text selection in inputs and content areas */
+              input, textarea, [contenteditable] {
+                -webkit-user-select: text;
+                user-select: text;
+              }
+              
+              /* Improve touch targets for better iOS interaction */
+              button, [role="button"], a {
+                -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+                touch-action: manipulation;
+              }
+              
+              /* Prevent iOS Safari from zooming when focusing inputs */
+              input, select, textarea {
+                font-size: 16px;
+              }
+              
+              /* Fix for iOS Safari viewport units */
+              .min-h-screen {
+                min-height: 100vh;
+                min-height: -webkit-fill-available;
+              }
+              
+              /* Ensure proper spacing for bottom navbar on iOS */
+              @supports (padding: max(0px)) {
+                .pb-safe {
+                  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+                }
+              }
+            `
+          }} />
         </head>
         <body className={`${outfit.className} antialiased text-gray-700`}>
           <Toaster />
           <AppContextProvider>
             <Navbar /> {/* Add your Navbar here */}
-            <main className="pt-12 pb-4"> {/* Adjust padding-top to match Navbar height */}
+            <main className="pt-12 pb-4 pb-safe"> {/* Adjust padding-top to match Navbar height, add safe area padding */}
               {children}
             </main>
             <CartPopup />
