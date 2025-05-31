@@ -496,14 +496,12 @@ const AllProducts = () => {
                         </div>
 
                         <button
-                            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                            className="lg:hidden px-3 py-2 border border-gray-300 rounded-md text-sm flex items-center"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 010 2H4a1 1 0 01-1-1zm0 8a1 1 0 011-1h16a1 1 0 010 2H4a1 1 0 01-1-1zm0 8a1 1 0 011-1h16a1 1 0 010 2H4a1 1 0 01-1-1z" />
-                            </svg>
-                            Filters
-                        </button>
+    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+    className="lg:hidden px-3 py-2 border border-gray-300 rounded-md text-sm flex items-center"
+>
+    <CiFilter className="h-5 w-5" />
+</button>
+
                     </div>
                 </div>
 
@@ -521,10 +519,12 @@ const AllProducts = () => {
                             }`}
                     >
                         <div className="flex justify-between items-center mb-6 lg:hidden">
-                            <button onClick={() => setIsSidebarOpen(true)} className="text-lg font-medium">
-                                <CiFilter className="h-6 w-6" />
-                            </button>
-                        </div>
+    <button onClick={() => setIsSidebarOpen(true)} className="flex items-center text-lg font-medium">
+        <CiFilter className="h-6 w-6 mr-2" />
+        Filters
+    </button>
+</div>
+
 
                         <ProductFilter
                             categories={allCategories}
