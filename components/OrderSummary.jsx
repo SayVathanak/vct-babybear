@@ -16,7 +16,8 @@ import {
   FaCreditCard,
   FaMoneyBillWave,
   FaUpload,
-  FaSpinner
+  FaSpinner,
+  FaCopy
 } from "react-icons/fa";
 
 const OrderSummary = () => {
@@ -101,6 +102,21 @@ const OrderSummary = () => {
   const handleAddressSelect = (address) => {
     setSelectedAddress(address);
     setIsDropdownOpen(false);
+  };
+  
+  const handleCopyText = async (textToCopy, message) => {
+    if (!navigator.clipboard) {
+      // Clipboard API not available (e.g., insecure context)
+      toast.error('Copying to clipboard is not supported in this browser or context.');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      toast.success(message || `Copied: ${textToCopy}`);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+      toast.error('Failed to copy. See console for details.');
+    }
   };
 
   // Form validation
@@ -617,13 +633,36 @@ const OrderSummary = () => {
               Please transfer to the following ABA account and upload a screenshot of your transaction.
             </p>
             
-            <div className="bg-gray-50 p-2 rounded text-center mb-3">
-              <p className="text-sm font-medium text-gray-700">
-                ABA Account: <span className="font-bold text-blue-600">001 223 344</span>
-              </p>
-              <p className="text-sm font-medium text-gray-700">
-                Account Name: <span className="font-bold text-blue-600">SAY SAKSOPHANNA</span>
-              </p>
+            {/* MODIFIED SECTION for ABA Account and Name */}
+            <div className="bg-gray-50 p-3 rounded mb-3 space-y-1">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-700">
+                  Account: <span className="font-semibold text-blue-600">001 223 344</span>
+                </p>
+                <button
+                  onClick={() => handleCopyText("001 223 344", "ABA Account Number Copied!")}
+                  className="p-1 text-blue-500 hover:text-blue-700 transition-colors"
+                  aria-label="Copy ABA Account Number"
+                  title="Copy ABA Account Number"
+                  type="button"
+                >
+                  <FaCopy size={14} />
+                </button>
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-700">
+                  Name: <span className="font-semibold text-blue-600">SAY SAKSOPHANNA</span>
+                </p>
+                <button
+                  onClick={() => handleCopyText("SAY SAKSOPHANNA", "Account Name Copied!")}
+                  className="p-1 text-blue-500 hover:text-blue-700 transition-colors"
+                  aria-label="Copy Account Name"
+                  title="Copy Account Name"
+                  type="button"
+                >
+                  <FaCopy size={14} />
+                </button>
+              </div>
             </div>
 
             <label
