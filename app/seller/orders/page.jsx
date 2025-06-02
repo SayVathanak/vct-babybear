@@ -8,7 +8,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import {
     CiCircleChevDown, CiCircleChevUp, CiBookmark, CiShoppingBasket, CiFolderOn, CiLocationArrow1, CiSearch, CiFilter, CiCalendar, CiPhone, CiMap ,
-    CiCreditCard1, CiCircleCheck, CiCircleRemove, CiWarning,CiMaximize1, CiImageOn, // CiImageOn for Eye
+    CiCreditCard1, CiCircleCheck, CiMinimize1, CiCircleRemove, CiWarning,CiMaximize1, CiImageOn, // CiImageOn for Eye
     CiRepeat, CiEdit, CiFloppyDisk, CiUser, CiReceipt , CiChat1, CiFileOn, CiDeliveryTruck, CiClock1,
     CiCircleAlert // For AlertCircle used in renderProofModal
 } from "react-icons/ci";
@@ -386,7 +386,7 @@ const Orders = () => {
                             className="text-gray-400 hover:text-gray-600 transition-colors"
                             aria-label="Close image viewer"
                         >
-                            <CiCircleRemove size={28} />
+                            <CiMinimize1 size={28} />
                         </button>
                     </div>
                     <div className="p-4 sm:p-6">
