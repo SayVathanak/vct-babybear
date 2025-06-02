@@ -6,7 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import CartPopup from "@/components/CartPopup";
 import TelegramPopup from "@/components/TelegramPopup";
 import BottomNavbar from "@/components/BottomNavbar/BottomNavbar";
-import Navbar from "@/components/Navbar/Navbar"; // Import your Navbar component
+import ConditionalLayout from "@/components/ConditionalLayout"; // We'll create this component
 
 const outfit = Outfit({ 
   subsets: ["latin"], 
@@ -106,10 +106,9 @@ export default function RootLayout({ children }) {
         <body className={`${outfit.className} antialiased text-gray-700`}>
           <Toaster />
           <AppContextProvider>
-            <Navbar /> {/* Add your Navbar here */}
-            <main className="pt-12 pb-4 pb-safe"> {/* Adjust padding-top to match Navbar height, add safe area padding */}
+            <ConditionalLayout>
               {children}
-            </main>
+            </ConditionalLayout>
             <CartPopup />
             <TelegramPopup />
             <BottomNavbar />

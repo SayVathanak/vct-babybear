@@ -5,12 +5,17 @@ const nextConfig = {
             {
                 protocol: 'https',
                 hostname: 'res.cloudinary.com',
-                pathname: '**',
+                pathname: '**', // Allows any path under this hostname
             },
             {
                 protocol: 'https',
                 hostname: 'raw.githubusercontent.com',
-                pathname: '**',
+                pathname: '**', // Allows any path under this hostname
+            },
+            { // Added for placehold.co
+                protocol: 'https',
+                hostname: 'placehold.co',
+                pathname: '/**', // Allows any path under this hostname (using '/**' which is also common)
             },
         ],
     },
