@@ -23,8 +23,8 @@ const CartPanel = ({ isOpen, onClose }) => {
 
     const cartCount = getCartCount();
 
-    // Calculate cart total
     const calculateCartTotal = useCallback(() => {
+        // ... (your existing function)
         if (!cartItems) return 0;
         return Object.entries(cartItems).reduce((sum, [productId, quantity]) => {
             const product = products.find((p) => p._id === productId);
@@ -32,8 +32,8 @@ const CartPanel = ({ isOpen, onClose }) => {
         }, 0);
     }, [cartItems, products]);
 
-    // Get cart items with product details
     const getCartItemsWithDetails = useCallback(() => {
+        // ... (your existing function)
         if (!cartItems || !products || products.length === 0) return [];
         return Object.entries(cartItems)
             .map(([productId, quantity]) => {
@@ -42,6 +42,7 @@ const CartPanel = ({ isOpen, onClose }) => {
             })
             .filter(Boolean);
     }, [cartItems, products]);
+
 
     const handleCheckout = () => {
         if (user) {
@@ -58,7 +59,8 @@ const CartPanel = ({ isOpen, onClose }) => {
         <AnimatePresence>
             {isOpen && (
                 <motion.div
-                    className="fixed inset-0 bg-black/30 z-60"
+                    // MODIFIED: Increased z-index for the backdrop
+                    className="fixed inset-0 bg-black/30 z-[1000]" // Was z-60, now z-[1000]
                     onClick={onClose}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -67,6 +69,8 @@ const CartPanel = ({ isOpen, onClose }) => {
                 >
                     <motion.div
                         ref={cartPanelRef}
+                        // The panel itself is a child, so its z-index is relative to the backdrop.
+                        // No explicit z-index needed here unless there's complex stacking within the panel.
                         className="fixed top-0 right-0 w-80 sm:w-96 max-w-full h-full bg-white shadow-xl flex flex-col overflow-hidden"
                         initial={{ x: "100%" }}
                         animate={{ x: 0 }}
