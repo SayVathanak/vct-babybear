@@ -128,7 +128,7 @@ const OrderSummary = () => {
       if (transactionProofFile && !transactionProofUrl) {
         toast.error("Please wait for proof to upload or try uploading again.");
       } else if (!transactionProofFile) {
-        toast.error("Please select and upload transaction proof for ABA payment.");
+        toast.error("Please select and upload transaction for ABA payment.");
       }
       return false;
     }
@@ -280,7 +280,7 @@ const OrderSummary = () => {
 
       if (data.success && data.imageUrl) {
         setTransactionProofUrl(data.imageUrl);
-        toast.success("Transaction proof uploaded successfully!");
+        toast.success("Transaction uploaded successfully!");
       } else {
         toast.error(data.message || "Failed to upload proof.");
         resetTransactionProof();
@@ -669,7 +669,7 @@ const OrderSummary = () => {
               htmlFor="transaction-proof-upload"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Upload Transaction Proof <span className="text-red-500">*</span>
+              Upload Transaction <span className="text-red-500">*</span>
             </label>
             
             <input
