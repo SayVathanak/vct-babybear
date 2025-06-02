@@ -2,6 +2,7 @@ import { inngest } from "@/config/inngest";
 import Product from "@/models/Product";
 import User from "@/models/User";
 import PromoCode from "@/models/PromoCode";
+import Order from "@/models/Order"; // Make sure to import your Order model
 import { getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import connectDB from "@/config/db";
@@ -13,7 +14,6 @@ export async function POST(request) {
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
-    // Extract ALL data from the request
     const requestData = await request.json();
     const { 
       address, 
@@ -23,165 +23,183 @@ export async function POST(request) {
       discount: requestDiscount,
       deliveryFee: requestDeliveryFee,
       amount: requestAmount,
-      promoCode: requestPromoDetails 
+      promoCode: requestPromoDetails,
+      paymentMethod, // New field
+      paymentTransactionImage // New field (filename or URL)
     } = requestData;
 
-    console.log("Received request data:", requestData);
+    console.log("Received request data for order creation:", requestData);
 
-    if (!address || items.length === 0) {
-      return NextResponse.json({ success: false, message: "Invalid data" });
+    if (!address || !items || items.length === 0 || !paymentMethod) {
+      return NextResponse.json({ success: false, message: "Invalid data: Address, items, and payment method are required." }, { status: 400 });
+    }
+
+    if (paymentMethod === "ABA" && !paymentTransactionImage) {
+        return NextResponse.json({ success: false, message: "Transaction proof is required for ABA payment." }, { status: 400 });
     }
 
     await connectDB();
 
-    // Calculate subtotal with fixed 2 decimal precision
     const calculatedSubtotal = Number(
       (await items.reduce(async (accPromise, item) => {
         const acc = await accPromise;
-        const product = await Product.findById(item.product);
-        // Use the same price logic as frontend - including fallback to regular price
-        const price = product.offerPrice || product.price;
+        const productDoc = await Product.findById(item.product).lean(); // Use .lean() for plain JS object
+        if (!productDoc) throw new Error(`Product with ID ${item.product} not found.`);
+        const price = productDoc.offerPrice || productDoc.price;
         return acc + price * item.quantity;
       }, Promise.resolve(0))).toFixed(2)
     );
 
-    // Delivery fee - fixed to 2 decimals
     const itemCount = items.reduce((count, item) => count + item.quantity, 0);
     const calculatedDeliveryFee = Number((itemCount > 1 ? 0 : 1.5).toFixed(2));
 
-    // Promo code logic - improved version to use frontend values if provided
     let discount = requestDiscount || 0;
     let promoCodeDetails = null;
     
-    // Use client-provided values for consistency if available
-    const subtotal = requestSubtotal || calculatedSubtotal;
-    const deliveryFee = requestDeliveryFee !== undefined ? requestDeliveryFee : calculatedDeliveryFee;
+    const subtotal = requestSubtotal !== undefined ? Number(requestSubtotal.toFixed(2)) : calculatedSubtotal;
+    const deliveryFee = requestDeliveryFee !== undefined ? Number(requestDeliveryFee.toFixed(2)) : calculatedDeliveryFee;
 
-    // If the client already provided processed promo code details, use them
     if (requestPromoDetails) {
-      console.log("Using client-provided promo code details:", requestPromoDetails);
       promoCodeDetails = {
         id: requestPromoDetails.id,
         code: requestPromoDetails.code,
-        discountAmount: requestPromoDetails.discountAmount || discount
+        discountAmount: requestPromoDetails.discountAmount || discount,
+        // Ensure discountType and discountValue are also passed if needed by the Order model
+        discountType: requestPromoDetails.discountType, 
+        discountValue: requestPromoDetails.discountValue  
       };
-      
-      // Ensure the discount value is properly set
       discount = requestDiscount || discount;
-    }
-    // Otherwise look up the promo code if an ID was provided
-    else if (promoCodeId) {
-      console.log("Looking up promo code with ID:", promoCodeId);
+    } else if (promoCodeId) {
+      const promoCodeDoc = await PromoCode.findOne({
+        _id: promoCodeId,
+        isActive: true,
+        $or: [
+          { expiryDate: { $exists: false } },
+          { expiryDate: null },
+          { expiryDate: { $gt: new Date() } }
+        ]
+      }).lean();
 
-      try {
-        const promoCode = await PromoCode.findOne({
-          _id: promoCodeId,
-          isActive: true,
-          $or: [
-            { expiryDate: { $exists: false } },
-            { expiryDate: null },
-            { expiryDate: { $gt: new Date() } }
-          ]
-        });
-
-        if (!promoCode) {
-          console.log("No active promo code found with this ID or code has expired");
-        } else {
-          console.log("Found promo code:", {
-            code: promoCode.code,
-            discountType: promoCode.discountType,
-            discountValue: promoCode.discountValue,
-            minPurchaseAmount: promoCode.minPurchaseAmount,
-            maxDiscountAmount: promoCode.maxDiscountAmount
-          });
-
-          // Check minimum purchase amount
-          if (promoCode.minPurchaseAmount && subtotal < promoCode.minPurchaseAmount) {
-            console.log(`Minimum purchase amount not met. Required: ${promoCode.minPurchaseAmount}, Current: ${subtotal}`);
-          } else {
-            // Apply discount based on type
-            if (promoCode.discountType === "percentage") {
-              // Ensure percentage is within valid range (0-100)
-              const validPercentage = Math.min(Math.max(promoCode.discountValue, 0), 100);
-              discount = (subtotal * validPercentage) / 100;
-
-              // Apply maximum discount cap if specified
-              if (promoCode.maxDiscountAmount && discount > promoCode.maxDiscountAmount) {
-                console.log(`Discount capped at maximum: ${promoCode.maxDiscountAmount}`);
-                discount = promoCode.maxDiscountAmount;
-              }
-            } else if (promoCode.discountType === "fixed") {
-              // For fixed discount, don't allow more than the subtotal
-              discount = Math.min(promoCode.discountValue, subtotal);
-            } else {
-              console.log(`Unknown discount type: ${promoCode.discountType}`);
+      if (promoCodeDoc) {
+        if (!promoCodeDoc.minPurchaseAmount || subtotal >= promoCodeDoc.minPurchaseAmount) {
+          if (promoCodeDoc.discountType === "percentage") {
+            const validPercentage = Math.min(Math.max(promoCodeDoc.discountValue, 0), 100);
+            discount = (subtotal * validPercentage) / 100;
+            if (promoCodeDoc.maxDiscountAmount && discount > promoCodeDoc.maxDiscountAmount) {
+              discount = promoCodeDoc.maxDiscountAmount;
             }
-
-            // Format to 2 decimal places
-            discount = Number(discount.toFixed(2));
-            console.log("Calculated discount amount:", discount);
-
-            // Increment usage count
-            promoCode.usageCount = (promoCode.usageCount || 0) + 1;
-            await promoCode.save();
-
-            // Set promo code details for the response
-            promoCodeDetails = {
-              id: promoCode._id,
-              code: promoCode.code,
-              discountAmount: discount,
-              discountType: promoCode.discountType,
-              discountValue: promoCode.discountValue
-            };
-
-            console.log("Set promoCodeDetails:", promoCodeDetails);
+          } else if (promoCodeDoc.discountType === "fixed") {
+            discount = Math.min(promoCodeDoc.discountValue, subtotal);
           }
+          discount = Number(discount.toFixed(2));
+          
+          // Increment usage count (important: do this on the actual PromoCode model, not the lean object)
+          await PromoCode.updateOne({ _id: promoCodeId }, { $inc: { usageCount: 1 } });
+
+          promoCodeDetails = {
+            id: promoCodeDoc._id,
+            code: promoCodeDoc.code,
+            discountAmount: discount,
+            discountType: promoCodeDoc.discountType,
+            discountValue: promoCodeDoc.discountValue
+          };
         }
-      } catch (error) {
-        console.error("Error processing promo code:", error);
-        // Continue checkout without promo code if there's an error
       }
-    } else {
-      console.log("No promoCodeId or promoCode details provided in request");
     }
 
-    // Final amount - use client amount if provided, otherwise calculate
-    const finalAmount = requestAmount || Number((subtotal + deliveryFee - discount).toFixed(2));
-    console.log("Calculated order amounts:", { subtotal, deliveryFee, discount, finalAmount });
+    const finalAmount = requestAmount !== undefined ? Number(requestAmount.toFixed(2)) : Number((subtotal + deliveryFee - discount).toFixed(2));
 
-    // Compose full order data
-    const orderData = {
+    // Determine paymentStatus and paymentConfirmationStatus based on paymentMethod
+    let orderPaymentStatus = 'pending';
+    let orderPaymentConfirmationStatus = 'na'; // Not applicable by default
+
+    if (paymentMethod === 'ABA') {
+      orderPaymentStatus = 'pending_confirmation'; // Or 'pending' if you prefer, then seller confirms to 'paid'
+      orderPaymentConfirmationStatus = 'pending_review';
+    } else if (paymentMethod === 'COD') {
+      // For COD, payment is typically made upon delivery.
+      // paymentStatus remains 'pending' until delivery and payment confirmation.
+      // paymentConfirmationStatus is 'na' as it's not an upfront bank transfer.
+    }
+
+
+    const orderDataForInngest = { // This is for the event, not directly for DB save if schema differs
       userId,
-      address,
+      address, // Should be address ID
       items,
-      subtotal: Number(subtotal.toFixed(2)),
-      deliveryFee: Number(deliveryFee.toFixed(2)),
-      discount: Number(discount.toFixed(2)),
-      promoCode: promoCodeDetails,
+      subtotal: subtotal,
+      deliveryFee: deliveryFee,
+      discount: discount,
+      promoCode: promoCodeDetails, // This should match the structure expected by Inngest/Order model
       amount: finalAmount,
-      date: Date.now()
+      date: Date.now(),
+      paymentMethod: paymentMethod,
+      paymentTransactionImage: paymentTransactionImage, // Filename or URL
+      // status: 'Order Placed', // Set by default in schema or here
+      // paymentStatus: orderPaymentStatus, // Set based on logic above
+      // paymentConfirmationStatus: orderPaymentConfirmationStatus // Set based on logic above
+    };
+    
+    // Create the order document for DB
+    const newOrder = {
+        userId,
+        address, // Assuming this is the Address ID string
+        items,
+        subtotal,
+        deliveryFee,
+        discount,
+        promoCode: promoCodeDetails, // Save the detailed promo object
+        amount: finalAmount,
+        date: Date.now(),
+        status: 'Order Placed', // Initial status
+        paymentMethod,
+        paymentTransactionImage,
+        paymentStatus: orderPaymentStatus,
+        paymentConfirmationStatus: orderPaymentConfirmationStatus
     };
 
-    console.log("Final order data being sent to Inngest:", orderData);
+
+    // Send to Inngest first, so if DB fails, we might have a record in Inngest
+    // However, it's often better to save to DB first to get an order ID.
+    // For this example, let's assume Inngest can handle an order without a pre-existing DB ID or uses a temporary one.
+    
+    // The `inngest.send` for "order/created" might trigger the actual order saving to DB
+    // via an Inngest function. If so, the data sent to Inngest should be complete.
+    // If this API route is *solely* responsible for DB saving, then save here.
+    // The provided `create.js` sends to Inngest and then clears cart, implying Inngest handles DB.
+    // Let's adjust `orderDataForInngest` to include all necessary fields for DB creation by Inngest.
+
+    const finalOrderDataForEvent = {
+        ...orderDataForInngest, // contains most fields
+        status: 'Order Placed', // Explicitly set initial status for the event
+        paymentStatus: orderPaymentStatus,
+        paymentConfirmationStatus: orderPaymentConfirmationStatus
+    };
+    
+    console.log("Final order data being sent to Inngest:", finalOrderDataForEvent);
 
     await inngest.send({
-      name: "order/created",
-      data: orderData
+      name: "order/created", // This Inngest function should handle saving the order to MongoDB
+      data: finalOrderDataForEvent 
     });
 
-    // Clear user's cart
-    const user = await User.findById(userId);
-    user.cartItems = {};
-    await user.save();
+    // Clear user's cart (assuming Inngest successfully creates the order)
+    const userDoc = await User.findById(userId);
+    if (userDoc) {
+        userDoc.cartItems = {};
+        await userDoc.save();
+    }
 
     return NextResponse.json({
       success: true,
-      message: "Order Placed",
-      orderId: Date.now().toString(), // Replace with actual order ID logic later
-      orderData
+      message: "Order Placed successfully. Awaiting processing.",
+      // orderId: newOrder._id // If saved here, you'd have an ID. If Inngest saves, ID comes later.
+      // For now, let's assume Inngest event is the source of truth for creation.
+      orderData: finalOrderDataForEvent // Return the data sent, useful for client if needed
     });
+
   } catch (error) {
-    console.log("Error in order creation:", error);
-    return NextResponse.json({ success: false, message: error.message });
+    console.error("Error in order creation:", error);
+    return NextResponse.json({ success: false, message: error.message || "Failed to create order." }, { status: 500 });
   }
 }

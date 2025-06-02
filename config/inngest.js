@@ -62,35 +62,56 @@ export const syncUserDeletion = inngest.createFunction(
 export const createUserOrder = inngest.createFunction(
     {
         id: 'create-user-order',
-        batchEvents: {
-            maxSize: 5,
-            timeout: '5s'
+        batchEvents: { // Note: batching might delay individual order processing visibility slightly
+            maxSize: 5, // Consider maxSize: 1 if you want immediate processing per order
+            timeout: '5s' // Adjust timeout accordingly if changing maxSize
         },
     },
-    { event: 'order/created' },
-    async ({ events }) => {
+    { event: 'order/created' }, // This is triggered by your /api/order/create.js
+    async ({ events, step }) => { // Added 'step' for potential individual logging if needed
 
-        const orders = events.map((event) => {
+        const ordersToInsert = events.map((singleEvent) => { // Changed variable name for clarity
+            const eventData = singleEvent.data; // Data from /api/order/create.js
+
+            // Log the data received by this specific event if needed for debugging
+            // console.log(`Processing order event data for Inngest: ${JSON.stringify(eventData, null, 2)}`);
+
             return {
-                userId: event.data.userId,
-                items: event.data.items,
-                subtotal: event.data.subtotal,
-                deliveryFee: event.data.deliveryFee,
-                discount: event.data.discount,
-                promoCode: event.data.promoCode,
-                amount: event.data.amount,
-                address: event.data.address,
-                date: event.data.date,
+                userId: eventData.userId,
+                items: eventData.items,
+                subtotal: eventData.subtotal,
+                deliveryFee: eventData.deliveryFee,
+                discount: eventData.discount,
+                promoCode: eventData.promoCode, // Ensure this structure matches your Order schema
+                amount: eventData.amount,
+                address: eventData.address, // Ensure this is the address ID string
+                date: eventData.date,
+
+                // --- Add the missing fields here ---
+                status: eventData.status || 'Order Placed', // Use status from event, or a default
+                paymentMethod: eventData.paymentMethod,
+                paymentTransactionImage: eventData.paymentTransactionImage,
+                paymentStatus: eventData.paymentStatus,
+                paymentConfirmationStatus: eventData.paymentConfirmationStatus,
             };
-        })
+        });
 
-        await connectDB()
-        await Order.insertMany(orders)
+        if (ordersToInsert.length > 0) {
+            await step.run("save-orders-to-db", async () => {
+                await connectDB();
+                // Using insertMany is good for batching
+                const result = await Order.insertMany(ordersToInsert);
+                console.log(`${result.length} orders successfully inserted via Inngest.`);
+                return { insertedCount: result.length };
+            });
+        } else {
+            console.log("No orders to insert in this Inngest batch.");
+            return { success: true, processed: 0, message: "No orders in batch." };
+        }
 
-        return { success: true, processed: orders.length };
-
+        return { success: true, processed: ordersToInsert.length };
     }
-)
+);
 
 // New function to handle item status updates
 export const handleItemStatusUpdated = inngest.createFunction(
