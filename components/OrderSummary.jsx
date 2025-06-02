@@ -619,10 +619,10 @@ const OrderSummary = () => {
             
             <div className="bg-gray-50 p-2 rounded text-center mb-3">
               <p className="text-sm font-medium text-gray-700">
-                ABA Account: <span className="font-bold text-blue-600">000 123 456</span>
+                ABA Account: <span className="font-bold text-blue-600">001 223 344</span>
               </p>
               <p className="text-sm font-medium text-gray-700">
-                Account Name: <span className="font-bold text-blue-600">Your Store Name</span>
+                Account Name: <span className="font-bold text-blue-600">SAY SAKSOPHANNA</span>
               </p>
             </div>
 
