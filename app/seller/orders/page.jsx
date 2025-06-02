@@ -8,7 +8,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import {
     CiCircleChevDown, CiCircleChevUp, CiBookmark, CiShoppingBasket, CiFolderOn, CiLocationArrow1, CiSearch, CiFilter, CiCalendar, CiPhone, CiMap ,
-    CiCreditCard1, CiCircleCheck, CiCircleRemove, CiWarning, CiImageOn, // CiImageOn for Eye
+    CiCreditCard1, CiCircleCheck, CiCircleRemove, CiWarning,CiMaximize1, CiImageOn, // CiImageOn for Eye
     CiRepeat, CiEdit, CiFloppyDisk, CiUser, CiReceipt , CiChat1, CiFileOn, CiDeliveryTruck, CiClock1,
     CiCircleAlert // For AlertCircle used in renderProofModal
 } from "react-icons/ci";
@@ -644,7 +644,7 @@ const Orders = () => {
                                                                         <div className="flex justify-between items-center pt-1">
                                                                             <span className="text-gray-600">Payment Transaction:</span>
                                                                             <button onClick={() => openProofModal(order.paymentTransactionImage)} className="text-sky-600 hover:text-sky-700 text-xs font-medium flex items-center underline hover:no-underline">
-                                                                                <CiImageOn size={16} className="mr-1" /> View Payment
+                                                                                <CiMaximize1 size={16} className="mr-1" /> View Payment
                                                                             </button>
                                                                         </div>
                                                                     )}
