@@ -32,7 +32,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
         <AnimatePresence>
             {isOpen && (
                 <motion.div
-                    className="fixed inset-0 bg-black/30 z-40"
+                    className="fixed inset-0 bg-black/30 z-[60]" // Changed z-50 to z-[60]
                     onClick={onClose}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -40,7 +40,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
                     transition={{ duration: 0.2 }}
                 >
                     <motion.div
-                        className="fixed top-0 left-0 w-72 h-full bg-white z-50 overflow-hidden flex flex-col"
+                        className="fixed top-0 left-0 w-72 h-full bg-white z-[70] overflow-hidden flex flex-col" // Changed z-50 to z-[70]
                         initial={{ x: "-100%" }}
                         animate={{ x: 0 }}
                         exit={{ x: "-100%" }}
