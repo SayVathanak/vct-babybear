@@ -642,9 +642,9 @@ const Orders = () => {
                                                                     <div className="flex justify-between items-center"><span className="text-gray-600">Confirmation:</span><span className={`font-medium ${getPaymentStatusColorText(order.paymentConfirmationStatus)}`}>{order.paymentConfirmationStatus?.replace(/_/g, ' ') || 'N/A'}</span></div>
                                                                     {order.paymentTransactionImage && (
                                                                         <div className="flex justify-between items-center pt-1">
-                                                                            <span className="text-gray-600">Proof:</span>
+                                                                            <span className="text-gray-600">Payment Transaction:</span>
                                                                             <button onClick={() => openProofModal(order.paymentTransactionImage)} className="text-sky-600 hover:text-sky-700 text-xs font-medium flex items-center underline hover:no-underline">
-                                                                                <CiImageOn size={16} className="mr-1" /> View Proof
+                                                                                <CiImageOn size={16} className="mr-1" /> View Payment
                                                                             </button>
                                                                         </div>
                                                                     )}
