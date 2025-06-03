@@ -3,7 +3,7 @@ import { getAuth } from "@clerk/nextjs/server";
 import authSeller from "@/lib/authSeller";
 import connectDB from "@/config/db";
 import Product from "@/models/Product";
-import { uploadToCloudinary } from "@/lib/cloudinary"; // You'll need to create this utility
+import { uploadToCloudinary } from "@/lib/cloudinary";
 
 export async function PUT(request) {
   try {
@@ -18,7 +18,7 @@ export async function PUT(request) {
     const isSeller = await authSeller(userId);
 
     if (!isSeller) {
-      return NextResponse.json({ success: false, message: "Not Authorized" });
+      return NextResponse.json({ success: false, message: "Not Authorized" }, { status: 403 });
     }
 
     // Check if this is a form data request
@@ -80,7 +80,7 @@ export async function PUT(request) {
       } = requestData;
 
       if (!_id) {
-        return NextResponse.json({ success: false, message: "Product ID is required" });
+        return NextResponse.json({ success: false, message: "Product ID is required" }, { status: 400 });
       }
 
       // Validate required fields
@@ -88,22 +88,24 @@ export async function PUT(request) {
         return NextResponse.json({
           success: false,
           message: "Name, price, offer price, category, and description are required"
-        });
+        }, { status: 400 });
       }
 
       // Connect to the database
       await connectDB();
 
-      // Find the product and verify ownership
+      // Find the product
       const product = await Product.findById(_id);
 
       if (!product) {
-        return NextResponse.json({ success: false, message: "Product not found" });
+        return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
       }
 
-      if (product.userId !== userId) {
-        return NextResponse.json({ success: false, message: "Not authorized to update this product" });
-      }
+      // --- OWNERSHIP CHECK REMOVED ---
+      // Any authenticated seller can now edit any product
+      // if (product.userId !== userId) {
+      //   return NextResponse.json({ success: false, message: "Not authorized to update this product" });
+      // }
 
       // Process image uploads (if any)
       let finalImageUrls = [...existingImages];
@@ -111,7 +113,7 @@ export async function PUT(request) {
       if (newImageFiles && newImageFiles.length > 0) {
         // Upload new images to cloudinary or your storage service
         const uploadPromises = newImageFiles.map(file =>
-          uploadToCloudinary(file) // You need to implement this function
+          uploadToCloudinary(file)
         );
 
         const uploadResults = await Promise.all(uploadPromises);
@@ -138,11 +140,11 @@ export async function PUT(request) {
         product
       });
     } else if (isQuickEdit) {
-      // Handle quick edit functionality (original functionality)
+      // Handle quick edit functionality
       const { _id, name, price, offerPrice, category, isAvailable } = requestData;
 
       if (!_id) {
-        return NextResponse.json({ success: false, message: "Product ID is required" });
+        return NextResponse.json({ success: false, message: "Product ID is required" }, { status: 400 });
       }
 
       // Validate required fields
@@ -150,22 +152,24 @@ export async function PUT(request) {
         return NextResponse.json({
           success: false,
           message: "Name, price, offer price, and category are required"
-        });
+        }, { status: 400 });
       }
 
       // Connect to the database
       await connectDB();
 
-      // Find the product and verify ownership
+      // Find the product
       const product = await Product.findById(_id);
 
       if (!product) {
-        return NextResponse.json({ success: false, message: "Product not found" });
+        return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
       }
 
-      if (product.userId !== userId) {
-        return NextResponse.json({ success: false, message: "Not authorized to update this product" });
-      }
+      // --- OWNERSHIP CHECK REMOVED ---
+      // Any authenticated seller can now edit any product
+      // if (product.userId !== userId) {
+      //   return NextResponse.json({ success: false, message: "Not authorized to update this product" });
+      // }
 
       // Update product with quick edit fields
       product.name = name;
@@ -182,26 +186,28 @@ export async function PUT(request) {
         product
       });
     } else {
-      // Handle simple availability update (original functionality)
+      // Handle simple availability update
       const { productId, isAvailable } = requestData;
 
       if (!productId) {
-        return NextResponse.json({ success: false, message: "Product ID is required" });
+        return NextResponse.json({ success: false, message: "Product ID is required" }, { status: 400 });
       }
 
       // Connect to the database
       await connectDB();
 
-      // Find the product and verify ownership
+      // Find the product
       const product = await Product.findById(productId);
 
       if (!product) {
-        return NextResponse.json({ success: false, message: "Product not found" });
+        return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
       }
 
-      if (product.userId !== userId) {
-        return NextResponse.json({ success: false, message: "Not authorized to update this product" });
-      }
+      // --- OWNERSHIP CHECK REMOVED ---
+      // Any authenticated seller can now edit any product
+      // if (product.userId !== userId) {
+      //   return NextResponse.json({ success: false, message: "Not authorized to update this product" });
+      // }
 
       // Update product availability
       product.isAvailable = isAvailable;
@@ -213,6 +219,7 @@ export async function PUT(request) {
       });
     }
   } catch (error) {
-    return NextResponse.json({ success: false, message: error.message });
+    console.error("Error in PUT route:", error);
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }

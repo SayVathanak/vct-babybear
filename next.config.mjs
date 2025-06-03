@@ -12,11 +12,7 @@ const nextConfig = {
                 hostname: 'raw.githubusercontent.com',
                 pathname: '**', // Allows any path under this hostname
             },
-            { // Added for placehold.co
-                protocol: 'https',
-                hostname: 'placehold.co',
-                pathname: '/**', // Allows any path under this hostname (using '/**' which is also common)
-            },
+            
         ],
     },
 };

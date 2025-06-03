@@ -4,13 +4,14 @@ import { AppContextProvider } from "@/context/AppContext";
 import { Toaster } from "react-hot-toast";
 import { ClerkProvider } from "@clerk/nextjs";
 import CartPopup from "@/components/CartPopup";
-import TelegramPopup from "@/components/TelegramPopup";
+import TelegramPopup from "@/components/TelegramPopup"; 
+import TelegramChat from "@/components/TelegramChat"; 
 import BottomNavbar from "@/components/BottomNavbar/BottomNavbar";
-import ConditionalLayout from "@/components/ConditionalLayout"; // We'll create this component
+import ConditionalLayout from "@/components/ConditionalLayout";
 
-const outfit = Outfit({ 
-  subsets: ["latin"], 
-  weight: ["300", "400", "500", "600", "700"] 
+const outfit = Outfit({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"]
 });
 
 export const metadata = {
@@ -41,6 +42,7 @@ export default function RootLayout({ children }) {
     <ClerkProvider>
       <html lang="en">
         <head>
+          {/* ... your head content ... */}
           <link rel="manifest" href="/manifest.json" />
           <meta name="theme-color" content="#ffffff" />
           <meta name="msapplication-TileColor" content="#ffffff" />
@@ -52,9 +54,7 @@ export default function RootLayout({ children }) {
           <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png" />
           <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-167x167.png" />
           <link rel="apple-touch-startup-image" href="/icons/splash-2048x2732.png" />
-          {/* IMPORTANT: Updated viewport to prevent iOS zoom while allowing keyboard functionality */}
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
-          {/* iOS Safari keyboard fix - prevents automatic zoom on input focus */}
           <style dangerouslySetInnerHTML={{
             __html: `
               @supports (-webkit-touch-callout: none) {
@@ -62,39 +62,27 @@ export default function RootLayout({ children }) {
                   font-size: 16px !important;
                 }
               }
-              
-              /* Prevent iOS Safari from hiding the keyboard when clicking outside inputs */
               body {
                 -webkit-tap-highlight-color: transparent;
                 -webkit-touch-callout: none;
                 -webkit-user-select: none;
                 user-select: none;
               }
-              
-              /* Allow text selection in inputs and content areas */
               input, textarea, [contenteditable] {
                 -webkit-user-select: text;
                 user-select: text;
               }
-              
-              /* Improve touch targets for better iOS interaction */
               button, [role="button"], a {
                 -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
                 touch-action: manipulation;
               }
-              
-              /* Prevent iOS Safari from zooming when focusing inputs */
               input, select, textarea {
                 font-size: 16px;
               }
-              
-              /* Fix for iOS Safari viewport units */
               .min-h-screen {
                 min-height: 100vh;
                 min-height: -webkit-fill-available;
               }
-              
-              /* Ensure proper spacing for bottom navbar on iOS */
               @supports (padding: max(0px)) {
                 .pb-safe {
                   padding-bottom: max(1rem, env(safe-area-inset-bottom));
@@ -111,6 +99,7 @@ export default function RootLayout({ children }) {
             </ConditionalLayout>
             <CartPopup />
             <TelegramPopup />
+            <TelegramChat />
             <BottomNavbar />
           </AppContextProvider>
         </body>

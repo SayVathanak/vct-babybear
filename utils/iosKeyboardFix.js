@@ -29,31 +29,33 @@ export const iosKeyboardFix = () => {
   }
 };
 
-// Alternative approach - use this in your component
-export const useIOSKeyboardFix = () => {
-  useEffect(() => {
+/// Conceptual refinement for iosKeyboardFix using event delegation
+export const iosKeyboardFixDelegated = () => {
     const isIOSPWA = window.navigator.standalone === true && 
-      /iPad|iPhone|iPod/.test(navigator.userAgent);
-    
+        /iPad|iPhone|iPod/.test(navigator.userAgent);
+
     if (isIOSPWA) {
-      // Add event listeners to force keyboard
-      const handleInputFocus = (e) => {
-        const target = e.target;
-        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-          setTimeout(() => {
-            target.focus();
-            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }, 300);
-        }
-      };
-      
-      document.addEventListener('touchend', handleInputFocus);
-      document.addEventListener('click', handleInputFocus);
-      
-      return () => {
-        document.removeEventListener('touchend', handleInputFocus);
-        document.removeEventListener('click', handleInputFocus);
-      };
+        const handleTouchStart = function(e) {
+            if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) {
+                setTimeout(() => {
+                    e.target.focus();
+                    // e.target.click(); // Re-evaluate if click() is always needed
+                }, 100);
+            }
+        };
+
+        const handleClick = function(e) {
+            if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) {
+                setTimeout(() => {
+                    e.target.focus();
+                }, 50);
+            }
+        };
+
+        document.addEventListener('touchstart', handleTouchStart, { capture: true }); // Use capture if needed, or bubble
+        document.addEventListener('click', handleClick, { capture: true }); // Use capture if needed
+
+        // Note: You'd need a way to remove these listeners if this function could be "undone"
+        // For a one-time call, it might be acceptable, but less ideal than the hook's cleanup.
     }
-  }, []);
 };
