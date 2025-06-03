@@ -8,7 +8,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import {
     CiCircleChevDown, CiCircleChevUp, CiBookmark, CiShoppingBasket, CiFolderOn, CiLocationArrow1, CiSearch, CiFilter, CiCalendar, CiPhone, CiMap ,
-    CiCreditCard1, CiCircleCheck, CiMinimize1, CiCircleRemove, CiWarning,CiMaximize1, CiImageOn, // CiImageOn for Eye
+    CiCreditCard1, CiCircleCheck, CiMinimize1, CiCircleRemove, CiWarning,CiMaximize1, CiRead, CiImageOn, // CiImageOn for Eye
     CiRepeat, CiEdit, CiFloppyDisk, CiUser, CiReceipt , CiChat1, CiFileOn, CiDeliveryTruck, CiClock1,
     CiCircleAlert // For AlertCircle used in renderProofModal
 } from "react-icons/ci";
@@ -380,13 +380,13 @@ const Orders = () => {
                     onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal content
                 >
                     <div className="flex justify-between items-center p-4 border-b border-gray-200">
-                        <h3 id="proof-modal-title" className="text-lg font-semibold text-gray-900">Transaction Proof</h3>
+                        <h3 id="proof-modal-title" className="text-lg font-semibold text-gray-900">Payment Transaction</h3>
                         <button
                             onClick={() => setShowProofModal(false)}
                             className="text-gray-400 hover:text-gray-600 transition-colors"
                             aria-label="Close image viewer"
                         >
-                            <CiMinimize1 size={28} />
+                            <CiSquareRemove size={28} />
                         </button>
                     </div>
                     <div className="p-4 sm:p-6">
@@ -644,7 +644,7 @@ const Orders = () => {
                                                                         <div className="flex justify-between items-center pt-1">
                                                                             <span className="text-gray-600">Payment Transaction:</span>
                                                                             <button onClick={() => openProofModal(order.paymentTransactionImage)} className="text-sky-600 hover:text-sky-700 text-xs font-medium flex items-center underline hover:no-underline">
-                                                                                <CiMaximize1 size={16} className="mr-1" /> View Payment
+                                                                                <CiRead size={16} className="mr-1" /> View
                                                                             </button>
                                                                         </div>
                                                                     )}
