@@ -492,7 +492,7 @@ const MyOrders = () => {
                                                                 {order.paymentMethod === 'ABA' && order.paymentTransactionImage && (
                                                                     <div className="pt-1 text-right">
                                                                         <button onClick={() => openProofModal(order.paymentTransactionImage)} className="inline-flex items-center text-sky-500 hover:text-sky-700 hover:underline text-sm font-medium">
-                                                                            <Eye className="mr-1.5" size={14} /> Payment Transaction
+                                                                            <Eye className="mr-1.5" size={14} /> View
                                                                         </button>
                                                                     </div>
                                                                 )}
