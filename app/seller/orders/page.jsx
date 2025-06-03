@@ -386,7 +386,7 @@ const Orders = () => {
                             className="text-gray-400 hover:text-gray-600 transition-colors"
                             aria-label="Close image viewer"
                         >
-                            <CiSquareRemove size={28} />
+                            <CiCircleRemove size={28} />
                         </button>
                     </div>
                     <div className="p-4 sm:p-6">
