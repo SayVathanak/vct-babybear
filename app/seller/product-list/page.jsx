@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect, useState } from "react";
-// import { assets, productsDummyData } from "@/assets/assets"; // productsDummyData seems unused
+import { assets, productsDummyData } from "@/assets/assets";
 import Image from "next/image";
 import { useAppContext } from "@/context/AppContext";
 import Footer from "@/components/seller/Footer";
@@ -10,18 +10,15 @@ import toast from "react-hot-toast";
 import QuickEditModal from "@/components/seller/QuickEditModal";
 
 const ProductList = () => {
-  const { router, getToken, user, isLoaded: isUserLoaded } = useAppContext(); // Assuming isLoaded comes from AppContext for Clerk's user
-  const [products, setProducts] = useState([]);
-  const [isLoadingProducts, setIsLoadingProducts] = useState(true); // Renamed for clarity
-  const [isSeller, setIsSeller] = useState(false);
-  const [authCheckCompleted, setAuthCheckCompleted] = useState(false);
-
-  const [updatingProductId, setUpdatingProductId] = useState(null);
-  const [quickEditProduct, setQuickEditProduct] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterCategory, setFilterCategory] = useState("");
-  const [sortBy, setSortBy] = useState("newest");
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const { router, getToken, user } = useAppContext()
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [updatingProductId, setUpdatingProductId] = useState(null)
+  const [quickEditProduct, setQuickEditProduct] = useState(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filterCategory, setFilterCategory] = useState("")
+  const [sortBy, setSortBy] = useState("newest")
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false)
 
   const categories = [
     { value: '', label: 'All Categories' },
@@ -36,49 +33,28 @@ const ProductList = () => {
     { value: 'NurseryItems', label: 'Nursery & Sleep Essentials' }
   ];
 
-  useEffect(() => {
-    // This effect determines if the user is a seller and then fetches products.
-    if (isUserLoaded) { // Wait for Clerk's user object to be loaded
-      if (user && user.publicMetadata && user.publicMetadata.role === 'seller') {
-        setIsSeller(true);
-        fetchSellerProduct(); // Fetch products only if user is a seller
-      } else {
-        setIsSeller(false);
-        setIsLoadingProducts(false); // Not loading products if not a seller
-      }
-      setAuthCheckCompleted(true); // Mark that the authentication and role check has been performed
-    }
-  }, [user, isUserLoaded]); // Rerun when user or its loaded state changes
-
   const fetchSellerProduct = async () => {
-    // No need to check isSeller here again, as this is called conditionally
-    setIsLoadingProducts(true);
     try {
-      const token = await getToken();
-      const { data } = await axios.get('/api/product/seller-list', { headers: { Authorization: `Bearer ${token}` } });
+      setLoading(true)
+      const token = await getToken()
+      const {data} = await axios.get('/api/product/seller-list', {headers:{Authorization:`Bearer ${token}`}})
       
       if (data.success) {
-        setProducts(data.products);
+        setProducts(data.products)
       } else {
-        toast.error(data.message);
-        setProducts([]); // Clear products on error
+        toast.error(data.message)
       }
     } catch (error) {
-      toast.error(error.message || "Failed to fetch products.");
-      setProducts([]); // Clear products on error
+      toast.error(error.message)
     } finally {
-      setIsLoadingProducts(false);
+      setLoading(false)
     }
-  };
+  }
 
   const toggleAvailability = async (productId, currentStatus) => {
-    if (!isSeller) {
-      toast.error("You are not authorized to perform this action.");
-      return;
-    }
-    setUpdatingProductId(productId);
     try {
-      const token = await getToken();
+      setUpdatingProductId(productId)
+      const token = await getToken()
       const { data } = await axios.put(
         '/api/product/update-availability',
         { 
@@ -86,53 +62,50 @@ const ProductList = () => {
           isAvailable: !currentStatus 
         },
         { headers: { Authorization: `Bearer ${token}` } }
-      );
+      )
       
       if (data.success) {
-        setProducts(prevProducts => prevProducts.map(product => 
+        // Update local state to reflect the change
+        setProducts(products.map(product => 
           product._id === productId ? 
-          { ...product, isAvailable: !product.isAvailable } : 
+          {...product, isAvailable: !product.isAvailable} : 
           product
-        ));
-        toast.success(`Product ${!currentStatus ? 'available' : 'unavailable'} now`);
+        ))
+        toast.success(`Product ${!currentStatus ? 'available' : 'unavailable'} now`)
       } else {
-        toast.error(data.message);
+        toast.error(data.message)
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to update product availability');
+      toast.error(error.message || 'Failed to update product availability')
     } finally {
-      setUpdatingProductId(null);
+      setUpdatingProductId(null)
     }
-  };
+  }
 
   const handleQuickEdit = (product) => {
-    if (!isSeller) return; // Should not be reachable if UI is correctly gated
     setQuickEditProduct({
       ...product,
-      price: product.price ? product.price.toString() : '', // Handle potential undefined price
-      offerPrice: product.offerPrice ? product.offerPrice.toString() : '' // Handle potential undefined offerPrice
-    });
-  };
+      price: product.price.toString(),
+      offerPrice: product.offerPrice.toString()
+    })
+  }
 
   const closeQuickEdit = () => {
-    setQuickEditProduct(null);
-  };
+    setQuickEditProduct(null)
+  }
 
   const handleQuickEditSubmit = async (updatedProductData) => {
-    if (!isSeller) {
-      toast.error("You are not authorized to perform this action.");
-      return;
-    }
-    const productId = updatedProductData instanceof FormData
-        ? updatedProductData.get('_id')
-        : updatedProductData._id;
-    
-    setUpdatingProductId(productId);
-
     try {
+      setUpdatingProductId(
+        updatedProductData instanceof FormData
+          ? updatedProductData.get('_id')
+          : updatedProductData._id
+      );
+
       const token = await getToken();
+
       const { data } = await axios.put(
-        '/api/product/update-availability', // This endpoint handles various updates as per previous discussions
+        '/api/product/update-availability',
         updatedProductData,
         {
           headers: {
@@ -145,7 +118,8 @@ const ProductList = () => {
       );
 
       if (data.success) {
-        await fetchSellerProduct(); // Refresh product list
+        // Refresh product list to get updated data
+        await fetchSellerProduct();
         toast.success('Product updated successfully');
         setQuickEditProduct(null);
       } else {
@@ -156,51 +130,58 @@ const ProductList = () => {
     } finally {
       setUpdatingProductId(null);
     }
-  };
+  }
 
+  // Reset filters function
   const resetFilters = () => {
     setSearchTerm("");
     setFilterCategory("");
     setSortBy("newest");
-  };
+  }
 
+  // Filter and sort products
   const filteredProducts = products.filter(product => {
-    const nameMatch = product.name && product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const categoryMatch = filterCategory === "" || product.category === filterCategory;
-    return nameMatch && categoryMatch;
-  });
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesCategory = filterCategory === "" || product.category === filterCategory
+    return matchesSearch && matchesCategory
+  })
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     switch(sortBy) {
       case "newest":
-        return new Date(b.createdAt) - new Date(a.createdAt);
+        return new Date(b.createdAt) - new Date(a.createdAt)
       case "oldest":
-        return new Date(a.createdAt) - new Date(b.createdAt);
+        return new Date(a.createdAt) - new Date(b.createdAt)
       case "name-asc":
-        return a.name.localeCompare(b.name);
+        return a.name.localeCompare(b.name)
       case "name-desc":
-        return b.name.localeCompare(a.name);
+        return b.name.localeCompare(a.name)
       case "price-asc":
-        return (a.offerPrice || 0) - (b.offerPrice || 0); // Handle potential undefined
+        return a.offerPrice - b.offerPrice
       case "price-desc":
-        return (b.offerPrice || 0) - (a.offerPrice || 0); // Handle potential undefined
+        return b.offerPrice - a.offerPrice
       default:
-        return 0;
+        return 0
     }
-  });
+  })
 
-  // ProductCard component (minor safety for product.image)
+  useEffect(() => {
+    if (user) {
+      fetchSellerProduct();
+    }
+  }, [user])
+
+  // For products on smaller screens
   const ProductCard = ({ product }) => (
-    <div className={`relative border rounded-lg overflow-hidden shadow-sm mb-3 ${!product.isAvailable ? 'bg-gray-100' : 'bg-white'}`}>
+    <div className={`relative border rounded-lg overflow-hidden shadow-sm mb-3 ${!product.isAvailable ? 'bg-gray-50' : 'bg-white'}`}>
       <div className="flex p-3">
         <div className="bg-white rounded-lg shadow-sm p-1 flex-shrink-0 mr-3">
           <Image
-            src={product.image && product.image.length > 0 ? product.image[0] : "/placeholder-image.png"} // Fallback image
-            alt={product.name || "Product image"}
+            src={product.image[0]}
+            alt={product.name}
             className={`w-20 h-20 object-cover rounded ${!product.isAvailable ? 'opacity-60' : ''}`}
             width={80}
             height={80}
-            onError={(e) => { e.target.onerror = null; e.target.src="/placeholder-image.png"; }} // More robust fallback
           />
         </div>
         <div className="flex-1 min-w-0">
@@ -211,9 +192,9 @@ const ProductList = () => {
             <span className="px-2 py-0.5 bg-blue-50 rounded-full text-xs font-medium text-blue-600">
               {product.category}
             </span>
-            {/* <span className="text-xs text-gray-500">
-              {new Date(product.createdAt).toLocaleDateString()}
-            </span> */}
+            <span className="text-xs text-gray-500">
+              {/* {new Date(product.createdAt).toLocaleDateString()} */}
+            </span>
           </div>
           <div className="flex items-center mt-2">
             <p className="text-sm font-medium text-gray-900">
@@ -276,43 +257,17 @@ const ProductList = () => {
     </div>
   );
 
-  // Main loading state for initial auth check or if user data is not yet loaded
-  if (!isUserLoaded || !authCheckCompleted) {
-    return <Loading />;
-  }
-
-  // If user is not a seller after auth check
-  if (!isSeller) {
-    return (
-      <div className="flex-1 min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4 text-center">
-        <svg className="mx-auto h-16 w-16 text-red-400 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-        </svg>
-        <h1 className="text-2xl font-semibold text-gray-700 mb-2">Access Denied</h1>
-        <p className="text-gray-500 mb-6">You do not have permission to view this page. Please contact support if you believe this is an error.</p>
-        <button
-          onClick={() => router.push('/')} // Or to a more appropriate page
-          className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-        >
-          Go to Homepage
-        </button>
-        <Footer />
-      </div>
-    );
-  }
-
-  // If user is a seller, show the product list UI
   return (
     <div className="flex-1 min-h-screen flex flex-col bg-gray-50">
-      {isLoadingProducts ? <Loading /> : ( // This loading is specifically for products after seller check
+      {loading ? <Loading /> : (
         <div className="flex-1">
+          {/* Modified container to take full width */}
           <div className="w-full px-4 py-6 sm:px-6 lg:px-8 max-w-full">
             <div className="flex flex-col mb-2">
-              {/* Header and Add New Product Button */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4">
                 <h1 className="text-lg md:text-3xl font-medium text-gray-800 mb-4 sm:mb-0">Product List</h1>
                 <button
-                  onClick={() => router.push('/seller')} // Assuming '/seller' is the add product page
+                  onClick={() => router.push('/seller')}
                   className="inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                 >
                   <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -407,7 +362,7 @@ const ProductList = () => {
               
               {/* Filters Row - Desktop */}
               <div className="hidden sm:flex sm:flex-wrap md:flex-nowrap md:items-center gap-3 mt-4">
-                 <div className="relative flex-1 min-w-[240px]">
+                <div className="relative flex-1 min-w-[240px]">
                   <input
                     type="text"
                     placeholder="Search products..."
@@ -488,7 +443,7 @@ const ProductList = () => {
               )}
             </div>
             
-            {/* Empty state or Product Grid */}
+            {/* Empty state */}
             {sortedProducts.length === 0 ? (
               <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8 text-center">
                 <svg className="mx-auto h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">

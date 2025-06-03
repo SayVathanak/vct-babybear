@@ -19,8 +19,9 @@ export async function GET(request) {
 
     await connectDB();
 
-    // Get all promo codes created by this seller
-    const promoCodes = await PromoCode.find({ createdBy: userId })
+    // Get ALL promo codes from all sellers (removed the createdBy filter)
+    const promoCodes = await PromoCode.find({})
+      .populate('createdBy', 'firstName lastName email') // Optional: populate creator info
       .sort({ createdAt: -1 }); // Sort by creation date, newest first
 
     return NextResponse.json({
