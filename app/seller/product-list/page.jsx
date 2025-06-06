@@ -141,9 +141,11 @@ const ProductList = () => {
 
   // Filter and sort products
   const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = filterCategory === "" || product.category === filterCategory
-    return matchesSearch && matchesCategory
+    const lowercasedSearchTerm = searchTerm.toLowerCase();
+    const matchesSearch = product.name.toLowerCase().includes(lowercasedSearchTerm) ||
+                          (product.barcode && product.barcode.toLowerCase().includes(lowercasedSearchTerm));
+    const matchesCategory = filterCategory === "" || product.category === filterCategory;
+    return matchesSearch && matchesCategory;
   })
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
@@ -185,7 +187,7 @@ const ProductList = () => {
           />
         </div>
         <div className="flex-1 min-w-0">
-          <p className={`text-sm font-medium line-clamp-2 ${!product.isAvailable ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+          <p className={`text-sm font-medium line-clamp-2 ${!product.isAvailable ? 'text-gray-400' : 'text-gray-800'}`}>
             {product.name}
           </p>
           <div className="flex items-center mt-1 flex-wrap gap-1">
@@ -305,7 +307,7 @@ const ProductList = () => {
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="Search products..."
+                    placeholder="Search by name or barcode..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-9 pr-3 py-3 border border-gray-300 rounded-md w-full focus:ring-indigo-500 focus:border-indigo-500"
@@ -365,7 +367,7 @@ const ProductList = () => {
                 <div className="relative flex-1 min-w-[240px]">
                   <input
                     type="text"
-                    placeholder="Search products..."
+                    placeholder="Search by name or barcode..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-9 pr-9 py-2.5 border border-gray-300 rounded-md w-full focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"

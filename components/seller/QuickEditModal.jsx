@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { Check, X, AlertCircle, EyeIcon, Upload, Trash2 } from 'lucide-react';
+import { Check, X, AlertCircle, EyeIcon, Upload, Trash2, Package, Hash } from 'lucide-react';
 
 const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
   const [formData, setFormData] = useState({
@@ -10,14 +10,15 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
     offerPrice: product.offerPrice,
     category: product.category,
     isAvailable: product.isAvailable,
-    description: product.description, // Add description
-    image: product.image // Add image array
+    description: product.description,
+    barcode: product.barcode || '', // Add barcode support
+    image: product.image
   });
   const [errors, setErrors] = useState({});
   const [isDirty, setIsDirty] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [newImages, setNewImages] = useState([]); // For storing new image files
-  const [imagePreviews, setImagePreviews] = useState([]); // For storing image previews
+  const [newImages, setNewImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const fileInputRef = useRef(null);
 
   // Initialize image previews from existing product images
@@ -74,7 +75,24 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
+    // Check if adding these files would exceed the limit
+    if (imagePreviews.length + files.length > 5) {
+      setErrors({
+        ...errors,
+        image: `Cannot upload ${files.length} images. Maximum 5 images allowed (currently have ${imagePreviews.length})`
+      });
+      return;
+    }
+
     setIsDirty(true);
+
+    // Clear any previous image errors
+    if (errors.image) {
+      setErrors({
+        ...errors,
+        image: ''
+      });
+    }
 
     // Create preview URLs
     const newPreviews = files.map(file => ({
@@ -108,6 +126,14 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
         setNewImages(newImagesUpdated);
       }
     }
+
+    // Clear image error if we now have images
+    if (errors.image && newPreviews.length > 0) {
+      setErrors({
+        ...errors,
+        image: ''
+      });
+    }
   };
 
   // Handle form submission
@@ -136,6 +162,7 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
     formDataToSubmit.append('category', formData.category);
     formDataToSubmit.append('isAvailable', formData.isAvailable);
     formDataToSubmit.append('description', formData.description);
+    formDataToSubmit.append('barcode', formData.barcode); // Add barcode to form data
 
     // Add existing image URLs
     finalImageUrls.forEach(url => {
@@ -177,6 +204,20 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
 
     if (imagePreviews.length === 0) {
       newErrors.image = 'At least one product image is required';
+    }
+
+    // Barcode validation (optional field, but if provided should be valid)
+    if (data.barcode && data.barcode.trim()) {
+      const barcodeRegex = /^[0-9A-Za-z\-_]+$/;
+      if (!barcodeRegex.test(data.barcode.trim())) {
+        newErrors.barcode = 'Barcode can only contain letters, numbers, hyphens, and underscores';
+      }
+      if (data.barcode.trim().length < 3) {
+        newErrors.barcode = 'Barcode must be at least 3 characters long';
+      }
+      if (data.barcode.trim().length > 50) {
+        newErrors.barcode = 'Barcode cannot exceed 50 characters';
+      }
     }
 
     return newErrors;
@@ -236,9 +277,12 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
 
         {/* Modal content */}
-        <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full mx-auto z-10">
+        <div className="relative bg-white rounded-lg shadow-xl max-w-4xl w-full mx-auto z-10">
           <div className="flex items-center justify-between p-4 border-b">
-            <h3 className="text-lg font-medium">Edit Product Details</h3>
+            <div className="flex items-center space-x-2">
+              <Package className="h-5 w-5 text-blue-600" />
+              <h3 className="text-lg font-medium">Edit Product Details</h3>
+            </div>
             <div className="flex items-center space-x-2">
               {showPreview ? (
                 <button
@@ -307,11 +351,17 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
                         </>
                       )}
                     </div>
-                    <div className="flex items-center mt-2">
+                    <div className="flex items-center mt-2 flex-wrap gap-2">
                       <span className="text-xs px-2 py-1 bg-gray-100 rounded-full">{categories.find(c => c.value === formData.category)?.label}</span>
-                      <span className={`text-xs px-2 py-1 rounded-full ml-2 ${formData.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      <span className={`text-xs px-2 py-1 rounded-full ${formData.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                         {formData.isAvailable ? 'In Stock' : 'Out of Stock'}
                       </span>
+                      {formData.barcode && (
+                        <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full flex items-center">
+                          <Hash className="h-3 w-3 mr-1" />
+                          {formData.barcode}
+                        </span>
+                      )}
                     </div>
 
                     <div className="mt-4">
@@ -344,7 +394,7 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="p-4 max-h-[80vh] overflow-y-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left Column: Product Info */}
                 <div>
                   <div className="flex items-center space-x-4 mb-4">
@@ -421,7 +471,7 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div className="flex flex-col gap-1">
                       <label className="text-sm font-medium" htmlFor="price">
                         Regular Price ($) <span className="text-red-500">*</span>
@@ -472,6 +522,33 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
                         </p>
                       )}
                     </div>
+                  </div>
+
+                  {/* Barcode Field */}
+                  <div className="flex flex-col gap-1 mb-4">
+                    <label className="text-sm font-medium flex items-center" htmlFor="barcode">
+                      <Hash className="h-4 w-4 mr-1" />
+                      Product Barcode <span className="text-gray-500 text-xs ml-1">(Optional)</span>
+                    </label>
+                    <input
+                      id="barcode"
+                      name="barcode"
+                      type="text"
+                      placeholder="Enter product barcode/SKU"
+                      className={`outline-none py-2 px-3 rounded border ${errors.barcode ? 'border-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                        }`}
+                      onChange={handleInputChange}
+                      value={formData.barcode}
+                    />
+                    {errors.barcode && (
+                      <p className="text-red-500 text-xs flex items-center mt-1">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        {errors.barcode}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500">
+                      Used for inventory tracking and quick product lookup. Can contain letters, numbers, hyphens, and underscores.
+                    </p>
                   </div>
 
                   {/* Product Description */}
@@ -541,7 +618,7 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
                         {imagePreviews.length < 5 && (
                           <button
                             type="button"
-                            onClick={() => fileInputRef.current.click()}
+                            onClick={() => fileInputRef.current?.click()}
                             className="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-md bg-white text-gray-500 hover:border-blue-500 hover:text-blue-500 transition-colors"
                           >
                             <Upload className="h-6 w-6 mb-1" />
@@ -576,17 +653,18 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
                     </div>
                   </div>
 
-                  {/* Image Management Tip */}
+                  {/* Product Management Tips */}
                   <div className="bg-blue-50 border border-blue-100 rounded-md p-3 mt-4">
                     <div className="flex items-start">
                       <AlertCircle className="h-4 w-4 text-blue-500 mr-2 flex-shrink-0 mt-0.5" />
                       <div className="text-sm text-blue-700">
-                        <p className="font-medium mb-1">Image Management Tips:</p>
+                        <p className="font-medium mb-1">Product Management Tips:</p>
                         <ul className="list-disc pl-4 space-y-1">
-                          <li>Drag to reorder images (first image is primary)</li>
                           <li>Use high-quality, well-lit images</li>
                           <li>Show product from multiple angles</li>
+                          <li>Add barcode for easy inventory tracking</li>
                           <li>Include size reference if relevant</li>
+                          <li>Write detailed, accurate descriptions</li>
                         </ul>
                       </div>
                     </div>
@@ -617,7 +695,7 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
                     </>
                   ) : (
                     <>
-                      <Check className="h-4 w-4 mr-1" />
+                      <Check className="h-4 w-4 mr-2" />
                       Save Changes
                     </>
                   )}
@@ -625,34 +703,45 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
               </div>
             </form>
           )}
+        </div>
+      </div>
 
-          {/* Confirmation Modal */}
-          <div id="confirmCloseModal" className="fixed inset-0 z-50 overflow-y-auto hidden">
-            <div className="flex items-center justify-center min-h-screen px-4">
-              <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
-              <div className="relative bg-white rounded-lg shadow-xl max-w-sm w-full mx-auto z-10 p-4">
-                <div className="mb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Discard changes?</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    You have unsaved changes. Are you sure you want to discard them?
-                  </p>
+      {/* Confirmation modal for unsaved changes */}
+      <div id="confirmCloseModal" className="hidden fixed inset-0 z-60 overflow-y-auto">
+        <div className="flex items-center justify-center min-h-screen px-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+          <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-auto z-10">
+            <div className="p-6">
+              <div className="flex items-start">
+                <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
+                  <AlertCircle className="h-6 w-6 text-yellow-600" />
                 </div>
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={handleCancelClose}
-                    className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
-                  >
-                    Continue Editing
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleConfirmClose}
-                    className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700"
-                  >
-                    Discard Changes
-                  </button>
+                <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left flex-1">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900 mb-2">
+                    Unsaved Changes
+                  </h3>
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-500">
+                      You have unsaved changes that will be lost if you close this modal. Are you sure you want to continue?
+                    </p>
+                  </div>
                 </div>
+              </div>
+              <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  onClick={handleConfirmClose}
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
+                >
+                  Discard Changes
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelClose}
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm"
+                >
+                  Keep Editing
+                </button>
               </div>
             </div>
           </div>

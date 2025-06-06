@@ -99,7 +99,7 @@ export default function RootLayout({ children }) {
             </ConditionalLayout>
             <CartPopup />
             <TelegramPopup />
-            <TelegramChat />
+            {/* <TelegramChat /> */}
             <BottomNavbar />
           </AppContextProvider>
         </body>

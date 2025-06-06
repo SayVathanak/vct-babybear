@@ -30,6 +30,7 @@ export async function POST(request) {
         const category = formData.get('category');
         const price = formData.get('price');
         const offerPrice = formData.get('offerPrice');
+        const barcode = formData.get('barcode'); // Get barcode from form data
 
         const files = formData.getAll('images');
 
@@ -61,7 +62,9 @@ export async function POST(request) {
         const image = result.map(result => result.secure_url)
 
         await connectDB()
-        const newProduct = await Product.create({
+
+        // Create product data object
+        const productData = {
             userId,
             name,
             description,
@@ -70,11 +73,26 @@ export async function POST(request) {
             offerPrice: Number(offerPrice),
             image,
             date: Date.now()
-        })
+        }
+
+        // Only add barcode if it's provided and not empty
+        if (barcode && barcode.trim() !== '') {
+            productData.barcode = barcode.trim();
+        }
+
+        const newProduct = await Product.create(productData)
 
         return NextResponse.json({ success: true, message: "Upload successful", newProduct })
 
     } catch (error) {
+        // Handle duplicate barcode error specifically
+        if (error.code === 11000 && error.keyPattern?.barcode) {
+            return NextResponse.json({ 
+                success: false, 
+                message: "A product with this barcode already exists. Please use a unique barcode." 
+            })
+        }
+        
         return NextResponse.json({ success: false, message: error.message })
     }
 }

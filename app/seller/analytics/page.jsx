@@ -331,7 +331,7 @@ const Analytics = () => {
       ) : (
         <div className="px-2 py-4 sm:py-6 sm:px-6 md:px-10 space-y-4 sm:space-y-6 w-full">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-y-3 gap-x-2 sm:gap-x-4">
-            <h2 className="text-lg sm:text-3xl font-prata font-medium">Sales Analytics</h2>
+            <h2 className="text-lg sm:text-3xl font-medium">Sales Analytics</h2>
             
             <div className="flex flex-row justify-between sm:gap-3">
               {/* Time Frame Selector */}

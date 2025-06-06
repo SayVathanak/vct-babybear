@@ -8,8 +8,9 @@ const productSchema = new mongoose.Schema({
     offerPrice: { type: Number, required: true },
     image: { type: Array, required: true },
     category: { type: String, required: true },
+    barcode: { type: String, unique: true, sparse: true }, // Added barcode field
     date: { type: Number, required: true },
-    isAvailable: { type: Boolean, default: true }, // New field with default value of true
+    isAvailable: { type: Boolean, default: true },
 })
 
 const Product = mongoose.models.product || mongoose.model('product', productSchema)

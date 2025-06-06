@@ -16,6 +16,7 @@ const AddProduct = () => {
   const [category, setCategory] = useState('PowderedMilk');
   const [price, setPrice] = useState('');
   const [offerPrice, setOfferPrice] = useState('');
+  const [barcode, setBarcode] = useState(''); // Added barcode state
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,6 +28,7 @@ const AddProduct = () => {
     formData.append('category', category)
     formData.append('price', price)
     formData.append('offerPrice', offerPrice)
+    formData.append('barcode', barcode) // Added barcode to form data
 
     for (let i = 0; i < files.length; i++) {
       formData.append('images', files[i])
@@ -46,6 +48,7 @@ const AddProduct = () => {
         setCategory('');
         setPrice('');
         setOfferPrice('');
+        setBarcode(''); // Reset barcode field
       } else {
         toast.error(data.message);
       }
@@ -113,6 +116,19 @@ const AddProduct = () => {
             value={description}
             required
           ></textarea>
+        </div>
+        <div className="flex flex-col gap-1 max-w-md">
+          <label className="text-base font-medium" htmlFor="product-barcode">
+            Barcode (Optional)
+          </label>
+          <input
+            id="product-barcode"
+            type="text"
+            placeholder="Enter barcode (UPC, EAN, etc.)"
+            className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40"
+            onChange={(e) => setBarcode(e.target.value)}
+            value={barcode}
+          />
         </div>
         <div className="flex items-center gap-5 flex-wrap">
           <div className="flex flex-col gap-1 w-32">
