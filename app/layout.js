@@ -54,7 +54,7 @@ export default function RootLayout({ children }) {
           <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png" />
           <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-167x167.png" />
           <link rel="apple-touch-startup-image" href="/icons/splash-2048x2732.png" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
           <style dangerouslySetInnerHTML={{
             __html: `
               @supports (-webkit-touch-callout: none) {
