@@ -90,7 +90,6 @@ export default function RootLayout({ children }) {
               }
             `
           }} />
-          <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
         </head>
         <body className={`${outfit.className} antialiased text-gray-700`}>
           <Toaster />
