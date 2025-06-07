@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { Check, X, AlertCircle, EyeIcon, Upload, Trash2, Package, Hash } from 'lucide-react';
+import { Check, X, AlertCircle, EyeIcon, Upload, Trash2, Package, Hash, RefreshCw, Copy, Download } from 'lucide-react';
+import Barcode from 'react-barcode'; // Import the barcode library
 
 const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
   const [formData, setFormData] = useState({
@@ -11,7 +12,7 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
     category: product.category,
     isAvailable: product.isAvailable,
     description: product.description,
-    barcode: product.barcode || '', // Add barcode support
+    barcode: product.barcode || '',
     image: product.image
   });
   const [errors, setErrors] = useState({});
@@ -19,7 +20,12 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [newImages, setNewImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
+  const [showBarcodePreview, setShowBarcodePreview] = useState(false);
+  const [barcodeCopied, setBarcodeCopied] = useState(false);
+  const [isGeneratingBarcode, setIsGeneratingBarcode] = useState(false);
+  const [showBarcodeModal, setShowBarcodeModal] = useState(false);
   const fileInputRef = useRef(null);
+  const barcodeRef = useRef(null);
 
   // Initialize image previews from existing product images
   useEffect(() => {
@@ -68,6 +74,167 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
         [name]: ''
       });
     }
+  };
+
+  // Function to calculate EAN-13 check digit
+  const calculateEAN13CheckDigit = (barcode) => {
+    let sum = 0;
+    for (let i = 0; i < 12; i++) {
+      const digit = parseInt(barcode[i]);
+      sum += i % 2 === 0 ? digit : digit * 3;
+    }
+    return ((10 - (sum % 10)) % 10).toString();
+  };
+
+  // Function to validate barcode format
+  const validateBarcode = (code) => {
+    if (!code) return true; // Empty is valid (optional field)
+    if (!/^\d{12,13}$/.test(code)) {
+      return false;
+    }
+    if (code.length === 13) {
+      const calculatedCheckDigit = calculateEAN13CheckDigit(code.slice(0, 12));
+      return calculatedCheckDigit === code[12];
+    }
+    return true;
+  };
+
+  // Generate a random barcode
+  const generateBarcode = () => {
+    setIsGeneratingBarcode(true);
+    
+    const countryCode = '890';
+    const companyCode = '1234';
+    const productCode = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
+    const partialBarcode = countryCode + companyCode + productCode;
+    const checkDigit = calculateEAN13CheckDigit(partialBarcode);
+    const fullBarcode = partialBarcode + checkDigit;
+    
+    setFormData({
+      ...formData,
+      barcode: fullBarcode
+    });
+    
+    setIsDirty(true);
+    setIsGeneratingBarcode(false);
+    setShowBarcodePreview(true);
+    
+    // Clear any barcode error
+    if (errors.barcode) {
+      setErrors({
+        ...errors,
+        barcode: ''
+      });
+    }
+  };
+
+  // Generate barcode from product name
+  const generateBarcodeFromName = () => {
+    if (!formData.name.trim()) {
+      setErrors({
+        ...errors,
+        barcode: 'Please enter a product name first'
+      });
+      return;
+    }
+    
+    setIsGeneratingBarcode(true);
+    
+    let hash = 0;
+    for (let i = 0; i < formData.name.length; i++) {
+      const char = formData.name.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    
+    const positiveHash = Math.abs(hash);
+    const productCode = (positiveHash % 100000).toString().padStart(5, '0');
+    
+    const countryCode = '890';
+    const companyCode = '1234';
+    const partialBarcode = countryCode + companyCode + productCode;
+    const checkDigit = calculateEAN13CheckDigit(partialBarcode);
+    const fullBarcode = partialBarcode + checkDigit;
+    
+    setFormData({
+      ...formData,
+      barcode: fullBarcode
+    });
+    
+    setIsDirty(true);
+    setIsGeneratingBarcode(false);
+    setShowBarcodePreview(true);
+    
+    // Clear any barcode error
+    if (errors.barcode) {
+      setErrors({
+        ...errors,
+        barcode: ''
+      });
+    }
+  };
+
+  // Copy barcode to clipboard
+  const copyBarcode = () => {
+    if (formData.barcode) {
+      navigator.clipboard.writeText(formData.barcode)
+        .then(() => {
+          setBarcodeCopied(true);
+          setTimeout(() => setBarcodeCopied(false), 2000);
+        })
+        .catch(err => {
+          console.error('Failed to copy barcode: ', err);
+        });
+    }
+  };
+
+  // Download barcode as PNG
+  const handleDownloadBarcode = () => {
+    const svgNode = barcodeRef.current?.querySelector('svg');
+    if (!svgNode) {
+      setErrors({
+        ...errors,
+        barcode: "Could not find barcode to download."
+      });
+      return;
+    }
+
+    const svgData = new XMLSerializer().serializeToString(svgNode);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = document.createElement("img");
+
+    img.onload = () => {
+      // Set canvas dimensions to match image dimensions
+      canvas.width = img.width;
+      canvas.height = img.height;
+      
+      // Fill background with white
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw the image on the canvas
+      ctx.drawImage(img, 0, 0);
+
+      // Trigger download
+      const pngFile = canvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+      downloadLink.download = `${formData.barcode}-barcode.png`;
+      downloadLink.href = pngFile;
+      downloadLink.click();
+    };
+    
+    img.src = "data:image/svg+xml;base64," + btoa(svgData);
+  };
+
+  // Clear barcode
+  const clearBarcode = () => {
+    setFormData({
+      ...formData,
+      barcode: ''
+    });
+    setIsDirty(true);
+    setShowBarcodePreview(false);
   };
 
   // Handle image upload
@@ -136,6 +303,119 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
     }
   };
 
+  // Barcode modal component
+  const BarcodeModal = () => {
+    if (!showBarcodeModal || !formData.barcode) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">Product Barcode</h3>
+            <button 
+              onClick={() => setShowBarcodeModal(false)}
+              className="text-gray-500 hover:text-gray-700 text-xl"
+            >
+              ×
+            </button>
+          </div>
+          
+          {/* This div is used to hold the barcode for download */}
+          <div ref={barcodeRef} className="text-center p-4 bg-white">
+            {/* The react-barcode component generates the scannable image */}
+            <Barcode value={formData.barcode} />
+          </div>
+          
+          <div className="flex flex-col gap-3 mt-4">
+            <button
+              onClick={handleDownloadBarcode}
+              className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download as PNG
+            </button>
+            <button
+              onClick={() => setShowBarcodeModal(false)}
+              className="w-full px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Render barcode display
+  const renderBarcodeDisplay = () => {
+    if (!formData.barcode) return null;
+    
+    return (
+      <div className="mt-2 p-3 bg-white border border-gray-200 rounded-md shadow-sm">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-xs font-medium text-gray-500">BARCODE PREVIEW</span>
+          <div className="flex space-x-2">
+            <button
+              type="button"
+              onClick={copyBarcode}
+              className="text-blue-600 hover:text-blue-800 text-xs flex items-center"
+              title="Copy barcode"
+            >
+              <Copy className="h-3 w-3 mr-1" />
+              {barcodeCopied ? 'Copied!' : 'Copy'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowBarcodeModal(true)}
+              className="text-green-600 hover:text-green-800 text-xs flex items-center"
+              title="View & download barcode"
+            >
+              <EyeIcon className="h-3 w-3 mr-1" />
+              View
+            </button>
+            <button
+              type="button"
+              onClick={clearBarcode}
+              className="text-red-600 hover:text-red-800 text-xs flex items-center"
+              title="Clear barcode"
+            >
+              <X className="h-3 w-3 mr-1" />
+              Clear
+            </button>
+          </div>
+        </div>
+        
+        {/* Simplified barcode visualization */}
+        <div className="flex flex-col items-center">
+          {/* Display barcode-like pattern */}
+          <div className="w-full h-12 flex items-center justify-center space-x-0.5 mb-1">
+            {formData.barcode.split('').map((char, index) => {
+              // Generate a pseudo-random height based on the character
+              const height = 30 + (char.charCodeAt(0) % 5) * 8;
+              return (
+                <div 
+                  key={index}
+                  className="bg-black w-0.5"
+                  style={{ height: `${height}px` }}
+                ></div>
+              );
+            })}
+          </div>
+          <div className="text-center font-mono text-sm mt-1">{formData.barcode}</div>
+          {validateBarcode(formData.barcode) ? (
+            <span className="text-xs text-green-600 flex items-center mt-1">
+              <Check className="h-3 w-3 mr-1" /> Valid barcode format
+            </span>
+          ) : (
+            <span className="text-xs text-red-600 flex items-center mt-1">
+              <AlertCircle className="h-3 w-3 mr-1" /> Invalid barcode format
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -162,7 +442,7 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
     formDataToSubmit.append('category', formData.category);
     formDataToSubmit.append('isAvailable', formData.isAvailable);
     formDataToSubmit.append('description', formData.description);
-    formDataToSubmit.append('barcode', formData.barcode); // Add barcode to form data
+    formDataToSubmit.append('barcode', formData.barcode);
 
     // Add existing image URLs
     finalImageUrls.forEach(url => {
@@ -208,15 +488,8 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
 
     // Barcode validation (optional field, but if provided should be valid)
     if (data.barcode && data.barcode.trim()) {
-      const barcodeRegex = /^[0-9A-Za-z\-_]+$/;
-      if (!barcodeRegex.test(data.barcode.trim())) {
-        newErrors.barcode = 'Barcode can only contain letters, numbers, hyphens, and underscores';
-      }
-      if (data.barcode.trim().length < 3) {
-        newErrors.barcode = 'Barcode must be at least 3 characters long';
-      }
-      if (data.barcode.trim().length > 50) {
-        newErrors.barcode = 'Barcode cannot exceed 50 characters';
+      if (!validateBarcode(data.barcode.trim())) {
+        newErrors.barcode = 'Invalid barcode format. Must be a valid 12 or 13 digit EAN format';
       }
     }
 
@@ -335,6 +608,31 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
                       ))}
                     </div>
                   </div>
+                  
+                  {/* Barcode preview in preview mode */}
+                  {formData.barcode && (
+                    <div className="mt-4 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Product Barcode</h4>
+                      <div className="bg-white p-3 rounded border border-gray-200">
+                        <div className="flex flex-col items-center">
+                          {/* Display barcode-like pattern */}
+                          <div className="w-full h-12 flex items-center justify-center space-x-0.5 mb-1">
+                            {formData.barcode.split('').map((char, index) => {
+                              const height = 30 + (char.charCodeAt(0) % 5) * 8;
+                              return (
+                                <div 
+                                  key={index}
+                                  className="bg-black w-0.5"
+                                  style={{ height: `${height}px` }}
+                                ></div>
+                              );
+                            })}
+                          </div>
+                          <div className="text-center font-mono text-sm mt-1">{formData.barcode}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -524,31 +822,68 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
                     </div>
                   </div>
 
-                  {/* Barcode Field */}
+                  {/* Enhanced Barcode Field with Generator */}
                   <div className="flex flex-col gap-1 mb-4">
                     <label className="text-sm font-medium flex items-center" htmlFor="barcode">
                       <Hash className="h-4 w-4 mr-1" />
                       Product Barcode <span className="text-gray-500 text-xs ml-1">(Optional)</span>
                     </label>
-                    <input
-                      id="barcode"
-                      name="barcode"
-                      type="text"
-                      placeholder="Enter product barcode/SKU"
-                      className={`outline-none py-2 px-3 rounded border ${errors.barcode ? 'border-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
-                        }`}
-                      onChange={handleInputChange}
-                      value={formData.barcode}
-                    />
+                    <div className="flex">
+                      <input
+                        id="barcode"
+                        name="barcode"
+                        type="text"
+                        placeholder="Enter product barcode/SKU"
+                        className={`outline-none py-2 px-3 rounded-l border ${errors.barcode ? 'border-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                          } flex-1`}
+                        onChange={handleInputChange}
+                        value={formData.barcode}
+                      />
+                      <button
+                        type="button"
+                        onClick={generateBarcode}
+                        disabled={isGeneratingBarcode}
+                        className="flex items-center justify-center px-3 bg-blue-500 text-white rounded-r border border-blue-500 hover:bg-blue-600 transition-colors"
+                        title="Generate unique barcode"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${isGeneratingBarcode ? 'animate-spin' : ''}`} />
+                      </button>
+                    </div>
+                    
+                    <div className="flex gap-2 mt-1">
+                      <button
+                        type="button"
+                        onClick={generateBarcodeFromName}
+                        disabled={isGeneratingBarcode || !formData.name.trim()}
+                        className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 flex items-center"
+                      >
+                        <RefreshCw className={`h-3 w-3 mr-1 ${isGeneratingBarcode ? 'animate-spin' : ''}`} />
+                        Generate from Name
+                      </button>
+                      {formData.barcode && (
+                        <button
+                          type="button"
+                          onClick={() => setShowBarcodeModal(true)}
+                          className="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 flex items-center"
+                        >
+                          <EyeIcon className="h-3 w-3 mr-1" />
+                          View Barcode
+                        </button>
+                      )}
+                    </div>
+                    
                     {errors.barcode && (
                       <p className="text-red-500 text-xs flex items-center mt-1">
                         <AlertCircle className="h-3 w-3 mr-1" />
                         {errors.barcode}
                       </p>
                     )}
-                    <p className="text-xs text-gray-500">
-                      Used for inventory tracking and quick product lookup. Can contain letters, numbers, hyphens, and underscores.
+                    <p className="text-xs text-gray-500 mt-1">
+                      Used for inventory tracking and quick product lookup. For EAN-13 format, use 12-13 digits.
                     </p>
+                    
+                    {/* Barcode preview */}
+                    {showBarcodePreview && formData.barcode && renderBarcodeDisplay()}
                   </div>
 
                   {/* Product Description */}
@@ -669,6 +1004,24 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Barcode Information Box */}
+                  <div className="bg-yellow-50 border border-yellow-100 rounded-md p-3 mt-4">
+                    <div className="flex items-start">
+                      <Hash className="h-4 w-4 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm text-yellow-800">
+                        <p className="font-medium mb-1">About Barcodes:</p>
+                        <p className="mb-2">Barcodes help you track inventory and quickly look up products during checkout.</p>
+                        <ul className="list-disc pl-4 space-y-1">
+                          <li>Each product can have a unique barcode</li>
+                          <li>You can scan or enter the barcode during checkout</li>
+                          <li>Generate a unique barcode or use your existing system</li>
+                          <li>For EAN-13 format, use 12-13 digits</li>
+                          <li>Leave empty if you don't need barcode tracking</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -705,6 +1058,9 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
           )}
         </div>
       </div>
+
+      {/* Barcode Modal */}
+      <BarcodeModal />
 
       {/* Confirmation modal for unsaved changes */}
       <div id="confirmCloseModal" className="hidden fixed inset-0 z-60 overflow-y-auto">

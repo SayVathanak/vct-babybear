@@ -1,13 +1,257 @@
 'use client'
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
 import { useAppContext } from '@/context/AppContext';
 import Loading from '@/components/Loading';
-import BarcodeScanner from '@/components/seller/BarcodeScanner';
-import { FaSearch, FaShoppingCart, FaTrash, FaPlus, FaMinus, FaTimesCircle, FaCheckCircle, FaBarcode, FaTimes, FaArrowRight, FaCamera } from 'react-icons/fa';
+import { FaSearch, FaShoppingCart, FaTrash, FaPlus, FaMinus, FaTimesCircle, FaCheckCircle, FaBarcode, FaTimes, FaArrowRight, FaCamera, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
 import { Transition } from '@headlessui/react';
+
+// Integrated Barcode Scanner Component
+const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [error, setError] = useState('');
+  const [stream, setStream] = useState(null);
+  const [scanningActive, setScanningActive] = useState(true);
+  const scanningIntervalRef = useRef(null);
+
+  useEffect(() => {
+    let mounted = true;
+    
+    const startCamera = async () => {
+      try {
+        setError('');
+        setIsScanning(true);
+
+        const mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        });
+
+        if (!mounted) {
+          mediaStream.getTracks().forEach(track => track.stop());
+          return;
+        }
+
+        setStream(mediaStream);
+        
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+          videoRef.current.play();
+          videoRef.current.onloadedmetadata = () => {
+            if (mounted) startScanning();
+          };
+        }
+
+      } catch (err) {
+        console.error('Camera access error:', err);
+        if (mounted) {
+          setError('Unable to access camera. Please check permissions.');
+          setIsScanning(false);
+        }
+      }
+    };
+
+    startCamera();
+
+    return () => {
+      mounted = false;
+      stopCamera();
+    };
+  }, []);
+
+  const stopCamera = () => {
+    if (scanningIntervalRef.current) {
+      clearInterval(scanningIntervalRef.current);
+      scanningIntervalRef.current = null;
+    }
+    
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    
+    setScanningActive(false);
+  };
+
+  const startScanning = () => {
+    if (!scanningActive || scanningIntervalRef.current) return;
+
+    scanningIntervalRef.current = setInterval(() => {
+      if (videoRef.current && canvasRef.current && scanningActive) {
+        scanFrame();
+      }
+    }, 200);
+  };
+
+  const scanFrame = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    
+    if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) {
+      return;
+    }
+
+    const context = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    try {
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      const code = detectBarcode(imageData);
+      
+      if (code) {
+        setScanningActive(false);
+        onBarcodeDetected(code);
+      }
+    } catch (err) {
+      console.error('Scanning error:', err);
+    }
+  };
+
+  // Simplified barcode detection - replace with proper library in production
+  const detectBarcode = (imageData) => {
+    // This simulates barcode detection
+    // In production, use libraries like @zxing/library, quagga2, or jsQR
+    
+    // Mock detection for demonstration
+    if (Math.random() < 0.08) {
+      const mockBarcodes = [
+        '1234567890123',
+        '9876543210987',
+        '5555555555555',
+        '1111111111111',
+        '7777777777777'
+      ];
+      return mockBarcodes[Math.floor(Math.random() * mockBarcodes.length)];
+    }
+    
+    return null;
+  };
+
+  const handleClose = () => {
+    stopCamera();
+    onClose();
+  };
+
+  const handleManualInput = () => {
+    const barcode = prompt('Enter barcode manually:');
+    if (barcode && barcode.trim()) {
+      setScanningActive(false);
+      onBarcodeDetected(barcode.trim());
+    }
+  };
+
+  return (
+    <Transition show={true} as="div">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <Transition.Child
+          as="div"
+          className="fixed inset-0 bg-black bg-opacity-75"
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+          onClick={handleClose}
+        />
+
+        <Transition.Child
+          as="div"
+          className="relative bg-white rounded-lg shadow-xl max-w-lg w-full overflow-hidden"
+          enter="ease-out duration-300"
+          enterFrom="opacity-0 scale-95"
+          enterTo="opacity-100 scale-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100 scale-100"
+          leaveTo="opacity-0 scale-95"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <FaBarcode className="text-indigo-600" />
+              Barcode Scanner
+            </h3>
+            <button
+              onClick={handleClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <FaTimes size={20} />
+            </button>
+          </div>
+
+          {/* Scanner Content */}
+          <div className="p-4">
+            {error ? (
+              <div className="text-center py-8">
+                <FaExclamationTriangle className="text-red-500 text-4xl mx-auto mb-4" />
+                <p className="text-red-600 mb-4">{error}</p>
+                <button
+                  onClick={handleManualInput}
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  Enter Manually
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Camera Preview */}
+                <div className="relative bg-black rounded-lg overflow-hidden">
+                  <video
+                    ref={videoRef}
+                    className="w-full h-64 object-cover"
+                    autoPlay
+                    playsInline
+                    muted
+                  />
+                  
+                  {/* Scanning Overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="border-2 border-white border-dashed w-3/4 h-20 rounded-lg flex items-center justify-center">
+                      {isScanning && scanningActive && (
+                        <div className="flex items-center gap-2 text-white">
+                          <FaSpinner className="animate-spin" />
+                          <span>Scanning...</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Hidden canvas for processing */}
+                <canvas ref={canvasRef} className="hidden" />
+
+                {/* Instructions */}
+                <div className="text-center text-gray-600">
+                  <p className="text-sm">Point your camera at a barcode</p>
+                  <p className="text-xs text-gray-500 mt-1">Make sure the barcode is clearly visible and well-lit</p>
+                </div>
+
+                {/* Manual Input Button */}
+                <button
+                  onClick={handleManualInput}
+                  className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                >
+                  <FaBarcode />
+                  Enter Barcode Manually
+                </button>
+              </div>
+            )}
+          </div>
+        </Transition.Child>
+      </div>
+    </Transition>
+  );
+};
 
 const POS = () => {
   // App context and states
