@@ -7,6 +7,7 @@ import { useAppContext } from '@/context/AppContext';
 import Loading from '@/components/Loading';
 import { FaSearch, FaShoppingCart, FaTrash, FaPlus, FaMinus, FaTimesCircle, FaCheckCircle, FaBarcode, FaTimes, FaArrowRight, FaCamera, FaStop } from 'react-icons/fa';
 import { Transition } from '@headlessui/react';
+import EnhancedBarcodeScanner from '@/components/seller/EnhancedBarcodeScanner';
 
 const POS = () => {
   // App context and states
@@ -576,7 +577,8 @@ const POS = () => {
       </div>
 
       {/* Barcode Scanner Modal */}
-      <BarcodeScannerModal />
+      {/* <BarcodeScannerModal /> */}
+      <EnhancedBarcodeScanner/>
     </div>
   );
 };
