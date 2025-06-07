@@ -5,9 +5,9 @@ import toast from 'react-hot-toast';
 import Image from 'next/image';
 import { useAppContext } from '@/context/AppContext';
 import Loading from '@/components/Loading';
-import { FaSearch, FaShoppingCart, FaTrash, FaPlus, FaMinus, FaTimesCircle, FaCheckCircle, FaBarcode, FaTimes, FaArrowRight } from 'react-icons/fa';
+import BarcodeScanner from '@/components/seller/BarcodeScanner';
+import { FaSearch, FaShoppingCart, FaTrash, FaPlus, FaMinus, FaTimesCircle, FaCheckCircle, FaBarcode, FaTimes, FaArrowRight, FaCamera } from 'react-icons/fa';
 import { Transition } from '@headlessui/react';
-
 
 const POS = () => {
   // App context and states
@@ -19,7 +19,11 @@ const POS = () => {
   const [processingOrder, setProcessingOrder] = useState(false);
   const [saleCompleted, setSaleCompleted] = useState(false);
   const [completedOrderDetails, setCompletedOrderDetails] = useState(null);
-  const [isCartOpen, setIsCartOpen] = useState(false); // State for mobile cart modal
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  
+  // Barcode scanner states
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [barcodeLoading, setBarcodeLoading] = useState(false);
 
   // Fetch seller's products on component mount
   useEffect(() => {
@@ -45,20 +49,69 @@ const POS = () => {
     fetchSellerProduct();
   }, [user, getToken]);
 
+  // Handle barcode detection from scanner
+  const handleBarcodeDetected = async (barcode) => {
+    setBarcodeLoading(true);
+    setShowBarcodeScanner(false);
+    
+    try {
+      const token = await getToken();
+      const { data } = await axios.get(`/api/product/barcode/${barcode}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (data.success) {
+        // Check if product is in the seller's current inventory
+        const sellerProduct = products.find(p => p._id === data.product._id);
+        
+        if (sellerProduct) {
+          addToCart(data.product._id);
+          toast.success(`Scanned: ${data.product.name}`, {
+            icon: <FaBarcode className="text-white" />,
+            style: {
+              borderRadius: '20px',
+              background: '#10B981',
+              color: '#ffffff',
+            },
+          });
+        } else {
+          toast.error('Product not found in your inventory', {
+            icon: <FaBarcode />,
+          });
+        }
+      } else {
+        toast.error(data.message || `Product not found for barcode: ${barcode}`, {
+          icon: <FaBarcode />,
+        });
+      }
+    } catch (error) {
+      console.error('Barcode lookup error:', error);
+      toast.error(error.response?.data?.message || 'Failed to lookup barcode', {
+        icon: <FaBarcode />,
+      });
+    } finally {
+      setBarcodeLoading(false);
+    }
+  };
+
   // Cart management functions
   const addToCart = (productId) => {
     setCartItems((prev) => ({
       ...prev,
       [productId]: (prev[productId] || 0) + 1,
     }));
-    toast.success('Added to cart', {
-      icon: <FaPlus className="text-white" />,
-      style: {
-        borderRadius: '20px',
-        background: '#10B981', // Green-400
-        color: '#ffffff',
-      },
-    });
+    
+    // Don't show toast if called from barcode scanner (it shows its own toast)
+    if (!showBarcodeScanner && !barcodeLoading) {
+      toast.success('Added to cart', {
+        icon: <FaPlus className="text-white" />,
+        style: {
+          borderRadius: '20px',
+          background: '#10B981',
+          color: '#ffffff',
+        },
+      });
+    }
   };
 
   const updateQuantity = (productId, newQuantity) => {
@@ -127,7 +180,7 @@ const POS = () => {
         setCompletedOrderDetails(data.order);
         setCartItems({});
         setSearchTerm('');
-        setIsCartOpen(false); // Close mobile cart on success
+        setIsCartOpen(false);
       } else {
         toast.error(data.message || 'Failed to complete sale');
       }
@@ -155,6 +208,9 @@ const POS = () => {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-800 line-clamp-1">{item.name}</p>
                   <p className="text-sm text-gray-500">{currency}{item.offerPrice.toFixed(2)} x {item.quantity}</p>
+                  {item.barcode && (
+                    <p className="text-xs text-gray-400">#{item.barcode}</p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => updateQuantity(item._id, item.quantity - 1)} className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"><FaMinus size={12} /></button>
@@ -168,7 +224,7 @@ const POS = () => {
           <div className="text-center py-20 flex flex-col items-center justify-center h-full text-gray-400">
             <FaShoppingCart className="text-6xl mx-auto mb-4" />
             <h3 className="text-xl font-semibold">Your cart is empty</h3>
-            <p>Click on products to add them to the sale.</p>
+            <p>Click on products or scan barcodes to add items to the sale.</p>
           </div>
         )}
       </div>
@@ -245,21 +301,29 @@ const POS = () => {
       
       <main className="w-full md:w-3/5 lg:w-2/3 flex flex-col pb-28 md:pb-0">
         <header className="p-4 md:p-6 border-b border-gray-200 bg-white">
-          {/* <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Point of Sale</h1> */}
-          {/* <div className="relative mt-4"> */}
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-              <FaSearch />
-            </span>
-            <input
-              type="text"
-              placeholder="Search by product name or scan barcode..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg py-3 pl-12 pr-4 text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <FaSearch />
+              </span>
+              <input
+                type="text"
+                placeholder="Search by product name or scan barcode..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg py-3 pl-12 pr-4 text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <button
+              onClick={() => setShowBarcodeScanner(true)}
+              disabled={barcodeLoading}
+              className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
+            >
+              <FaCamera /> {barcodeLoading ? 'Processing...' : 'Scan'}
+            </button>
           </div>
         </header>
+        
         <div className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
             {filteredProducts.map(product => (
@@ -275,6 +339,11 @@ const POS = () => {
                 <div className="mt-3">
                   <p className="font-semibold text-gray-800 text-sm line-clamp-2 h-10">{product.name}</p>
                   <p className="text-indigo-600 font-bold mt-2 text-lg">{currency}{product.offerPrice.toFixed(2)}</p>
+                  {product.barcode && (
+                    <p className="text-xs text-gray-400 mt-1 flex items-center justify-center gap-1">
+                      <FaBarcode size={10} /> {product.barcode}
+                    </p>
+                  )}
                 </div>
               </button>
             ))}
@@ -359,6 +428,14 @@ const POS = () => {
              </div>
         </Transition>
       </div>
+
+      {/* Barcode Scanner Modal */}
+      {showBarcodeScanner && (
+        <BarcodeScanner
+          onBarcodeDetected={handleBarcodeDetected}
+          onClose={() => setShowBarcodeScanner(false)}
+        />
+      )}
     </div>
   );
 };

@@ -16,10 +16,111 @@ const AddProduct = () => {
   const [category, setCategory] = useState('PowderedMilk');
   const [price, setPrice] = useState('');
   const [offerPrice, setOfferPrice] = useState('');
-  const [barcode, setBarcode] = useState(''); // Added barcode state
+  const [barcode, setBarcode] = useState('');
+  const [isGeneratingBarcode, setIsGeneratingBarcode] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
+
+  // Function to generate a unique barcode
+  const generateBarcode = () => {
+    setIsGeneratingBarcode(true);
+    
+    // Generate a 13-digit EAN-13 barcode
+    // First 3 digits: Country code (e.g., 890 for your business)
+    // Next 4-5 digits: Company code
+    // Next 4-5 digits: Product code
+    // Last digit: Check digit
+    
+    const countryCode = '890'; // You can customize this
+    const companyCode = '1234'; // You can customize this
+    const productCode = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
+    
+    // Calculate check digit for EAN-13
+    const partialBarcode = countryCode + companyCode + productCode;
+    const checkDigit = calculateEAN13CheckDigit(partialBarcode);
+    const fullBarcode = partialBarcode + checkDigit;
+    
+    setBarcode(fullBarcode);
+    setIsGeneratingBarcode(false);
+    toast.success('Barcode generated successfully!');
+  };
+
+  // Function to calculate EAN-13 check digit
+  const calculateEAN13CheckDigit = (barcode) => {
+    let sum = 0;
+    for (let i = 0; i < 12; i++) {
+      const digit = parseInt(barcode[i]);
+      sum += i % 2 === 0 ? digit : digit * 3;
+    }
+    return ((10 - (sum % 10)) % 10).toString();
+  };
+
+  // Function to validate barcode format
+  const validateBarcode = (code) => {
+    // Check if it's a valid length (UPC-A: 12 digits, EAN-13: 13 digits)
+    if (!/^\d{12,13}$/.test(code)) {
+      return false;
+    }
+    
+    // Validate check digit for EAN-13
+    if (code.length === 13) {
+      const calculatedCheckDigit = calculateEAN13CheckDigit(code.slice(0, 12));
+      return calculatedCheckDigit === code[12];
+    }
+    
+    return true;
+  };
+
+  // Function to generate barcode based on product name
+  const generateBarcodeFromName = () => {
+    if (!name.trim()) {
+      toast.error('Please enter a product name first');
+      return;
+    }
+    
+    setIsGeneratingBarcode(true);
+    
+    // Create a hash from the product name
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      const char = name.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    
+    // Convert to positive number and ensure it's within range
+    const positiveHash = Math.abs(hash);
+    const productCode = (positiveHash % 100000).toString().padStart(5, '0');
+    
+    const countryCode = '890';
+    const companyCode = '1234';
+    const partialBarcode = countryCode + companyCode + productCode;
+    const checkDigit = calculateEAN13CheckDigit(partialBarcode);
+    const fullBarcode = partialBarcode + checkDigit;
+    
+    setBarcode(fullBarcode);
+    setIsGeneratingBarcode(false);
+    toast.success('Barcode generated from product name!');
+  };
+
+  const handleBarcodeChange = (e) => {
+    const value = e.target.value;
+    setBarcode(value);
+    
+    // Validate barcode if it's not empty
+    if (value && !validateBarcode(value)) {
+      // Show warning but don't prevent input
+      console.warn('Invalid barcode format');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate barcode if provided
+    if (barcode && !validateBarcode(barcode)) {
+      toast.error('Please enter a valid barcode format (12-13 digits)');
+      return;
+    }
 
     const formData = new FormData()
 
@@ -28,7 +129,7 @@ const AddProduct = () => {
     formData.append('category', category)
     formData.append('price', price)
     formData.append('offerPrice', offerPrice)
-    formData.append('barcode', barcode) // Added barcode to form data
+    formData.append('barcode', barcode)
 
     for (let i = 0; i < files.length; i++) {
       formData.append('images', files[i])
@@ -45,10 +146,11 @@ const AddProduct = () => {
         setFiles([]);
         setName('');
         setDescription('');
-        setCategory('');
+        setCategory('PowderedMilk');
         setPrice('');
         setOfferPrice('');
-        setBarcode(''); // Reset barcode field
+        setBarcode('');
+        setShowPrintModal(false);
       } else {
         toast.error(data.message);
       }
@@ -57,6 +159,60 @@ const AddProduct = () => {
       toast.error(error.message)
     }
 
+  };
+
+  const PrintBarcodeModal = () => {
+    if (!showPrintModal || !barcode) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">Print Barcode Label</h3>
+            <button 
+              onClick={() => setShowPrintModal(false)}
+              className="text-gray-500 hover:text-gray-700 text-xl"
+            >
+              ×
+            </button>
+          </div>
+          
+          <div id="barcode-label" className="border-2 border-dashed border-gray-300 p-4 text-center bg-white">
+            <div className="mb-2">
+              <div className="text-sm font-medium truncate">{name || 'Product Name'}</div>
+              <div className="text-xs text-gray-600">{category}</div>
+            </div>
+            
+            {/* Barcode placeholder - will be replaced with actual barcode image */}
+            <div className="my-3 bg-black text-white p-2 font-mono text-xs">
+              ||||| {barcode} |||||
+            </div>
+            
+            <div className="text-sm">
+              <div className="font-semibold">${price || '0.00'}</div>
+              {offerPrice && offerPrice !== price && (
+                <div className="text-green-600 text-xs">Offer: ${offerPrice}</div>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={() => window.print()}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Print Label
+            </button>
+            <button
+              onClick={() => setShowPrintModal(false)}
+              className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -86,6 +242,7 @@ const AddProduct = () => {
 
           </div>
         </div>
+        
         <div className="flex flex-col gap-1 max-w-md">
           <label className="text-base font-medium" htmlFor="product-name">
             Product Name
@@ -100,6 +257,7 @@ const AddProduct = () => {
             required
           />
         </div>
+        
         <div className="flex flex-col gap-1 max-w-md">
           <label
             className="text-base font-medium"
@@ -117,19 +275,58 @@ const AddProduct = () => {
             required
           ></textarea>
         </div>
+        
         <div className="flex flex-col gap-1 max-w-md">
           <label className="text-base font-medium" htmlFor="product-barcode">
-            Barcode (Optional)
+            Barcode
           </label>
-          <input
-            id="product-barcode"
-            type="text"
-            placeholder="Enter barcode (UPC, EAN, etc.)"
-            className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40"
-            onChange={(e) => setBarcode(e.target.value)}
-            value={barcode}
-          />
+          <div className="flex gap-2">
+            <input
+              id="product-barcode"
+              type="text"
+              placeholder="Enter barcode or generate one"
+              className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40 flex-1"
+              onChange={handleBarcodeChange}
+              value={barcode}
+            />
+            <button
+              type="button"
+              onClick={generateBarcode}
+              disabled={isGeneratingBarcode}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 whitespace-nowrap"
+            >
+              {isGeneratingBarcode ? 'Generating...' : 'Generate'}
+            </button>
+          </div>
+          <div className="flex gap-2 mt-1">
+            <button
+              type="button"
+              onClick={generateBarcodeFromName}
+              disabled={isGeneratingBarcode || !name.trim()}
+              className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+            >
+              Generate from Name
+            </button>
+            {barcode && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowPrintModal(true)}
+                  className="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
+                >
+                  Print Label
+                </button>
+                <span className="text-sm text-gray-600 flex items-center">
+                  {validateBarcode(barcode) ? '✅ Valid format' : '⚠️ Invalid format'}
+                </span>
+              </>
+            )}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Barcode will be used for POS scanning. Leave empty to skip or generate automatically.
+          </p>
         </div>
+        
         <div className="flex items-center gap-5 flex-wrap">
           <div className="flex flex-col gap-1 w-32">
             <label className="text-base font-medium" htmlFor="category">
@@ -139,7 +336,7 @@ const AddProduct = () => {
               id="category"
               className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40"
               onChange={(e) => setCategory(e.target.value)}
-              defaultValue={category}
+              value={category}
             >
               <option value="PowderedMilk">Formula & Powdered Milk</option>
               <option value="LiquidMilk">Ready-to-Feed Milk</option>
@@ -181,11 +378,33 @@ const AddProduct = () => {
             />
           </div>
         </div>
+        
         <button type="submit" className="px-8 py-2.5 bg-black text-white font-medium rounded">
           ADD
         </button>
       </form>
-      {/* <Footer /> */}
+      
+      <PrintBarcodeModal />
+      
+      <style jsx>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #barcode-label, #barcode-label * {
+            visibility: visible;
+          }
+          #barcode-label {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            border: none !important;
+            padding: 20px;
+          }
+        }
+      `}</style>
     </div>
   );
 };
