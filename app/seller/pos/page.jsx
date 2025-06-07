@@ -117,19 +117,26 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
     }
   };
 
-  // Simplified barcode detection - replace with proper library in production
+  // Enhanced barcode detection - replace with proper library in production
   const detectBarcode = (imageData) => {
-    // This simulates barcode detection
+    // This is still a mock implementation for demonstration
     // In production, use libraries like @zxing/library, quagga2, or jsQR
     
-    // Mock detection for demonstration
-    if (Math.random() < 0.08) {
+    // For a real implementation, you would:
+    // 1. Install a barcode scanning library: npm install @zxing/library
+    // 2. Import and use it: import { BrowserMultiFormatReader } from '@zxing/library';
+    // 3. Replace this mock with actual barcode detection
+    
+    // Mock detection with better simulation
+    if (Math.random() < 0.1) { // Slightly higher chance for testing
       const mockBarcodes = [
         '1234567890123',
         '9876543210987',
         '5555555555555',
         '1111111111111',
-        '7777777777777'
+        '7777777777777',
+        '0123456789012',
+        '9999888877776'
       ];
       return mockBarcodes[Math.floor(Math.random() * mockBarcodes.length)];
     }
@@ -359,8 +366,14 @@ const POS = () => {
   };
 
   const updateQuantity = (productId, newQuantity) => {
+    const product = products.find(p => p._id === productId);
+    
     if (newQuantity <= 0) {
       removeFromCart(productId);
+    } else if (product && newQuantity > product.stock) {
+      toast.error(`Only ${product.stock} items available in stock`, {
+        icon: <FaExclamationTriangle />,
+      });
     } else {
       setCartItems((prev) => ({ ...prev, [productId]: newQuantity }));
     }
@@ -371,6 +384,14 @@ const POS = () => {
       const newCart = { ...prev };
       delete newCart[productId];
       return newCart;
+    });
+    toast.success('Item removed from cart', {
+      icon: <FaTrash />,
+      style: {
+        borderRadius: '20px',
+        background: '#EF4444',
+        color: '#ffffff',
+      },
     });
   };
 
@@ -409,6 +430,14 @@ const POS = () => {
       toast.error("Cart is empty");
       return;
     }
+
+    // Check stock availability before processing
+    const stockIssues = cartDetails.items.filter(item => item.quantity > item.stock);
+    if (stockIssues.length > 0) {
+      toast.error(`Insufficient stock for: ${stockIssues.map(item => item.name).join(', ')}`);
+      return;
+    }
+
     setProcessingOrder(true);
     try {
       const token = await getToken();
@@ -425,6 +454,9 @@ const POS = () => {
         setCartItems({});
         setSearchTerm('');
         setIsCartOpen(false);
+        toast.success('Sale completed successfully!', {
+          icon: <FaCheckCircle />,
+        });
       } else {
         toast.error(data.message || 'Failed to complete sale');
       }
@@ -455,10 +487,23 @@ const POS = () => {
                   {item.barcode && (
                     <p className="text-xs text-gray-400">#{item.barcode}</p>
                   )}
+                  <p className="text-xs text-gray-500">Stock: {item.stock}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => updateQuantity(item._id, item.quantity - 1)} className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"><FaMinus size={12} /></button>
-                  <button onClick={() => updateQuantity(item._id, item.quantity + 1)} className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"><FaPlus size={12}/></button>
+                  <button 
+                    onClick={() => updateQuantity(item._id, item.quantity - 1)} 
+                    className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                  >
+                    <FaMinus size={12} />
+                  </button>
+                  <span className="w-8 text-center font-semibold">{item.quantity}</span>
+                  <button 
+                    onClick={() => updateQuantity(item._id, item.quantity + 1)} 
+                    className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center disabled:opacity-50"
+                    disabled={item.quantity >= item.stock}
+                  >
+                    <FaPlus size={12}/>
+                  </button>
                 </div>
                 <button onClick={() => removeFromCart(item._id)} className="text-gray-400 hover:text-red-500 transition-colors"><FaTimesCircle size={20} /></button>
               </div>
@@ -499,9 +544,16 @@ const POS = () => {
           <button
             onClick={handleCheckout}
             disabled={processingOrder || cartDetails.items.length === 0}
-            className="w-full bg-green-500 text-white font-bold py-3.5 rounded-lg hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            className="w-full bg-green-500 text-white font-bold py-3.5 rounded-lg hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
-            {processingOrder ? 'Processing...' : 'Complete Sale'}
+            {processingOrder ? (
+              <>
+                <FaSpinner className="animate-spin" />
+                Processing...
+              </>
+            ) : (
+              'Complete Sale'
+            )}
           </button>
         </div>
       </div>
@@ -563,7 +615,8 @@ const POS = () => {
               disabled={barcodeLoading}
               className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
             >
-              <FaCamera /> {barcodeLoading ? 'Processing...' : 'Scan'}
+              {barcodeLoading ? <FaSpinner className="animate-spin" /> : <FaCamera />} 
+              {barcodeLoading ? 'Processing...' : 'Scan'}
             </button>
           </div>
         </header>
@@ -574,11 +627,16 @@ const POS = () => {
               <button
                 key={product._id}
                 onClick={() => addToCart(product._id)}
-                className="bg-white rounded-xl border border-gray-200 p-4 text-center transition-all duration-300 hover:shadow-lg hover:border-indigo-500 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex flex-col justify-between group"
-                disabled={processingOrder}
+                className="bg-white rounded-xl border border-gray-200 p-4 text-center transition-all duration-300 hover:shadow-lg hover:border-indigo-500 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex flex-col justify-between group disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={processingOrder || product.stock === 0}
               >
                 <div className="relative w-full h-28">
                   <Image src={product.image[0]} alt={product.name} fill sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw" className="object-contain" />
+                  {product.stock === 0 && (
+                    <div className="absolute inset-0 bg-red-500 bg-opacity-20 flex items-center justify-center rounded-lg">
+                      <span className="text-red-600 font-bold text-xs">OUT OF STOCK</span>
+                    </div>
+                  )}
                 </div>
                 <div className="mt-3">
                   <p className="font-semibold text-gray-800 text-sm line-clamp-2 h-10">{product.name}</p>
@@ -588,6 +646,7 @@ const POS = () => {
                       <FaBarcode size={10} /> {product.barcode}
                     </p>
                   )}
+                  <p className="text-xs text-gray-500 mt-1">Stock: {product.stock}</p>
                 </div>
               </button>
             ))}
@@ -624,7 +683,7 @@ const POS = () => {
         {cartDetails.items.length > 0 &&
             <div 
                 onClick={() => setIsCartOpen(true)}
-                className="fixed bottom-0 left-0 right-0 bg-indigo-600 text-white p-4 shadow-lg-top cursor-pointer transition-transform duration-300 hover:bg-indigo-700"
+                className="fixed bottom-0 left-0 right-0 bg-indigo-600 text-white p-4 shadow-lg cursor-pointer transition-transform duration-300 hover:bg-indigo-700"
             >
                 <div className="flex justify-between items-center">
                     <div className="flex items-center">
@@ -638,38 +697,52 @@ const POS = () => {
                 </div>
             </div>
         }
-
         {/* Cart Modal */}
-        <Transition show={isCartOpen} as={React.Fragment}>
-             <div className="fixed inset-0 z-40 flex flex-col" >
-                <Transition.Child
-                    as={React.Fragment}
-                    enter="ease-in-out duration-300"
-                    enterFrom="opacity-0"
-                    enterTo="opacity-100"
-                    leave="ease-in-out duration-300"
-                    leaveFrom="opacity-100"
-                    leaveTo="opacity-0"
+        <Transition show={isCartOpen} as="div">
+          <div className="fixed inset-0 z-50 flex items-end justify-center">
+            <Transition.Child
+              as="div"
+              className="fixed inset-0 bg-black bg-opacity-50"
+              enter="ease-out duration-300"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+              onClick={() => setIsCartOpen(false)}
+            />
+
+            <Transition.Child
+              as="div"
+              className="relative bg-white rounded-t-3xl shadow-xl w-full max-h-[85vh] flex flex-col"
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 translate-y-full"
+              enterTo="opacity-100 translate-y-0"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 translate-y-0"
+              leaveTo="opacity-0 translate-y-full"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                  <FaShoppingCart className="mr-3 text-indigo-500" />
+                  Current Order
+                  <span className="text-lg font-bold text-indigo-500 bg-indigo-100 rounded-full px-3 py-1 ml-3">
+                    {cartDetails.totalItems}
+                  </span>
+                </h2>
+                <button
+                  onClick={() => setIsCartOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                    <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setIsCartOpen(false)} />
-                </Transition.Child>
-                <Transition.Child
-                    as="div"
-                    className="relative z-50 bg-white h-full flex flex-col"
-                    enter="transform transition ease-in-out duration-300"
-                    enterFrom="translate-y-full"
-                    enterTo="translate-y-0"
-                    leave="transform transition ease-in-out duration-300"
-                    leaveFrom="translate-y-0"
-                    leaveTo="translate-y-full"
-                >
-                    <div className="p-4 border-b flex justify-between items-center">
-                        <h2 className="text-xl font-bold text-gray-800">Current Order ({cartDetails.totalItems})</h2>
-                        <button onClick={() => setIsCartOpen(false)} className="p-2 text-gray-500 hover:text-gray-800"><FaTimes size={24}/></button>
-                    </div>
-                    <CartContents />
-                </Transition.Child>
-             </div>
+                  <FaTimes size={24} />
+                </button>
+              </div>
+
+              {/* Cart Contents */}
+              <CartContents />
+            </Transition.Child>
+          </div>
         </Transition>
       </div>
 
