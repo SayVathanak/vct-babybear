@@ -1,12 +1,11 @@
 'use client'
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
 import { useAppContext } from '@/context/AppContext';
 import Loading from '@/components/Loading';
-import BarcodeScanner from '@/components/seller/BarcodeScanner';
-import { FaSearch, FaShoppingCart, FaTrash, FaPlus, FaMinus, FaTimesCircle, FaCheckCircle, FaBarcode, FaTimes, FaArrowRight, FaCamera } from 'react-icons/fa';
+import { FaSearch, FaShoppingCart, FaTrash, FaPlus, FaMinus, FaTimesCircle, FaCheckCircle, FaBarcode, FaTimes, FaArrowRight, FaCamera, FaStop } from 'react-icons/fa';
 import { Transition } from '@headlessui/react';
 
 const POS = () => {
@@ -22,8 +21,11 @@ const POS = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   
   // Barcode scanner states
-  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
-  const [barcodeLoading, setBarcodeLoading] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scannerError, setScannerError] = useState('');
+  const [lastScannedCode, setLastScannedCode] = useState('');
+  const scannerRef = useRef(null);
+  const quaggaRef = useRef(null);
 
   // Fetch seller's products on component mount
   useEffect(() => {
@@ -49,50 +51,139 @@ const POS = () => {
     fetchSellerProduct();
   }, [user, getToken]);
 
-  // Handle barcode detection from scanner
-  const handleBarcodeDetected = async (barcode) => {
-    setBarcodeLoading(true);
-    setShowBarcodeScanner(false);
-    
-    try {
-      const token = await getToken();
-      const { data } = await axios.get(`/api/product/barcode/${barcode}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      if (data.success) {
-        // Check if product is in the seller's current inventory
-        const sellerProduct = products.find(p => p._id === data.product._id);
-        
-        if (sellerProduct) {
-          addToCart(data.product._id);
-          toast.success(`Scanned: ${data.product.name}`, {
-            icon: <FaBarcode className="text-white" />,
-            style: {
-              borderRadius: '20px',
-              background: '#10B981',
-              color: '#ffffff',
-            },
-          });
-        } else {
-          toast.error('Product not found in your inventory', {
-            icon: <FaBarcode />,
-          });
+  // Initialize Quagga scanner
+  const initializeScanner = () => {
+    if (!scannerRef.current) return;
+
+    const config = {
+      inputStream: {
+        name: "Live",
+        type: "LiveStream",
+        target: scannerRef.current,
+        constraints: {
+          width: 640,
+          height: 480,
+          facingMode: "environment" // Use back camera
         }
-      } else {
-        toast.error(data.message || `Product not found for barcode: ${barcode}`, {
-          icon: <FaBarcode />,
-        });
-      }
-    } catch (error) {
-      console.error('Barcode lookup error:', error);
-      toast.error(error.response?.data?.message || 'Failed to lookup barcode', {
-        icon: <FaBarcode />,
-      });
-    } finally {
-      setBarcodeLoading(false);
+      },
+      locator: {
+        patchSize: "medium",
+        halfSample: true
+      },
+      numOfWorkers: 2,
+      frequency: 10,
+      decoder: {
+        readers: [
+          "code_128_reader",
+          "ean_reader",
+          "ean_8_reader",
+          "code_39_reader",
+          "code_39_vin_reader",
+          "codabar_reader",
+          "upc_reader",
+          "upc_e_reader",
+          "i2of5_reader"
+        ]
+      },
+      locate: true
+    };
+
+    // Load Quagga dynamically
+    if (typeof window !== 'undefined' && !quaggaRef.current) {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js';
+      script.onload = () => {
+        quaggaRef.current = window.Quagga;
+        startScanner(config);
+      };
+      script.onerror = () => {
+        setScannerError('Failed to load barcode scanner');
+        setIsScanning(false);
+      };
+      document.head.appendChild(script);
+    } else if (quaggaRef.current) {
+      startScanner(config);
     }
   };
+
+  const startScanner = (config) => {
+    const Quagga = quaggaRef.current;
+    
+    Quagga.init(config, (err) => {
+      if (err) {
+        console.error('Scanner initialization error:', err);
+        setScannerError('Camera access denied or not available');
+        setIsScanning(false);
+        return;
+      }
+      
+      Quagga.start();
+      setScannerError('');
+      
+      // Listen for successful scans
+      Quagga.onDetected(handleBarcodeDetected);
+    });
+  };
+
+  const handleBarcodeDetected = (result) => {
+    const code = result.codeResult.code;
+    
+    // Prevent duplicate scans of the same code in quick succession
+    if (code === lastScannedCode) return;
+    
+    setLastScannedCode(code);
+    
+    // Find product by barcode
+    const product = products.find(p => p.barcode === code);
+    
+    if (product) {
+      addToCart(product._id);
+      toast.success(`Scanned: ${product.name}`, {
+        icon: <FaBarcode className="text-white" />,
+        style: {
+          borderRadius: '20px',
+          background: '#10B981',
+          color: '#ffffff',
+        },
+      });
+    } else {
+      toast.error(`Product not found for barcode: ${code}`, {
+        icon: <FaBarcode />,
+      });
+    }
+    
+    // Clear the last scanned code after a delay to allow re-scanning
+    setTimeout(() => setLastScannedCode(''), 2000);
+  };
+
+  const startScanning = () => {
+    setIsScanning(true);
+    setScannerError('');
+    setLastScannedCode('');
+    
+    // Small delay to ensure DOM is ready
+    setTimeout(() => {
+      initializeScanner();
+    }, 100);
+  };
+
+  const stopScanning = () => {
+    if (quaggaRef.current) {
+      quaggaRef.current.stop();
+    }
+    setIsScanning(false);
+    setScannerError('');
+    setLastScannedCode('');
+  };
+
+  // Clean up scanner on unmount
+  useEffect(() => {
+    return () => {
+      if (quaggaRef.current) {
+        quaggaRef.current.stop();
+      }
+    };
+  }, []);
 
   // Cart management functions
   const addToCart = (productId) => {
@@ -102,7 +193,7 @@ const POS = () => {
     }));
     
     // Don't show toast if called from barcode scanner (it shows its own toast)
-    if (!showBarcodeScanner && !barcodeLoading) {
+    if (!isScanning) {
       toast.success('Added to cart', {
         icon: <FaPlus className="text-white" />,
         style: {
@@ -181,6 +272,11 @@ const POS = () => {
         setCartItems({});
         setSearchTerm('');
         setIsCartOpen(false);
+        
+        // Stop scanning when checkout is complete
+        if (isScanning) {
+          stopScanning();
+        }
       } else {
         toast.error(data.message || 'Failed to complete sale');
       }
@@ -195,6 +291,56 @@ const POS = () => {
     setSaleCompleted(false);
     setCompletedOrderDetails(null);
   };
+
+  // Barcode Scanner Modal Component
+  const BarcodeScannerModal = () => (
+    <Transition show={isScanning} as={React.Fragment}>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
+        <div className="bg-white rounded-lg p-4 max-w-md w-full mx-4 max-h-[90vh] overflow-hidden">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">Scan Barcode</h3>
+            <button 
+              onClick={stopScanning}
+              className="text-gray-500 hover:text-gray-700 p-2"
+            >
+              <FaTimes size={20} />
+            </button>
+          </div>
+          
+          {scannerError ? (
+            <div className="text-center py-8">
+              <div className="text-red-500 mb-4">{scannerError}</div>
+              <button 
+                onClick={startScanning}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Retry
+              </button>
+            </div>
+          ) : (
+            <>
+              <div 
+                ref={scannerRef}
+                className="w-full h-64 bg-black rounded-lg mb-4 overflow-hidden"
+              />
+              
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-4">
+                  Point your camera at a barcode to scan
+                </p>
+                <button 
+                  onClick={stopScanning}
+                  className="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center gap-2"
+                >
+                  <FaStop /> Stop Scanning
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </Transition>
+  );
 
   // Render a shared component for the cart's content
   const CartContents = () => (
@@ -315,11 +461,11 @@ const POS = () => {
               />
             </div>
             <button
-              onClick={() => setShowBarcodeScanner(true)}
-              disabled={barcodeLoading}
+              onClick={startScanning}
+              disabled={isScanning}
               className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
             >
-              <FaCamera /> {barcodeLoading ? 'Processing...' : 'Scan'}
+              <FaCamera /> {isScanning ? 'Scanning...' : 'Scan'}
             </button>
           </div>
         </header>
@@ -430,12 +576,7 @@ const POS = () => {
       </div>
 
       {/* Barcode Scanner Modal */}
-      {showBarcodeScanner && (
-        <BarcodeScanner
-          onBarcodeDetected={handleBarcodeDetected}
-          onClose={() => setShowBarcodeScanner(false)}
-        />
-      )}
+      <BarcodeScannerModal />
     </div>
   );
 };
