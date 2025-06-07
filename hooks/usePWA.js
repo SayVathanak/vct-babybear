@@ -21,6 +21,33 @@ export default function usePWA() {
     return isStandalone || isIOSStandalone || isAndroidStandalone;
   }, []);
 
+  // Detect mobile device
+  const isMobileDevice = useCallback(() => {
+    if (typeof window === 'undefined') return false;
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }, []);
+
+  // Get optimal camera constraints for mobile
+  const getCameraConstraints = useCallback(() => {
+    const isMobile = isMobileDevice();
+    
+    if (isMobile) {
+      return {
+        width: { min: 640, ideal: 1280, max: 1920 },
+        height: { min: 480, ideal: 720, max: 1080 },
+        facingMode: "environment", // Use back camera for barcode scanning
+        aspectRatio: { ideal: 1.7777777778 }
+      };
+    }
+    
+    // Desktop constraints
+    return {
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+      facingMode: "environment"
+    };
+  }, [isMobileDevice]);
+
   // Update debug info
   const updateDebugInfo = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -34,6 +61,8 @@ export default function usePWA() {
       isIOSStandalone: /iPad|iPhone|iPod/.test(navigator.userAgent) && navigator.standalone,
       displayMode: window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser',
       serviceWorkerState: null,
+      isMobile: isMobileDevice(),
+      hasCamera: 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices,
     };
 
     // Check service worker state
@@ -49,7 +78,26 @@ export default function usePWA() {
     } else {
       setDebugInfo(info);
     }
-  }, []);
+  }, [isMobileDevice]);
+
+  // Test camera access
+  const testCameraAccess = useCallback(async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return { success: false, error: 'getUserMedia not supported' };
+    }
+
+    try {
+      const constraints = getCameraConstraints();
+      const stream = await navigator.mediaDevices.getUserMedia({ video: constraints });
+      
+      // Stop the stream immediately after testing
+      stream.getTracks().forEach(track => track.stop());
+      
+      return { success: true, constraints };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }, [getCameraConstraints]);
 
   useEffect(() => {
     // Initial checks
@@ -211,6 +259,10 @@ export default function usePWA() {
     installError,
     installApp,
     debugInfo,
-    forceCheckInstallability
+    forceCheckInstallability,
+    // New camera-related utilities
+    isMobileDevice: isMobileDevice(),
+    getCameraConstraints,
+    testCameraAccess
   };
 }
