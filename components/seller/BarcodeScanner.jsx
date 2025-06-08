@@ -10,11 +10,12 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
   const [error, setError] = useState('');
   const [flashSupported, setFlashSupported] = useState(false);
   const [flashEnabled, setFlashEnabled] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [facingMode, setFacingMode] = useState('environment');
   const [scanLine, setScanLine] = useState(0);
   const scanIntervalRef = useRef(null);
   const animationRef = useRef(null);
+  const initTimeoutRef = useRef(null);
 
   // Detect if device is iOS
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
@@ -47,15 +48,35 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
   const initializeCamera = async () => {
     setIsInitializing(true);
     setError('');
+    setIsScanning(false);
+
+    // Clear any existing timeout
+    if (initTimeoutRef.current) {
+      clearTimeout(initTimeoutRef.current);
+    }
+
+    // Set a timeout to prevent indefinite loading
+    initTimeoutRef.current = setTimeout(() => {
+      if (isInitializing) {
+        setError('Camera initialization timeout. Please try again.');
+        setIsInitializing(false);
+      }
+    }, 10000); // 10 second timeout
 
     try {
       // Stop existing stream
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
       }
 
-      // Request camera permissions
-      const constraints = {
+      // Check if getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera API not supported');
+      }
+
+      // Request camera permissions with fallback constraints
+      let constraints = {
         video: {
           facingMode: facingMode,
           width: { ideal: 1280, max: 1920 },
@@ -64,7 +85,20 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
         }
       };
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (err) {
+        // Fallback to basic constraints if detailed ones fail
+        console.warn('Detailed constraints failed, trying basic constraints:', err);
+        constraints = {
+          video: {
+            facingMode: facingMode
+          }
+        };
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      }
+
       streamRef.current = stream;
 
       if (videoRef.current) {
@@ -78,23 +112,53 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
           videoRef.current.setAttribute('webkit-playsinline', true);
         }
 
-        await new Promise((resolve, reject) => {
-          videoRef.current.onloadedmetadata = () => {
-            videoRef.current.play()
-              .then(() => {
-                setIsScanning(true);
-                setIsInitializing(false);
-                checkFlashSupport();
-                startBarcodeDetection();
-                resolve();
-              })
-              .catch(reject);
-          };
-          videoRef.current.onerror = reject;
-        });
+        // Wait for video metadata and play
+        const playVideo = () => {
+          return new Promise((resolve, reject) => {
+            const onLoadedMetadata = () => {
+              videoRef.current.removeEventListener('loadedmetadata', onLoadedMetadata);
+              
+              videoRef.current.play()
+                .then(() => {
+                  // Clear the timeout since we're successful
+                  if (initTimeoutRef.current) {
+                    clearTimeout(initTimeoutRef.current);
+                  }
+                  
+                  setIsScanning(true);
+                  setIsInitializing(false);
+                  checkFlashSupport();
+                  startBarcodeDetection();
+                  resolve();
+                })
+                .catch(reject);
+            };
+
+            const onError = (err) => {
+              videoRef.current.removeEventListener('error', onError);
+              reject(err);
+            };
+
+            if (videoRef.current.readyState >= 1) {
+              // Metadata already loaded
+              onLoadedMetadata();
+            } else {
+              videoRef.current.addEventListener('loadedmetadata', onLoadedMetadata);
+              videoRef.current.addEventListener('error', onError);
+            }
+          });
+        };
+
+        await playVideo();
       }
     } catch (err) {
       console.error('Camera initialization error:', err);
+      
+      // Clear the timeout
+      if (initTimeoutRef.current) {
+        clearTimeout(initTimeoutRef.current);
+      }
+      
       setIsInitializing(false);
       
       if (err.name === 'NotAllowedError') {
@@ -109,6 +173,8 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
           ? 'Camera not compatible. Please try using Safari browser.'
           : 'Camera constraints not supported. Please try a different device.'
         );
+      } else if (err.message === 'Camera API not supported') {
+        setError('Camera API not supported by your browser. Please use a modern browser.');
       } else {
         setError(isIOS 
           ? 'Unable to access camera. Please ensure you\'re using Safari and camera access is enabled.'
@@ -122,8 +188,13 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
     if (streamRef.current) {
       const videoTrack = streamRef.current.getVideoTracks()[0];
       if (videoTrack && videoTrack.getCapabilities) {
-        const capabilities = videoTrack.getCapabilities();
-        setFlashSupported(!!capabilities.torch);
+        try {
+          const capabilities = videoTrack.getCapabilities();
+          setFlashSupported(!!capabilities.torch);
+        } catch (err) {
+          console.warn('Flash capability check failed:', err);
+          setFlashSupported(false);
+        }
       }
     }
   };
@@ -202,12 +273,16 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
   const cleanup = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
     if (scanIntervalRef.current) {
       clearInterval(scanIntervalRef.current);
     }
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
+    }
+    if (initTimeoutRef.current) {
+      clearTimeout(initTimeoutRef.current);
     }
     setIsScanning(false);
   };
@@ -230,6 +305,11 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
     }
   };
 
+  const handleRetry = () => {
+    setError('');
+    initializeCamera();
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black">
       {/* Header */}
@@ -243,7 +323,7 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
           </button>
           <h1 className="text-white text-lg font-semibold">Scan Barcode</h1>
           <div className="flex items-center gap-2">
-            {flashSupported && (
+            {!error && !isInitializing && flashSupported && (
               <button
                 onClick={toggleFlash}
                 className="p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
@@ -251,12 +331,14 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
                 {flashEnabled ? <Zap size={20} /> : <ZapOff size={20} />}
               </button>
             )}
-            <button
-              onClick={switchCamera}
-              className="p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
-            >
-              <RotateCw size={20} />
-            </button>
+            {!error && !isInitializing && (
+              <button
+                onClick={switchCamera}
+                className="p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+              >
+                <RotateCw size={20} />
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -279,12 +361,20 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
                   </ul>
                 </div>
               )}
-              <button
-                onClick={handleManualInput}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors w-full"
-              >
-                Enter Barcode Manually
-              </button>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleRetry}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors w-full"
+                >
+                  Try Again
+                </button>
+                <button
+                  onClick={handleManualInput}
+                  className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors w-full"
+                >
+                  Enter Barcode Manually
+                </button>
+              </div>
             </div>
           </div>
         ) : isInitializing ? (
@@ -296,6 +386,12 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
                 Please allow camera access when prompted
               </p>
             )}
+            <button
+              onClick={handleManualInput}
+              className="mt-6 bg-white/20 backdrop-blur-md text-white px-6 py-3 rounded-full border border-white/30 hover:bg-white/30 transition-colors"
+            >
+              Enter Code Manually
+            </button>
           </div>
         ) : (
           <>
@@ -306,6 +402,11 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
               autoPlay
               playsInline
               muted
+              onError={(e) => {
+                console.error('Video error:', e);
+                setError('Video playback failed. Please try again.');
+                setIsInitializing(false);
+              }}
             />
             
             {/* Viewfinder Overlay */}
