@@ -1,531 +1,288 @@
-// components/BarcodeScanner.jsx
-'use client';
+‘use client’
+import React, { useState, useEffect, useRef } from ‘react’;
+import { FaBarcode, FaTimes, FaCamera, FaExclamationTriangle, FaSpinner } from ‘react-icons/fa’;
+import { Transition } from ‘@headlessui/react’;
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { X, Camera, AlertTriangle, RotateCcw } from 'lucide-react'; // Assuming you have lucide-react installed
+// Dynamically import Quagga to avoid SSR issues
+let Quagga = null;
 
 const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
-  const videoRef = useRef(null);
-  const [isScanning, setIsScanning] = useState(false);
-  const [error, setError] = useState(null);
-  const [isInitializing, setIsInitializing] = useState(true);
-  const [lastScannedCode, setLastScannedCode] = useState('');
-  const [scanAttempts, setScanAttempts] = useState(0);
-  const [cameraPermission, setCameraPermission] = useState('prompt');
-  const [facingMode, setFacingMode] = useState('environment');
-  const [quaggaReady, setQuaggaReady] = useState(false);
+const scannerRef = useRef(null);
+const [isScanning, setIsScanning] = useState(false);
+const [error, setError] = useState(’’);
+const [quaggaLoaded, setQuaggaLoaded] = useState(false);
+const [scanningActive, setScanningActive] = useState(true);
 
-  // Detection tracking
-  const [detectedCodes, setDetectedCodes] = useState(new Map());
-  const quaggaInitialized = useRef(false);
-  const scanTimeout = useRef(null);
+// Load Quagga dynamically
+useEffect(() => {
+const loadQuagga = async () => {
+try {
+// Import Quagga dynamically (you’ll need to install it: npm install quagga)
+const QuaggaModule = await import(‘quagga’);
+Quagga = QuaggaModule.default;
+setQuaggaLoaded(true);
+} catch (err) {
+console.error(‘Failed to load Quagga:’, err);
+setError(‘Failed to load barcode scanner library’);
+}
+};
 
-  // Detect mobile device
-  const isMobileDevice = useCallback(() => {
-    return typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  }, []);
+```
+loadQuagga();
+```
 
-  // Get mobile-optimized constraints
-  const getCameraConstraints = useCallback(() => {
-    const isMobile = isMobileDevice();
+}, []);
 
-    if (isMobile) {
-      return {
-        width: { min: 640, ideal: 1280, max: 1920 },
-        height: { min: 480, ideal: 720, max: 1080 },
-        facingMode: facingMode,
-        aspectRatio: { ideal: 1.7777777778 },
-        frameRate: { ideal: 15, max: 30 }
-      };
-    }
+// Start Quagga scanner
+useEffect(() => {
+if (!quaggaLoaded || !Quagga || !scannerRef.current) return;
 
-    return {
-      width: { ideal: 1280 },
-      height: { ideal: 720 },
-      facingMode: facingMode,
-      frameRate: { ideal: 30 }
-    };
-  }, [facingMode, isMobileDevice]);
+```
+let mounted = true;
 
-  // Initialize QuaggaJS with improved settings
-  const initializeQuagga = useCallback(async () => {
-    // Check if Quagga is available globally
-    const Quagga = typeof window !== 'undefined' ? window.Quagga : null;
+const startScanner = () => {
+  setError('');
+  setIsScanning(true);
 
-    if (!Quagga) {
-      setError('QuaggaJS library not found. Please ensure it\'s loaded.');
-      setIsInitializing(false);
+  Quagga.init({
+    inputStream: {
+      name: "Live",
+      type: "LiveStream",
+      target: scannerRef.current,
+      constraints: {
+        width: 320,
+        height: 240,
+        facingMode: "environment" // Use back camera
+      }
+    },
+    locator: {
+      patchSize: "medium",
+      halfSample: true
+    },
+    numOfWorkers: 2,
+    decoder: {
+      readers: [
+        "ean_reader",
+        "ean_8_reader" 
+      ]
+    },
+    locate: true
+  }, (err) => {
+    if (err) {
+      console.error('Quagga initialization error:', err);
+      if (mounted) {
+        setError('Unable to access camera. Please check permissions.');
+        setIsScanning(false);
+      }
       return;
     }
-
-    if (quaggaInitialized.current) {
-      try {
-        Quagga.stop();
-      } catch (err) {
-        console.warn('Error stopping existing Quagga instance:', err);
-      }
-      quaggaInitialized.current = false;
+    
+    if (mounted) {
+      console.log("Quagga initialization finished. Ready to start");
+      Quagga.start();
+      setIsScanning(true);
     }
+  });
 
-    try {
-      setError(null);
-      setIsInitializing(true);
-      setDetectedCodes(new Map());
+  // Set up barcode detection handler
+  Quagga.onDetected((result) => {
+    if (!scanningActive || !mounted) return;
 
-      const constraints = getCameraConstraints();
-
-      const config = {
-        inputStream: {
-          name: "Live",
-          type: "LiveStream",
-          constraints: constraints,
-          target: videoRef.current,
-          area: {
-            top: "10%",
-            right: "10%",
-            left: "10%",
-            bottom: "10%"
-          }
-        },
-        locator: {
-          patchSize: "medium",
-          halfSample: true
-        },
-        numOfWorkers: Math.min(navigator.hardwareConcurrency || 2, 4),
-        frequency: 10,
-        decoder: {
-          readers: [
-            "ean_reader",
-            "ean_8_reader",
-            "code_128_reader",
-            "code_39_reader",
-            "upc_reader",
-            "upc_e_reader",
-            "codabar_reader",
-            "i2of5_reader"
-          ],
-          debug: {
-            drawBoundingBox: false,
-            showFrequency: false,
-            drawScanline: false,
-            showPattern: false
-          },
-          multiple: false
-        },
-        locate: true,
-        tracking: false,
-        debug: false
-      };
-
-      console.log('Initializing Quagga with config:', config);
-
-      Quagga.init(config, (err) => {
-        if (err) {
-          console.error('Quagga initialization error:', err);
-          setError(`Scanner initialization failed: ${err.message}`);
-          setIsInitializing(false);
-          return;
-        }
-
-        console.log('Quagga initialized successfully');
-
-        try {
-          Quagga.onProcessed((result) => {
-            setScanAttempts(prev => prev + 1);
-
-            const drawingCtx = Quagga.canvas.ctx.overlay;
-            const drawingCanvas = Quagga.canvas.dom.overlay;
-
-            if (result && drawingCtx && drawingCanvas) {
-              drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-
-              if (result.boxes) {
-                result.boxes.forEach(box => {
-                  if (box !== result.box) {
-                    drawingCtx.strokeStyle = "rgba(0, 255, 0, 0.5)";
-                    drawingCtx.lineWidth = 2;
-                    drawingCtx.strokeRect(box[0].x, box[0].y, box[1].x - box[0].x, box[1].y - box[0].y);
-                  }
-                });
-              }
-
-              if (result.box) {
-                drawingCtx.strokeStyle = "rgba(0, 150, 255, 0.8)";
-                drawingCtx.lineWidth = 3;
-                drawingCtx.strokeRect(result.box[0].x, result.box[0].y, result.box[1].x - result.box[0].x, result.box[1].y - result.box[0].y);
-              }
-            }
-          });
-
-          Quagga.onDetected((data) => {
-            console.log('Barcode detection event:', data);
-
-            if (data && data.codeResult && data.codeResult.code) {
-              const code = data.codeResult.code;
-              const confidence = data.codeResult.confidence || 0;
-              const format = data.codeResult.format;
-
-              console.log(`Detected: ${code}, Format: ${format}, Confidence: ${confidence.toFixed(2)}`);
-
-              if (confidence > 0.1 && code.length >= 8) { // Adjust confidence as needed
-                setDetectedCodes(prev => {
-                  const newMap = new Map(prev);
-                  const count = newMap.get(code) || 0;
-                  newMap.set(code, count + 1);
-
-                  console.log(`Code ${code} detected ${count + 1} times`);
-
-                  if (count + 1 >= 2 || confidence > 0.8) { // Confirm after 2 detections or high confidence
-                    console.log('Barcode confirmed:', code);
-
-                    if (scanTimeout.current) {
-                      clearTimeout(scanTimeout.current);
-                    }
-
-                    scanTimeout.current = setTimeout(() => {
-                      if (code !== lastScannedCode) {
-                        setLastScannedCode(code);
-
-                        try {
-                          Quagga.stop();
-                          quaggaInitialized.current = false;
-                        } catch (stopErr) {
-                          console.warn('Error stopping Quagga:', stopErr);
-                        }
-
-                        onBarcodeDetected(code);
-                      }
-                    }, 100);
-                  }
-
-                  return newMap;
-                });
-              } else {
-                console.log(`Rejected: ${code} (confidence: ${confidence.toFixed(2)}, length: ${code.length})`);
-              }
-            }
-          });
-
-          Quagga.start();
-          quaggaInitialized.current = true;
-          setIsScanning(true);
-          setIsInitializing(false);
-          setQuaggaReady(true);
-
-          console.log('Quagga started successfully with constraints:', constraints);
-
-        } catch (startErr) {
-          console.error('Error starting Quagga:', startErr);
-          setError('Failed to start scanner: ' + startErr.message);
-          setIsInitializing(false);
-        }
-      });
-
-    } catch (err) {
-      console.error('Quagga setup error:', err);
-      setError('Scanner setup failed: ' + err.message);
-      setIsInitializing(false);
+    const code = result.codeResult.code;
+    console.log('Barcode detected:', code);
+    
+    // Validate EAN-13 format (13 digits)
+    if (code && /^\d{13}$/.test(code)) {
+      setScanningActive(false);
+      Quagga.stop();
+      onBarcodeDetected(code);
     }
-  }, [facingMode, lastScannedCode, onBarcodeDetected, getCameraConstraints]);
+  });
 
-  // Initialize scanner
-  useEffect(() => {
-    let mounted = true;
+  // Handle processing errors
+  Quagga.onProcessed((result) => {
+    if (!mounted) return;
+    
+    const drawingCtx = Quagga.canvas.ctx.overlay;
+    const drawingCanvas = Quagga.canvas.dom.overlay;
 
-    const initScanner = async () => {
-      if (!mounted) return;
-
-      try {
-        if (navigator.permissions) {
-          const permission = await navigator.permissions.query({ name: 'camera' });
-          setCameraPermission(permission.state);
-
-          permission.addEventListener('change', () => {
-            setCameraPermission(permission.state);
+    if (result) {
+      // Clear previous drawings
+      drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
+      
+      // Draw bounding box around detected code
+      if (result.codeResult && result.codeResult.code) {
+        drawingCtx.strokeStyle = '#00ff00';
+        drawingCtx.lineWidth = 3;
+        
+        if (result.line) {
+          drawingCtx.beginPath();
+          drawingCtx.moveTo(result.line[0].x, result.line[0].y);
+          drawingCtx.lineTo(result.line[1].x, result.line[1].y);
+          drawingCtx.stroke();
+        }
+        
+        // Draw bounding box
+        if (result.boxes) {
+          drawingCtx.strokeStyle = '#ff0000';
+          result.boxes.filter(box => box !== result.box).forEach(box => {
+            Quagga.ImageDebug.drawPath(box, {x: 0, y: 1}, drawingCtx, {color: '#ff0000', lineWidth: 2});
           });
         }
-      } catch (err) {
-        console.warn('Permission check failed:', err);
-      }
-
-      const delay = isMobileDevice() ? 800 : 300;
-      setTimeout(() => {
-        if (mounted && videoRef.current) {
-          initializeQuagga();
+        
+        if (result.box) {
+          drawingCtx.strokeStyle = '#00ff00';
+          Quagga.ImageDebug.drawPath(result.box, {x: 0, y: 1}, drawingCtx, {color: '#00ff00', lineWidth: 2});
         }
-      }, delay);
-    };
-
-    initScanner();
-
-    return () => {
-      mounted = false;
-
-      if (scanTimeout.current) {
-        clearTimeout(scanTimeout.current);
-      }
-
-      const Quagga = typeof window !== 'undefined' ? window.Quagga : null;
-      if (quaggaInitialized.current && Quagga) {
-        try {
-          Quagga.stop();
-        } catch (err) {
-          console.warn('Cleanup error:', err);
-        }
-        quaggaInitialized.current = false;
-      }
-    };
-  }, [initializeQuagga, isMobileDevice]);
-
-  const handleClose = () => {
-    if (scanTimeout.current) {
-      clearTimeout(scanTimeout.current);
-    }
-
-    const Quagga = typeof window !== 'undefined' ? window.Quagga : null;
-    if (quaggaInitialized.current && Quagga) {
-      try {
-        Quagga.stop();
-      } catch (err) {
-        console.warn('Error stopping Quagga on close:', err);
       }
     }
-    onClose();
-  };
+  });
+};
 
-  const toggleCamera = () => {
-    const newFacingMode = facingMode === 'environment' ? 'user' : 'environment';
-    setFacingMode(newFacingMode);
-    setIsScanning(false);
-    setQuaggaReady(false);
-    setScanAttempts(0);
-    setDetectedCodes(new Map());
+startScanner();
 
-    setTimeout(() => {
-      initializeQuagga();
-    }, 300);
-  };
+return () => {
+  mounted = false;
+  setScanningActive(false);
+  if (Quagga) {
+    Quagga.stop();
+    Quagga.offDetected();
+    Quagga.offProcessed();
+  }
+};
+```
 
-  const handleManualInput = () => {
-    const code = prompt('Enter barcode manually:');
-    if (code && code.trim()) {
-      onBarcodeDetected(code.trim());
-    }
-  };
+}, [quaggaLoaded, onBarcodeDetected, scanningActive]);
 
-  const retryScanner = () => {
-    setError(null);
-    setIsScanning(false);
-    setQuaggaReady(false);
-    setScanAttempts(0);
-    setDetectedCodes(new Map());
+const handleClose = () => {
+setScanningActive(false);
+if (Quagga) {
+Quagga.stop();
+}
+onClose();
+};
 
-    if (scanTimeout.current) {
-      clearTimeout(scanTimeout.current);
-    }
+const handleManualInput = () => {
+const barcode = prompt(‘Enter EAN-13 barcode (13 digits):’);
+if (barcode && barcode.trim() && /^\d{13}$/.test(barcode.trim())) {
+setScanningActive(false);
+if (Quagga) {
+Quagga.stop();
+}
+onBarcodeDetected(barcode.trim());
+} else if (barcode && barcode.trim()) {
+alert(‘Please enter a valid 13-digit EAN-13 barcode’);
+}
+};
 
-    initializeQuagga();
-  };
+return (
+<Transition show={true} as="div">
+<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+<Transition.Child
+as=“div”
+className=“fixed inset-0 bg-black bg-opacity-75”
+enter=“ease-out duration-300”
+enterFrom=“opacity-0”
+enterTo=“opacity-100”
+leave=“ease-in duration-200”
+leaveFrom=“opacity-100”
+leaveTo=“opacity-0”
+onClick={handleClose}
+/>
 
-  const handleVideoClick = () => {
-    if (videoRef.current) {
-      try {
-        videoRef.current.play();
-      } catch (err) {
-        console.warn('Manual video play failed:', err);
-      }
-    }
-  };
-
-  const getMostFrequentCode = () => {
-    let maxCount = 0;
-    let mostFrequent = '';
-
-    detectedCodes.forEach((count, code) => {
-      if (count > maxCount) {
-        maxCount = count;
-        mostFrequent = code;
-      }
-    });
-
-    return { code: mostFrequent, count: maxCount };
-  };
-
-  const { code: frequentCode, count: frequentCount } = getMostFrequentCode();
-  const QuaggaGlobal = typeof window !== 'undefined' ? window.Quagga : null;
-
-  return (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col">
+```
+    <Transition.Child
+      as="div"
+      className="relative bg-white rounded-lg shadow-xl max-w-lg w-full overflow-hidden"
+      enter="ease-out duration-300"
+      enterFrom="opacity-0 scale-95"
+      enterTo="opacity-100 scale-100"
+      leave="ease-in duration-200"
+      leaveFrom="opacity-100 scale-100"
+      leaveTo="opacity-0 scale-95"
+    >
       {/* Header */}
-      <div className="flex justify-between items-center p-4 text-white bg-black bg-opacity-75">
-        <h3 className="text-lg font-semibold">Scan Barcode</h3>
-        <div className="flex gap-2">
-          {quaggaReady && (
-            <button
-              onClick={toggleCamera}
-              className="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
-              title="Switch Camera"
-            >
-              <RotateCcw size={20} />
-            </button>
-          )}
-          <button
-            onClick={handleClose}
-            className="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
-          >
-            <X size={20} />
-          </button>
-        </div>
+      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+          <FaBarcode className="text-indigo-600" />
+          EAN-13 Barcode Scanner
+        </h3>
+        <button
+          onClick={handleClose}
+          className="text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <FaTimes size={20} />
+        </button>
       </div>
 
       {/* Scanner Content */}
-      <div className="flex-1 relative overflow-hidden">
+      <div className="p-4">
         {error ? (
-          <div className="flex items-center justify-center h-full text-white text-center p-4">
-            <div className="max-w-sm">
-              <AlertTriangle className="text-4xl mx-auto mb-4 text-yellow-400" />
-              <p className="text-lg mb-2">Scanner Error</p>
-              <p className="text-sm opacity-75 mb-6">{error}</p>
-
-              {cameraPermission === 'denied' && (
-                <div className="text-xs opacity-75 mb-6 p-4 bg-red-500 bg-opacity-20 rounded-lg">
-                  <p className="font-semibold mb-2">Camera Access Required</p>
-                  <p>Please allow camera access:</p>
-                  <p>1. Tap the camera icon in your browser's address bar</p>
-                  <p>2. Select "Allow"</p>
-                  <p>3. Refresh the page</p>
-                </div>
-              )}
-
-              <div className="space-y-3">
-                <button
-                  onClick={retryScanner}
-                  className="block w-full px-6 py-3 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  Retry Scanner
-                </button>
-                <button
-                  onClick={handleManualInput}
-                  className="block w-full px-6 py-3 bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  Enter Manually
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* Video Element */}
-            <div
-              ref={videoRef}
-              className="w-full h-full relative cursor-pointer"
-              onClick={handleVideoClick}
-            />
-
-            {/* Loading Overlay */}
-            {isInitializing && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                <div className="text-white text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-                  <p className="text-lg">Initializing Scanner...</p>
-                  <p className="text-sm opacity-75 mt-2">
-                    {!QuaggaGlobal ? 'Loading QuaggaJS...' :
-                     isMobileDevice() ? 'Starting mobile camera...' : 'Starting camera...'}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Scanning Frame Overlay */}
-            {quaggaReady && isScanning && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="relative">
-                  <div className="w-80 h-48 border-2 border-white border-opacity-50 rounded-lg relative">
-                    <div className="absolute inset-x-0 top-1/2 h-0.5 bg-red-500 shadow-lg shadow-red-500/50 animate-pulse"></div>
-
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                      <div className="w-6 h-0.5 bg-white opacity-60"></div>
-                      <div className="w-0.5 h-6 bg-white opacity-60 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
-                    </div>
-                  </div>
-
-                  <div className="absolute -top-2 -left-2 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-lg"></div>
-                  <div className="absolute -top-2 -right-2 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-lg"></div>
-                  <div className="absolute -bottom-2 -left-2 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-lg"></div>
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-lg"></div>
-                </div>
-              </div>
-            )}
-
-            {/* Scan Status */}
-            {scanAttempts > 0 && quaggaReady && (
-              <div className="absolute top-4 left-4 bg-black bg-opacity-60 text-white px-3 py-2 rounded-lg text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span>Scanning... ({scanAttempts})</span>
-                </div>
-              </div>
-            )}
-
-            {/* Detection Status */}
-            {frequentCode && frequentCount > 0 && (
-              <div className="absolute top-4 right-4 bg-yellow-600 bg-opacity-80 text-white px-3 py-2 rounded-lg text-sm">
-                <div className="text-xs opacity-75">Detecting:</div>
-                <div className="font-mono text-sm font-bold">{frequentCode}</div>
-                <div className="text-xs opacity-75">Count: {frequentCount}/2</div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* Footer Instructions */}
-      <div className="p-4 text-center text-white bg-black bg-opacity-75">
-        {isInitializing && !error && (
-          <p className="text-sm opacity-75">Setting up camera and scanner...</p>
-        )}
-
-        {quaggaReady && isScanning && (
-          <>
-            <p className="text-sm mb-2 opacity-90">
-              Hold barcode steady within the frame
-            </p>
-            <p className="text-xs opacity-60 mb-4">
-              Using {facingMode} camera • {isMobileDevice() ? 'Mobile optimized' : 'Desktop mode'} • QuaggaJS
-            </p>
-          </>
-        )}
-
-        {!isInitializing && (
-          <div className="flex gap-3 justify-center">
+          <div className="text-center py-8">
+            <FaExclamationTriangle className="text-red-500 text-4xl mx-auto mb-4" />
+            <p className="text-red-600 mb-4">{error}</p>
             <button
               onClick={handleManualInput}
-              className="px-6 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
             >
-              Manual Entry
+              Enter Manually
             </button>
-            {!QuaggaGlobal && (
-              <button
-                onClick={() => window.location.reload()}
-                className="px-6 py-2 bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors text-sm"
+          </div>
+        ) : !quaggaLoaded ? (
+          <div className="text-center py-8">
+            <FaSpinner className="text-indigo-500 text-4xl mx-auto mb-4 animate-spin" />
+            <p className="text-gray-600">Loading scanner...</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Camera Preview */}
+            <div className="relative bg-black rounded-lg overflow-hidden">
+              <div 
+                ref={scannerRef} 
+                className="w-full h-64 flex items-center justify-center"
+                style={{ minHeight: '240px' }}
               >
-                Reload Page
-              </button>
-            )}
+                {isScanning && scanningActive && (
+                  <div className="absolute inset-0 flex items-center justify-center z-10">
+                    <div className="border-2 border-white border-dashed w-3/4 h-20 rounded-lg flex items-center justify-center">
+                      <div className="flex items-center gap-2 text-white">
+                        <FaSpinner className="animate-spin" />
+                        <span>Scanning for EAN-13...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Instructions */}
+            <div className="text-center text-gray-600">
+              <p className="text-sm">Point your camera at an EAN-13 barcode</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Make sure the barcode is clearly visible and well-lit
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                EAN-13 barcodes have 13 digits
+              </p>
+            </div>
+
+            {/* Manual Input Button */}
+            <button
+              onClick={handleManualInput}
+              className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+            >
+              <FaBarcode />
+              Enter EAN-13 Manually
+            </button>
           </div>
         )}
-
-        {/* Enhanced status info */}
-        <div className="mt-3 text-xs opacity-50 space-y-1">
-          <div>{QuaggaGlobal ? '✓ QuaggaJS Ready' : '⚠ QuaggaJS Not Loaded'}</div>
-          {isMobileDevice() && <div>📱 Mobile Device Detected</div>}
-          {detectedCodes.size > 0 && (
-            <div>🔍 {detectedCodes.size} unique code(s) detected</div>
-          )}
-        </div>
       </div>
-    </div>
-  );
+    </Transition.Child>
+  </div>
+</Transition>
+```
+
+);
 };
 
 export default BarcodeScanner;
