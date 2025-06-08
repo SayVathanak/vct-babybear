@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect, useRef } from 'react';
-import { FaBarcode, FaTimes, FaCamera, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
+import { FaBarcode, FaTimes, FaCamera, FaExclamationTriangle, FaSpinner, FaMobile } from 'react-icons/fa';
 import { Transition } from '@headlessui/react';
 
 // Dynamically import Quagga to avoid SSR issues
@@ -13,9 +13,20 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
   const [quaggaLoaded, setQuaggaLoaded] = useState(false);
   const [scanningActive, setScanningActive] = useState(true);
   const [isInitializing, setIsInitializing] = useState(false);
-  const [detectedCodes, setDetectedCodes] = useState(new Set()); // Track detected codes
+  const [detectedCodes, setDetectedCodes] = useState(new Set());
+  const [isIOS, setIsIOS] = useState(false);
+  const [cameraPermission, setCameraPermission] = useState('unknown');
   const timeoutRef = useRef(null);
   const cleanupRef = useRef(false);
+
+  // Detect iOS device
+  useEffect(() => {
+    const detectIOS = () => {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    };
+    setIsIOS(detectIOS());
+  }, []);
 
   // Load Quagga dynamically
   useEffect(() => {
@@ -32,6 +43,21 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
 
     loadQuagga();
   }, []);
+
+  // Check camera permissions (especially important for iOS)
+  const checkCameraPermission = async () => {
+    try {
+      if (navigator.permissions && navigator.permissions.query) {
+        const permission = await navigator.permissions.query({ name: 'camera' });
+        setCameraPermission(permission.state);
+        return permission.state === 'granted';
+      }
+      return true; // Assume granted if we can't check
+    } catch (err) {
+      console.log('Permission check not supported');
+      return true;
+    }
+  };
 
   // Cleanup function
   const cleanup = () => {
@@ -55,13 +81,20 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
     }
   };
 
-  // Start Quagga scanner
+  // Start Quagga scanner with iOS optimizations
   useEffect(() => {
     if (!quaggaLoaded || !Quagga || !scannerRef.current || isInitializing) return;
 
     cleanupRef.current = false;
 
-    const startScanner = () => {
+    const startScanner = async () => {
+      // Check permissions first (important for iOS)
+      const hasPermission = await checkCameraPermission();
+      if (!hasPermission && cameraPermission === 'denied') {
+        setError('Camera access denied. Please enable camera permissions in your browser settings and refresh the page.');
+        return;
+      }
+
       // Add a small delay to ensure DOM is fully ready
       timeoutRef.current = setTimeout(() => {
         if (cleanupRef.current || !scannerRef.current) return;
@@ -69,7 +102,6 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
         setError('');
         setIsInitializing(true);
 
-        // Ensure the scanner container has proper dimensions
         const scannerElement = scannerRef.current;
         if (!scannerElement) {
           console.error('Scanner element not found');
@@ -78,50 +110,66 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
           return;
         }
 
-        // Set explicit dimensions on the container
-        scannerElement.style.width = '320px';
-        scannerElement.style.height = '240px';
+        // iOS-optimized dimensions
+        const isMobile = window.innerWidth < 768;
+        const width = isMobile ? Math.min(320, window.innerWidth - 32) : 320;
+        const height = isMobile ? Math.min(240, (window.innerWidth - 32) * 0.75) : 240;
 
-        Quagga.init({
+        scannerElement.style.width = `${width}px`;
+        scannerElement.style.height = `${height}px`;
+
+        // iOS-optimized Quagga configuration
+        const config = {
           inputStream: {
             name: "Live",
             type: "LiveStream",
             target: scannerElement,
             constraints: {
-              width: { min: 320, ideal: 640, max: 1920 },
-              height: { min: 240, ideal: 480, max: 1080 },
-              facingMode: "environment" // Use back camera
+              width: { min: 320, ideal: isIOS ? 640 : 800, max: isIOS ? 1280 : 1920 },
+              height: { min: 240, ideal: isIOS ? 480 : 600, max: isIOS ? 960 : 1080 },
+              facingMode: "environment"
             }
           },
           locator: {
-            patchSize: "medium",
-            halfSample: true
+            patchSize: isIOS ? "small" : "medium", // Smaller patch for better iOS performance
+            halfSample: isIOS ? true : false // Enable half sampling on iOS for performance
           },
-          numOfWorkers: Math.min(navigator.hardwareConcurrency || 1, 2),
+          numOfWorkers: isIOS ? 1 : Math.min(navigator.hardwareConcurrency || 1, 2), // Single worker on iOS
           decoder: {
             readers: [
               "ean_reader",
               "ean_8_reader",
-              "code_128_reader", // Add more barcode types
-              "code_39_reader"
+              "code_128_reader",
+              ...(isIOS ? [] : ["code_39_reader"]) // Fewer readers on iOS for performance
             ]
           },
           locate: true,
-          frequency: 10 // Reduce frequency to improve performance
-        }, (err) => {
+          frequency: isIOS ? 5 : 10 // Lower frequency on iOS
+        };
+
+        Quagga.init(config, (err) => {
           setIsInitializing(false);
           
           if (err) {
             console.error('Quagga initialization error:', err);
             if (!cleanupRef.current) {
               if (err.name === 'NotAllowedError') {
-                setError('Camera access denied. Please allow camera permissions and try again.');
+                setError(isIOS 
+                  ? 'Camera access denied. Please allow camera access in Safari settings and refresh the page.'
+                  : 'Camera access denied. Please allow camera permissions and try again.'
+                );
               } else if (err.name === 'NotFoundError') {
                 setError('No camera found. Please ensure your device has a camera.');
               } else if (err.name === 'OverconstrainedError') {
-                setError('Camera constraints not supported. Please try a different device.');
+                setError(isIOS 
+                  ? 'Camera not compatible. Please try using Safari browser.'
+                  : 'Camera constraints not supported. Please try a different device.'
+                );
               } else {
-                setError('Unable to access camera. Please check permissions and try again.');
+                setError(isIOS 
+                  ? 'Unable to access camera. Please ensure you\'re using Safari and have allowed camera access.'
+                  : 'Unable to access camera. Please check permissions and try again.'
+                );
               }
               setIsScanning(false);
             }
@@ -141,7 +189,7 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
           }
         });
 
-        // Set up barcode detection handler with debouncing
+        // Set up barcode detection handler with iOS-optimized debouncing
         Quagga.onDetected((result) => {
           if (!scanningActive || cleanupRef.current) return;
 
@@ -152,73 +200,60 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
           
           console.log('Barcode detected:', code);
 
-          // Validate barcode format (EAN-13, EAN-8, or other common formats)
+          // Validate barcode format
           if (code && (/^\d{13}$/.test(code) || /^\d{8}$/.test(code) || /^[A-Za-z0-9]{6,}$/.test(code))) {
             setDetectedCodes(prev => new Set([...prev, code]));
             setScanningActive(false);
             
-            // Delay to prevent double scanning
+            // Longer delay for iOS to prevent double scanning
             setTimeout(() => {
               if (!cleanupRef.current) {
                 cleanup();
                 onBarcodeDetected(code);
               }
-            }, 100);
+            }, isIOS ? 200 : 100);
           }
         });
 
-        // Handle processing errors and visual feedback
-        Quagga.onProcessed((result) => {
-          if (cleanupRef.current) return;
+        // Simplified processing for iOS (less visual feedback to improve performance)
+        if (!isIOS) {
+          Quagga.onProcessed((result) => {
+            if (cleanupRef.current) return;
 
-          try {
-            const drawingCtx = Quagga.canvas.ctx.overlay;
-            const drawingCanvas = Quagga.canvas.dom.overlay;
+            try {
+              const drawingCtx = Quagga.canvas.ctx.overlay;
+              const drawingCanvas = Quagga.canvas.dom.overlay;
 
-            if (result && drawingCtx && drawingCanvas) {
-              // Clear previous drawings
-              drawingCtx.clearRect(0, 0, 
-                parseInt(drawingCanvas.getAttribute("width")) || 320, 
-                parseInt(drawingCanvas.getAttribute("height")) || 240
-              );
+              if (result && drawingCtx && drawingCanvas) {
+                drawingCtx.clearRect(0, 0, 
+                  parseInt(drawingCanvas.getAttribute("width")) || width, 
+                  parseInt(drawingCanvas.getAttribute("height")) || height
+                );
 
-              // Draw visual feedback for detected barcodes
-              if (result.codeResult && result.codeResult.code) {
-                drawingCtx.strokeStyle = '#00ff00';
-                drawingCtx.lineWidth = 3;
-
-                if (result.line) {
-                  drawingCtx.beginPath();
-                  drawingCtx.moveTo(result.line[0].x, result.line[0].y);
-                  drawingCtx.lineTo(result.line[1].x, result.line[1].y);
-                  drawingCtx.stroke();
-                }
-
-                // Draw bounding boxes
-                if (result.boxes) {
-                  drawingCtx.strokeStyle = '#ff0000';
-                  result.boxes.filter(box => box !== result.box).forEach(box => {
-                    Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, drawingCtx, { color: '#ff0000', lineWidth: 2 });
-                  });
-                }
-
-                if (result.box) {
+                if (result.codeResult && result.codeResult.code) {
                   drawingCtx.strokeStyle = '#00ff00';
-                  Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, drawingCtx, { color: '#00ff00', lineWidth: 2 });
+                  drawingCtx.lineWidth = 2;
+
+                  if (result.line) {
+                    drawingCtx.beginPath();
+                    drawingCtx.moveTo(result.line[0].x, result.line[0].y);
+                    drawingCtx.lineTo(result.line[1].x, result.line[1].y);
+                    drawingCtx.stroke();
+                  }
                 }
               }
+            } catch (drawErr) {
+              console.warn('Error in drawing overlay:', drawErr);
             }
-          } catch (drawErr) {
-            console.warn('Error in drawing overlay:', drawErr);
-          }
-        });
-      }, 100);
+          });
+        }
+      }, isIOS ? 200 : 100); // Longer delay for iOS
     };
 
     startScanner();
 
     return cleanup;
-  }, [quaggaLoaded, onBarcodeDetected, scanningActive]);
+  }, [quaggaLoaded, onBarcodeDetected, scanningActive, isIOS]);
 
   const handleClose = () => {
     cleanup();
@@ -229,7 +264,6 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
     const barcode = prompt('Enter barcode:');
     if (barcode && barcode.trim()) {
       const trimmedBarcode = barcode.trim();
-      // Validate common barcode formats
       if (/^\d{13}$/.test(trimmedBarcode) || /^\d{8}$/.test(trimmedBarcode) || /^[A-Za-z0-9]{6,}$/.test(trimmedBarcode)) {
         cleanup();
         onBarcodeDetected(trimmedBarcode);
@@ -269,6 +303,7 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <FaBarcode className="text-indigo-600" />
               Barcode Scanner
+              {isIOS && <FaMobile className="text-gray-400 text-sm" title="iOS Optimized" />}
             </h3>
             <button
               onClick={handleClose}
@@ -284,6 +319,17 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
               <div className="text-center py-8">
                 <FaExclamationTriangle className="text-red-500 text-4xl mx-auto mb-4" />
                 <p className="text-red-600 mb-4 text-sm leading-relaxed">{error}</p>
+                {isIOS && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-left">
+                    <h4 className="font-semibold text-blue-800 text-sm mb-2">iPhone/iPad Tips:</h4>
+                    <ul className="text-blue-700 text-xs space-y-1">
+                      <li>• Use Safari browser for best compatibility</li>
+                      <li>• Ensure camera permissions are enabled</li>
+                      <li>• Make sure you're on HTTPS (not HTTP)</li>
+                      <li>• Try refreshing the page if issues persist</li>
+                    </ul>
+                  </div>
+                )}
                 <button
                   onClick={handleManualInput}
                   className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
@@ -295,20 +341,28 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
               <div className="text-center py-8">
                 <FaSpinner className="text-indigo-500 text-4xl mx-auto mb-4 animate-spin" />
                 <p className="text-gray-600">
-                  {!quaggaLoaded ? 'Loading scanner...' : 'Initializing camera...'}
+                  {!quaggaLoaded ? 'Loading scanner...' : isIOS ? 'Initializing camera (this may take longer on iOS)...' : 'Initializing camera...'}
                 </p>
+                {isIOS && isInitializing && (
+                  <p className="text-gray-500 text-sm mt-2">
+                    Please allow camera access when prompted
+                  </p>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
                 {/* Camera Preview */}
-                <div className="relative bg-black rounded-lg overflow-hidden mx-auto" style={{ width: '320px', height: '240px' }}>
+                <div className="relative bg-black rounded-lg overflow-hidden mx-auto" style={{ 
+                  width: window.innerWidth < 768 ? Math.min(320, window.innerWidth - 32) : 320, 
+                  height: window.innerWidth < 768 ? Math.min(240, (window.innerWidth - 32) * 0.75) : 240 
+                }}>
                   <div
                     ref={scannerRef}
                     className="w-full h-full flex items-center justify-center"
                   >
                     {isScanning && scanningActive && (
                       <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                        <div className="border-2 border-white border-dashed w-3/4 h-20 rounded-lg flex items-center justify-center">
+                        <div className="border-2 border-white border-dashed w-3/4 h-16 rounded-lg flex items-center justify-center">
                           <div className="flex items-center gap-2 text-white text-sm">
                             <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                             <span>Scanning...</span>
@@ -325,9 +379,15 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
                   <p className="text-xs text-gray-500 mt-1">
                     Make sure the barcode is clearly visible and well-lit
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Supports EAN-13, EAN-8, Code 128, and Code 39
-                  </p>
+                  {isIOS ? (
+                    <p className="text-xs text-blue-600 mt-1">
+                      iOS optimized • Works best in Safari
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-400 mt-1">
+                      Supports EAN-13, EAN-8, Code 128, and Code 39
+                    </p>
+                  )}
                 </div>
 
                 {/* Action Buttons */}
