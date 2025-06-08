@@ -10,18 +10,27 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
   const streamRef = useRef(null);
   const scanIntervalRef = useRef(null);
   const codeReaderRef = useRef(null);
+  const hintsRef = useRef(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Initialize ZXing code reader
   useEffect(() => {
     const initializeCodeReader = async () => {
       try {
-        // Dynamically import ZXing library
-        const ZXing = await import('@zxing/library');
+        setError('Initializing scanner...');
         
+        // Check if ZXing is available
+        let ZXing;
+        try {
+          ZXing = await import('@zxing/library');
+        } catch (importError) {
+          throw new Error('ZXing library not found. Please install @zxing/library');
+        }
+
         // Create a new code reader instance
         codeReaderRef.current = new ZXing.BrowserMultiFormatReader();
         
-        // Optional: Set hints for better performance
+        // Create hints for better performance
         const hints = new Map();
         hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
         hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
@@ -35,10 +44,15 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
           ZXing.BarcodeFormat.DATA_MATRIX,
         ]);
         
-        codeReaderRef.current.setHints(hints);
+        // Store hints for use in decode method
+        hintsRef.current = hints;
+        setIsInitialized(true);
+        setError(null);
+        
       } catch (err) {
         console.error('Failed to initialize barcode reader:', err);
-        setError('Failed to initialize barcode scanner. Please make sure @zxing/library is installed.');
+        setError(err.message || 'Failed to initialize barcode scanner');
+        setIsInitialized(false);
       }
     };
 
@@ -47,15 +61,19 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
     return () => {
       // Cleanup code reader
       if (codeReaderRef.current) {
-        codeReaderRef.current.reset();
+        try {
+          codeReaderRef.current.reset();
+        } catch (e) {
+          console.warn('Error resetting code reader:', e);
+        }
       }
     };
   }, []);
 
   // Scan for barcodes in the video stream
   const scanBarcode = useCallback(async () => {
-    if (!codeReaderRef.current || !videoRef.current || !canvasRef.current || isProcessing) {
-      return;
+    if (!codeReaderRef.current || !videoRef.current || !canvasRef.current || isProcessing || !isInitialized) {
+      return false;
     }
 
     try {
@@ -63,6 +81,12 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
       
       const canvas = canvasRef.current;
       const video = videoRef.current;
+      
+      // Check if video is ready
+      if (video.videoWidth === 0 || video.videoHeight === 0) {
+        return false;
+      }
+      
       const context = canvas.getContext('2d');
       
       // Set canvas dimensions to match video
@@ -85,8 +109,8 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
       
       const binaryBitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminanceSource));
       
-      // Try to decode barcode
-      const result = await codeReaderRef.current.decode(binaryBitmap);
+      // Try to decode barcode with hints
+      const result = await codeReaderRef.current.decode(binaryBitmap, hintsRef.current);
       
       if (result && result.getText()) {
         // Barcode detected!
@@ -97,7 +121,7 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
     } catch (err) {
       // No barcode found in this frame - this is expected and normal
       // Only log actual errors, not "not found" exceptions
-      if (err.name !== 'NotFoundException') {
+      if (err.name !== 'NotFoundException' && err.message !== 'No MultiFormat Readers were able to detect the code.') {
         console.warn('Barcode scanning error:', err.message);
       }
     } finally {
@@ -105,11 +129,11 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
     }
     
     return false; // Continue scanning
-  }, [onBarcodeDetected, isProcessing]);
+  }, [onBarcodeDetected, isProcessing, isInitialized]);
 
   // Start continuous scanning
   const startScanning = useCallback(() => {
-    if (scanIntervalRef.current) return;
+    if (scanIntervalRef.current || !isInitialized) return;
     
     scanIntervalRef.current = setInterval(async () => {
       const found = await scanBarcode();
@@ -120,8 +144,8 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
           scanIntervalRef.current = null;
         }
       }
-    }, 100); // Scan every 100ms
-  }, [scanBarcode]);
+    }, 150); // Scan every 150ms (slightly slower for better performance)
+  }, [scanBarcode, isInitialized]);
 
   // Stop scanning
   const stopScanning = useCallback(() => {
@@ -135,6 +159,8 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
     let mounted = true;
     
     const startCamera = async () => {
+      if (!isInitialized) return;
+      
       try {
         setError(null);
         
@@ -177,29 +203,46 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
               });
             }
           };
+
+          videoRef.current.onerror = (err) => {
+            console.error('Video error:', err);
+            setError('Camera stream error');
+          };
         }
       } catch (err) {
         console.error('Error accessing camera:', err);
         if (mounted) {
-          setError(err.message || 'Failed to access camera');
+          if (err.name === 'NotAllowedError') {
+            setError('Camera permission denied. Please allow camera access and try again.');
+          } else if (err.name === 'NotFoundError') {
+            setError('No camera found on this device.');
+          } else {
+            setError(err.message || 'Failed to access camera');
+          }
         }
       }
     };
 
-    // Small delay to ensure component is mounted
-    const timer = setTimeout(startCamera, 100);
+    // Wait for initialization before starting camera
+    if (isInitialized) {
+      const timer = setTimeout(startCamera, 100);
+      return () => {
+        clearTimeout(timer);
+        mounted = false;
+        stopScanning();
+        
+        // Stop camera stream
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+        }
+      };
+    }
 
     return () => {
       mounted = false;
-      clearTimeout(timer);
       stopScanning();
-      
-      // Stop camera stream
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
     };
-  }, [startScanning, stopScanning]);
+  }, [startScanning, stopScanning, isInitialized]);
 
   const handleClose = () => {
     stopScanning();
@@ -238,7 +281,12 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
                 {error.includes('@zxing/library') && (
                   <div className="text-xs opacity-60 mb-4 p-3 bg-white bg-opacity-10 rounded">
                     <p>To install the required library, run:</p>
-                    <code className="block mt-1">npm install @zxing/library</code>
+                    <code className="block mt-1 bg-black bg-opacity-30 p-2 rounded">npm install @zxing/library</code>
+                  </div>
+                )}
+                {error.includes('permission') && (
+                  <div className="text-xs opacity-60 mb-4">
+                    <p>Please allow camera access in your browser settings and refresh the page.</p>
                   </div>
                 )}
                 <button
@@ -289,17 +337,19 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
         {/* Instructions and Controls */}
         <div className="p-4 text-center text-white">
           <p className="text-sm mb-4 opacity-75">
-            {isScanning ? 'Scanning automatically...' : 'Position the barcode within the frame'}
+            {!isInitialized ? 'Initializing scanner...' : 
+             isScanning ? 'Scanning automatically...' : 
+             'Position the barcode within the frame'}
           </p>
           
           {isScanning && !error && (
             <div className="space-y-2">
               <div className="text-xs opacity-60">
-                Auto-scanning every 100ms
+                Auto-scanning every 150ms
               </div>
               <button
                 onClick={handleManualScan}
-                disabled={isProcessing}
+                disabled={isProcessing || !isInitialized}
                 className="px-6 py-3 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition-colors disabled:opacity-50"
               >
                 {isProcessing ? (
