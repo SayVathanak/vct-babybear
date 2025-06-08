@@ -1,3 +1,4 @@
+// 2. Product creation route: /api/product/create/route.js
 import { v2 as cloudinary } from "cloudinary";
 import { getAuth } from "@clerk/nextjs/server";
 import authSeller from "@/lib/authSeller";
@@ -14,7 +15,6 @@ cloudinary.config({
 
 export async function POST(request) {
     try {
-
         const { userId } = getAuth(request)
 
         const isSeller = await authSeller(userId)
@@ -30,12 +30,33 @@ export async function POST(request) {
         const category = formData.get('category');
         const price = formData.get('price');
         const offerPrice = formData.get('offerPrice');
-        const barcode = formData.get('barcode'); // Get barcode from form data
+        const barcode = formData.get('barcode');
 
         const files = formData.getAll('images');
 
         if (!files || files.length === 0) {
-            return NextResponse.json({ success: false, message: 'no files uploaded' })
+            return NextResponse.json({ success: false, message: 'No files uploaded' })
+        }
+
+        // Validate required fields
+        if (!name || !price || !offerPrice) {
+            return NextResponse.json({ 
+                success: false, 
+                message: 'Name, price, and offer price are required' 
+            })
+        }
+
+        await connectDB()
+
+        // Check if barcode already exists (if provided)
+        if (barcode && barcode.trim() !== '') {
+            const existingProduct = await Product.findOne({ barcode: barcode.trim() });
+            if (existingProduct) {
+                return NextResponse.json({ 
+                    success: false, 
+                    message: "A product with this barcode already exists. Please use a unique barcode." 
+                })
+            }
         }
 
         const result = await Promise.all(
@@ -61,17 +82,16 @@ export async function POST(request) {
 
         const image = result.map(result => result.secure_url)
 
-        await connectDB()
-
         // Create product data object
         const productData = {
             userId,
-            name,
-            description,
-            category,
+            name: name.trim(),
+            description: description?.trim() || '',
+            category: category?.trim() || '',
             price: Number(price),
             offerPrice: Number(offerPrice),
             image,
+            isAvailable: true, // Default to available
             date: Date.now()
         }
 
@@ -82,9 +102,15 @@ export async function POST(request) {
 
         const newProduct = await Product.create(productData)
 
-        return NextResponse.json({ success: true, message: "Upload successful", newProduct })
+        return NextResponse.json({ 
+            success: true, 
+            message: "Product created successfully", 
+            product: newProduct 
+        })
 
     } catch (error) {
+        console.error('Product creation error:', error);
+        
         // Handle duplicate barcode error specifically
         if (error.code === 11000 && error.keyPattern?.barcode) {
             return NextResponse.json({ 
@@ -93,6 +119,9 @@ export async function POST(request) {
             })
         }
         
-        return NextResponse.json({ success: false, message: error.message })
+        return NextResponse.json({ 
+            success: false, 
+            message: error.message || 'Failed to create product' 
+        })
     }
 }

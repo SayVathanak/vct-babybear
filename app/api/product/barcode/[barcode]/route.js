@@ -1,3 +1,5 @@
+
+// 1. Barcode lookup route: /api/product/barcode/[barcode]/route.js
 import { NextResponse } from "next/server";
 import connectDB from "@/config/db";
 import Product from "@/models/Product";
@@ -8,7 +10,7 @@ export async function GET(request, { params }) {
         // Get the barcode from the URL parameters
         const { barcode } = params;
         
-        // Optional: Check if user is authenticated
+        // Check if user is authenticated
         const { userId } = getAuth(request);
         
         if (!userId) {
@@ -18,21 +20,20 @@ export async function GET(request, { params }) {
             }, { status: 401 });
         }
 
-        // Validate barcode format (optional but recommended)
-        if (!barcode || !/^\d{12,13}$/.test(barcode)) {
+        // Validate barcode exists
+        if (!barcode || barcode.trim() === '') {
             return NextResponse.json({ 
                 success: false, 
-                message: 'Invalid barcode format' 
+                message: 'Barcode is required' 
             }, { status: 400 });
         }
 
         await connectDB();
 
-        // Find product by barcode
+        // Find product by barcode (more flexible pattern matching)
         const product = await Product.findOne({ 
             barcode: barcode.trim(),
-            // Optional: Only find products from the same user/seller
-            // userId: userId 
+            isAvailable: true // Only find available products
         });
 
         if (!product) {
@@ -54,7 +55,9 @@ export async function GET(request, { params }) {
                 offerPrice: product.offerPrice,
                 barcode: product.barcode,
                 image: product.image,
-                date: product.date
+                date: product.date,
+                userId: product.userId,
+                isAvailable: product.isAvailable
             }
         });
 
@@ -92,9 +95,8 @@ export async function POST(request) {
 
         // Find multiple products by barcodes
         const products = await Product.find({ 
-            barcode: { $in: barcodes.map(b => b.trim()) }
-            // Optional: Only find products from the same user/seller
-            // userId: userId 
+            barcode: { $in: barcodes.map(b => b.trim()) },
+            isAvailable: true
         });
 
         return NextResponse.json({ 
@@ -109,7 +111,9 @@ export async function POST(request) {
                 offerPrice: product.offerPrice,
                 barcode: product.barcode,
                 image: product.image,
-                date: product.date
+                date: product.date,
+                userId: product.userId,
+                isAvailable: product.isAvailable
             }))
         });
 
