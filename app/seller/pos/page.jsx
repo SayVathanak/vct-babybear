@@ -59,28 +59,15 @@ const POS = () => {
       const localProduct = products.find(p => p.barcode === barcode);
 
       if (localProduct) {
-        // Check stock before adding
-        const currentCartQuantity = cartItems[localProduct._id] || 0;
-        if (currentCartQuantity >= localProduct.stock) {
-          toast.error(`Only ${localProduct.stock} items available in stock`, {
-            icon: <FaExclamationTriangle />,
-            style: {
-              borderRadius: '20px',
-              background: '#EF4444',
-              color: '#ffffff',
-            },
-          });
-        } else {
-          addToCart(localProduct._id, true); // Pass true to indicate it's from barcode scan
-          toast.success(`Scanned: ${localProduct.name}`, {
-            icon: <FaBarcode className="text-white" />,
-            style: {
-              borderRadius: '20px',
-              background: '#10B981',
-              color: '#ffffff',
-            },
-          });
-        }
+        addToCart(localProduct._id, true); // Pass true to indicate it's from barcode scan
+        toast.success(`Scanned: ${localProduct.name}`, {
+          icon: <FaBarcode className="text-white" />,
+          style: {
+            borderRadius: '20px',
+            background: '#10B981',
+            color: '#ffffff',
+          },
+        });
       } else {
         // If not found locally, try API lookup
         const token = await getToken();
@@ -93,22 +80,15 @@ const POS = () => {
           const sellerProduct = products.find(p => p._id === data.product._id);
 
           if (sellerProduct) {
-            const currentCartQuantity = cartItems[data.product._id] || 0;
-            if (currentCartQuantity >= sellerProduct.stock) {
-              toast.error(`Only ${sellerProduct.stock} items available in stock`, {
-                icon: <FaExclamationTriangle />,
-              });
-            } else {
-              addToCart(data.product._id, true);
-              toast.success(`Scanned: ${data.product.name}`, {
-                icon: <FaBarcode className="text-white" />,
-                style: {
-                  borderRadius: '20px',
-                  background: '#10B981',
-                  color: '#ffffff',
-                },
-              });
-            }
+            addToCart(data.product._id, true);
+            toast.success(`Scanned: ${data.product.name}`, {
+              icon: <FaBarcode className="text-white" />,
+              style: {
+                borderRadius: '20px',
+                background: '#10B981',
+                color: '#ffffff',
+              },
+            });
           } else {
             toast.error('Product not found in your inventory', {
               icon: <FaBarcode />,
@@ -157,14 +137,6 @@ const POS = () => {
     if (!product) return;
 
     const currentQuantity = cartItems[productId] || 0;
-    
-    // Check stock availability
-    if (currentQuantity >= product.stock) {
-      toast.error(`Only ${product.stock} items available in stock`, {
-        icon: <FaExclamationTriangle />,
-      });
-      return;
-    }
 
     setCartItems((prev) => ({
       ...prev,
@@ -185,14 +157,8 @@ const POS = () => {
   };
 
   const updateQuantity = (productId, newQuantity) => {
-    const product = products.find(p => p._id === productId);
-
     if (newQuantity <= 0) {
       removeFromCart(productId);
-    } else if (product && newQuantity > product.stock) {
-      toast.error(`Only ${product.stock} items available in stock`, {
-        icon: <FaExclamationTriangle />,
-      });
     } else {
       setCartItems((prev) => ({ ...prev, [productId]: newQuantity }));
     }
@@ -256,13 +222,6 @@ const POS = () => {
       return;
     }
 
-    // Check stock availability before processing
-    const stockIssues = cartDetails.items.filter(item => item.quantity > item.stock);
-    if (stockIssues.length > 0) {
-      toast.error(`Insufficient stock for: ${stockIssues.map(item => item.name).join(', ')}`);
-      return;
-    }
-
     setProcessingOrder(true);
     try {
       const token = await getToken();
@@ -323,7 +282,6 @@ const POS = () => {
                   {item.barcode && (
                     <p className="text-xs text-gray-400">#{item.barcode}</p>
                   )}
-                  <p className="text-xs text-gray-500">Stock: {item.stock}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -335,8 +293,7 @@ const POS = () => {
                   <span className="w-8 text-center font-semibold">{item.quantity}</span>
                   <button
                     onClick={() => updateQuantity(item._id, item.quantity + 1)}
-                    className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center disabled:opacity-50 transition-colors"
-                    disabled={item.quantity >= item.stock}
+                    className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
                   >
                     <FaPlus size={12} />
                   </button>
@@ -477,8 +434,7 @@ const POS = () => {
               <button
                 key={product._id}
                 onClick={() => addToCart(product._id)}
-                className="bg-white rounded-xl border border-gray-200 p-4 text-center transition-all duration-300 hover:shadow-lg hover:border-indigo-500 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex flex-col justify-between group disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={processingOrder || product.stock === 0}
+                className="bg-white rounded-xl border border-gray-200 p-4 text-center transition-all duration-300 hover:shadow-lg hover:border-indigo-500 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex flex-col justify-between group"
               >
                 <div className="relative w-full h-28">
                   <Image 
@@ -488,16 +444,10 @@ const POS = () => {
                     sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw" 
                     className="object-contain" 
                   />
-                  {product.stock === 0 && (
-                    <div className="absolute inset-0 bg-red-500 bg-opacity-20 flex items-center justify-center rounded-lg">
-                      <span className="text-red-600 font-bold text-xs">OUT OF STOCK</span>
-                    </div>
-                  )}
                 </div>
                 <div className="mt-3">
                   <p className="font-semibold text-gray-800 text-sm line-clamp-2 h-10">{product.name}</p>
                   <p className="text-indigo-600 font-bold mt-2 text-lg">{currency}{product.offerPrice.toFixed(2)}</p>
-                  <p className="text-xs text-gray-500 mt-1">Stock: {product.stock}</p>
                   {product.barcode && (
                     <p className="text-xs text-gray-400 mt-1">#{product.barcode}</p>
                   )}
