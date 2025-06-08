@@ -10,7 +10,6 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [stream, setStream] = useState(null);
   const scanIntervalRef = useRef(null);
-  const codeReaderRef = useRef(null);
 
   useEffect(() => {
     let mounted = true;
@@ -20,11 +19,6 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
       try {
         setIsLoading(true);
         setError(null);
-
-        // Check if ZXing is available
-        if (typeof window === 'undefined' || !window.ZXing) {
-          throw new Error('ZXing library not loaded');
-        }
 
         // Request camera permission
         const mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -45,12 +39,12 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
 
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream;
-          await videoRef.current.play();
+          videoRef.current.play();
         }
 
-        // Initialize ZXing code reader
-        const codeReader = new window.ZXing.BrowserMultiFormatReader();
-        codeReaderRef.current = codeReader;
+        // Import ZXing library dynamically
+        const { BrowserMultiFormatReader } = await import('@zxing/library');
+        const codeReader = new BrowserMultiFormatReader();
 
         // Wait for video to be ready
         if (videoRef.current) {
@@ -71,8 +65,6 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
             errorMessage = 'No camera found on this device.';
           } else if (err.name === 'NotSupportedError') {
             errorMessage = 'Camera not supported on this device.';
-          } else if (err.message.includes('ZXing')) {
-            errorMessage = 'Barcode scanner library not loaded. Please refresh and try again.';
           }
           setError(errorMessage);
           setIsLoading(false);
@@ -81,47 +73,39 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
     };
 
     const startScanning = (codeReader) => {
-      if (!videoRef.current || !canvasRef.current || !mounted) return;
+      if (!videoRef.current || !canvasRef.current) return;
 
-      const scanCode = async () => {
+      const scanCode = () => {
+        if (!isScanning || !videoRef.current || !canvasRef.current) return;
+
+        const canvas = canvasRef.current;
+        const video = videoRef.current;
+        const context = canvas.getContext('2d');
+
+        // Set canvas size to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        // Draw current video frame to canvas
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
         try {
-          if (!isScanning || !videoRef.current || !canvasRef.current || !mounted) return;
-
-          const canvas = canvasRef.current;
-          const video = videoRef.current;
-          const context = canvas.getContext('2d');
-
-          // Set canvas size to match video
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-
-          // Draw current video frame to canvas
-          context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-          // Get image data
+          // Try to decode barcode from canvas
           const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+          const result = codeReader.decodeFromImageData(imageData);
           
-          // Try to decode barcode
-          try {
-            const result = await codeReader.decodeFromImageData(imageData);
-            if (result && result.text) {
-              onBarcodeDetected(result.text);
-              setIsScanning(false);
-              return;
-            }
-          } catch (decodeError) {
-            // No barcode found, continue scanning
+          if (result) {
+            onBarcodeDetected(result.text);
+            setIsScanning(false);
+            return;
           }
+        } catch (err) {
+          // No barcode found, continue scanning
+        }
 
-          // Continue scanning if still mounted and scanning
-          if (mounted && isScanning) {
-            scanIntervalRef.current = setTimeout(scanCode, 150);
-          }
-        } catch (error) {
-          console.error('Scanning error:', error);
-          if (mounted && isScanning) {
-            scanIntervalRef.current = setTimeout(scanCode, 150);
-          }
+        // Continue scanning
+        if (mounted && isScanning) {
+          scanIntervalRef.current = setTimeout(scanCode, 100);
         }
       };
 
@@ -133,37 +117,19 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
 
     return () => {
       mounted = false;
-      setIsScanning(false);
-      
       if (scanIntervalRef.current) {
         clearTimeout(scanIntervalRef.current);
       }
-      
-      if (codeReaderRef.current) {
-        try {
-          codeReaderRef.current.reset();
-        } catch (e) {
-          console.warn('Error resetting code reader:', e);
-        }
-      }
-      
       if (currentStream) {
         currentStream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [onBarcodeDetected]);
+  }, [onBarcodeDetected, isScanning]);
 
   const handleClose = () => {
     setIsScanning(false);
     if (scanIntervalRef.current) {
       clearTimeout(scanIntervalRef.current);
-    }
-    if (codeReaderRef.current) {
-      try {
-        codeReaderRef.current.reset();
-      } catch (e) {
-        console.warn('Error resetting code reader:', e);
-      }
     }
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
