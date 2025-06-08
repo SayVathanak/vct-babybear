@@ -1,11 +1,11 @@
-"use client"
+‘use client’
 import React, { useState, useEffect, useMemo } from ‘react’;
 import axios from ‘axios’;
 import toast from ‘react-hot-toast’;
 import Image from ‘next/image’;
 import { useAppContext } from ‘@/context/AppContext’;
 import Loading from ‘@/components/Loading’;
-import BarcodeScanner from ‘@/app/components/seller/BarcodeScanner’;
+import BarcodeScanner from ‘@/components/seller/BarcodeScanner’;
 import { FaSearch, FaShoppingCart, FaTrash, FaPlus, FaMinus, FaTimesCircle, FaCheckCircle, FaBarcode, FaTimes, FaArrowRight, FaCamera, FaExclamationTriangle, FaSpinner } from ‘react-icons/fa’;
 import { Transition } from ‘@headlessui/react’;
 
