@@ -55,6 +55,7 @@ export default function RootLayout({ children }) {
           <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-167x167.png" />
           <link rel="apple-touch-startup-image" href="/icons/splash-2048x2732.png" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+          <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
           <style dangerouslySetInnerHTML={{
             __html: `
               @supports (-webkit-touch-callout: none) {
@@ -90,8 +91,7 @@ export default function RootLayout({ children }) {
               }
             `
           }} />
-          <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
-          <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
+          {/* <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script> */}
         </head>
         <body className={`${outfit.className} antialiased text-gray-700`}>
           <Toaster />

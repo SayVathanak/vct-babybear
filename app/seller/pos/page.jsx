@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
@@ -25,6 +25,11 @@ const POS = () => {
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [barcodeLoading, setBarcodeLoading] = useState(false);
 
+  // ZXing scanner states
+  const [cameraStream, setCameraStream] = useState(null);
+  const [codeReader, setCodeReader] = useState(null);
+  const videoRef = useRef(null);
+
   // Fetch seller's products on component mount
   useEffect(() => {
     const fetchSellerProduct = async () => {
@@ -49,17 +54,125 @@ const POS = () => {
     fetchSellerProduct();
   }, [user, getToken]);
 
-  // Handle barcode detection from scanner
-  const handleBarcodeDetected = async (barcode) => {
+  // Cleanup camera stream on unmount
+  useEffect(() => {
+    return () => {
+      stopScanning();
+    };
+  }, []);
+
+  // Initialize ZXing scanner
+  const initializeZXingScanner = async () => {
+    try {
+      // Check if ZXing is loaded
+      if (!window.ZXing) {
+        toast.error('Barcode scanner library not loaded');
+        return;
+      }
+      
+      // Get camera stream
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
+      setCameraStream(stream);
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      
+      // Initialize code reader
+      const reader = new window.ZXing.BrowserMultiFormatReader();
+      setCodeReader(reader);
+      
+      // Start scanning
+      reader.decodeFromVideoDevice(undefined, videoRef.current, (result, err) => {
+        if (result) {
+          handleBarcodeDetected(result.text);
+          stopScanning();
+        }
+      });
+    } catch (error) {
+      console.error('Scanner initialization failed:', error);
+      toast.error('Failed to initialize camera scanner');
+    }
+  };
+
+  // Stop scanning
+  const stopScanning = () => {
+    if (codeReader) {
+      codeReader.reset();
+      setCodeReader(null);
+    }
+    
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    
+    setShowBarcodeScanner(false);
+  };
+
+  // Alternative method using canvas for manual decoding
+  const scanBarcodeFromVideo = async () => {
+    if (!videoRef.current || !window.ZXing) return false;
+    
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    const video = videoRef.current;
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    try {
+      const codeReader = new window.ZXing.BrowserMultiFormatReader();
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      const result = await codeReader.decodeFromImageData(imageData);
+      
+      if (result) {
+        handleBarcodeDetected(result.text);
+        return true;
+      }
+    } catch (error) {
+      // No barcode found
+    }
+    
+    return false;
+  };
+
+  // Continuous scanning loop
+  const startContinuousScanning = () => {
+    const scanLoop = async () => {
+      if (showBarcodeScanner) {
+        const found = await scanBarcodeFromVideo();
+        if (!found) {
+          setTimeout(scanLoop, 100); // Scan every 100ms
+        }
+      }
+    };
+    scanLoop();
+  };
+
+  // Handle barcode detection from Scanbot scanner
+  const handleBarcodeDetected = async (barcodeText) => {
+    console.log('Barcode detected:', barcodeText);
     setBarcodeLoading(true);
     setShowBarcodeScanner(false);
 
     try {
       // First, try to find the product locally by barcode
-      const localProduct = products.find(p => p.barcode === barcode);
+      const localProduct = products.find(p => 
+        p.barcode === barcodeText || 
+        p.barcode === barcodeText.trim()
+      );
 
       if (localProduct) {
-        addToCart(localProduct._id, true); // Pass true to indicate it's from barcode scan
+        addToCart(localProduct._id, true);
         toast.success(`Scanned: ${localProduct.name}`, {
           icon: <FaBarcode className="text-white" />,
           style: {
@@ -71,7 +184,7 @@ const POS = () => {
       } else {
         // If not found locally, try API lookup
         const token = await getToken();
-        const { data } = await axios.get(`/api/product/barcode/${barcode}`, {
+        const { data } = await axios.get(`/api/product/barcode/${encodeURIComponent(barcodeText)}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -100,7 +213,7 @@ const POS = () => {
             });
           }
         } else {
-          toast.error(data.message || `Product not found for barcode: ${barcode}`, {
+          toast.error(data.message || `Product not found for barcode: ${barcodeText}`, {
             icon: <FaBarcode />,
             style: {
               borderRadius: '20px',
@@ -122,13 +235,62 @@ const POS = () => {
       });
     } finally {
       setBarcodeLoading(false);
+      stopScanning(); // Ensure scanner is stopped
     }
   };
 
   // Handle barcode scanner close
   const handleBarcodeScannerClose = () => {
-    setShowBarcodeScanner(false);
+    stopScanning();
     setBarcodeLoading(false);
+  };
+
+  // Handle scanner open with error handling
+  const handleOpenScanner = async () => {
+    try {
+      // Check if we're on HTTPS or localhost (required for camera access)
+      if (!window.location.protocol.startsWith('https') && !window.location.hostname.includes('localhost')) {
+        toast.error('Camera access requires HTTPS. Please use a secure connection.', {
+          style: {
+            borderRadius: '20px',
+            background: '#EF4444',
+            color: '#ffffff',
+          },
+        });
+        return;
+      }
+
+      // Check if camera permission is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast.error('Camera access is not supported on this device.', {
+          style: {
+            borderRadius: '20px',
+            background: '#EF4444',
+            color: '#ffffff',
+          },
+        });
+        return;
+      }
+
+      setShowBarcodeScanner(true);
+      
+      // Try to initialize ZXing scanner first, fallback to original scanner
+      if (window.ZXing) {
+        await initializeZXingScanner();
+      } else {
+        // Fallback to original BarcodeScanner component
+        console.log('ZXing not available, using fallback scanner');
+      }
+    } catch (error) {
+      console.error('Error opening scanner:', error);
+      toast.error('Failed to open camera scanner', {
+        style: {
+          borderRadius: '20px',
+          background: '#EF4444',
+          color: '#ffffff',
+        },
+      });
+    }
   };
 
   // Cart management functions
@@ -298,8 +460,8 @@ const POS = () => {
                     <FaPlus size={12} />
                   </button>
                 </div>
-                <button 
-                  onClick={() => removeFromCart(item._id)} 
+                <button
+                  onClick={() => removeFromCart(item._id)}
                   className="text-gray-400 hover:text-red-500 transition-colors"
                 >
                   <FaTimesCircle size={20} />
@@ -392,6 +554,81 @@ const POS = () => {
 
   return (
     <div className="flex flex-col md:flex-row bg-gray-50 md:h-screen md:overflow-hidden">
+      {/* ZXing Barcode Scanner Modal */}
+      {showBarcodeScanner && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+          <div className="relative w-full h-full max-w-2xl max-h-2xl">
+            <button
+              onClick={handleBarcodeScannerClose}
+              className="absolute top-4 right-4 z-10 bg-white bg-opacity-20 backdrop-blur-sm text-white p-3 rounded-full hover:bg-opacity-30 transition-colors"
+            >
+              <FaTimes size={24} />
+            </button>
+            <div className="absolute top-4 left-4 z-10 bg-white bg-opacity-20 backdrop-blur-sm text-white px-4 py-2 rounded-lg">
+              <p className="text-sm font-medium">Point camera at barcode to scan</p>
+            </div>
+            
+            {/* ZXing Video Scanner */}
+            {window.ZXing ? (
+              <video 
+                ref={videoRef}
+                className="w-full h-full object-cover rounded-lg"
+                autoPlay
+                playsInline
+                muted
+              />
+            ) : (
+              /* Fallback to original BarcodeScanner component */
+              <BarcodeScanner
+                onBarcodeDetected={handleBarcodeDetected}
+                onClose={handleBarcodeScannerClose}
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Cart Modal */}
+      <Transition
+        show={isCartOpen}
+        as={React.Fragment}
+        enter="transition-opacity duration-300"
+        enterFrom="opacity-0"
+        enterTo="opacity-100"
+        leave="transition-opacity duration-300"
+        leaveFrom="opacity-100"
+        leaveTo="opacity-0"
+      >
+        <div className="md:hidden fixed inset-0 bg-gray-900 bg-opacity-75 z-40 flex items-end">
+          <Transition
+            show={isCartOpen}
+            as={React.Fragment}
+            enter="transition-transform duration-300 ease-out"
+            enterFrom="transform translate-y-full"
+            enterTo="transform translate-y-0"
+            leave="transition-transform duration-300 ease-in"
+            leaveFrom="transform translate-y-0"
+            leaveTo="transform translate-y-full"
+          >
+            <div className="bg-white w-full max-h-[90vh] rounded-t-2xl flex flex-col">
+              <header className="p-4 border-b border-gray-200 bg-white rounded-t-2xl flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                  <FaShoppingCart className="text-indigo-600" />
+                  Cart ({cartDetails.totalItems})
+                </h2>
+                <button
+                  onClick={() => setIsCartOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <FaTimes size={24} />
+                </button>
+              </header>
+              <CartContents />
+            </div>
+          </Transition>
+        </div>
+      </Transition>
+
       {/* Main Product Area */}
       <main className="w-full md:w-3/5 lg:w-2/3 flex flex-col pb-28 md:pb-0">
         <header className="p-4 md:p-6 border-b border-gray-200 bg-white">
@@ -409,19 +646,19 @@ const POS = () => {
               />
             </div>
             <button
-              onClick={() => setShowBarcodeScanner(true)}
+              onClick={handleOpenScanner}
               disabled={barcodeLoading || showBarcodeScanner}
               className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
             >
               {barcodeLoading ? (
                 <>
                   <FaSpinner className="animate-spin" />
-                  Processing...
+                  Processing…
                 </>
               ) : (
                 <>
                   <FaCamera />
-                  Scan
+                  Scan Barcode
                 </>
               )}
             </button>
@@ -481,65 +718,27 @@ const POS = () => {
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
         <button
           onClick={() => setIsCartOpen(true)}
-          className="w-full bg-indigo-600 text-white font-bold py-4 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 relative"
+          className="w-full bg-indigo-600 text-white font-bold py-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-colors flex items-center justify-center gap-3"
         >
           <FaShoppingCart />
           <span>View Cart ({cartDetails.totalItems})</span>
           {cartDetails.totalItems > 0 && (
-            <span className="ml-2 text-lg font-bold">
-              {currency}{cartDetails.subtotal.toFixed(2)}
-            </span>
+            <>
+              <span>•</span>
+              <span>{currency}{cartDetails.subtotal.toFixed(2)}</span>
+            </>
           )}
         </button>
       </div>
 
-      {/* Mobile Cart Modal */}
-      <Transition show={isCartOpen}>
-        <div className="md:hidden fixed inset-0 z-50">
-          <Transition.Child
-            enter="transition-opacity ease-linear duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="transition-opacity ease-linear duration-300"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-black bg-opacity-25" onClick={() => setIsCartOpen(false)} />
-          </Transition.Child>
-
-          <Transition.Child
-            enter="transition ease-in-out duration-300 transform"
-            enterFrom="translate-x-full"
-            enterTo="translate-x-0"
-            leave="transition ease-in-out duration-300 transform"
-            leaveFrom="translate-x-0"
-            leaveTo="translate-x-full"
-          >
-            <div className="ml-auto relative w-full max-w-md h-full bg-white shadow-xl flex flex-col">
-              <header className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                  <FaShoppingCart className="text-indigo-600" />
-                  Cart ({cartDetails.totalItems})
-                </h2>
-                <button
-                  onClick={() => setIsCartOpen(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600"
-                >
-                  <FaTimes size={20} />
-                </button>
-              </header>
-              <CartContents />
-            </div>
-          </Transition.Child>
+      {/* Loading overlay for barcode processing */}
+      {barcodeLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center">
+          <div className="bg-white rounded-2xl p-8 flex flex-col items-center gap-4">
+            <FaSpinner className="animate-spin text-4xl text-indigo-600" />
+            <p className="text-lg font-semibold text-gray-800">Processing barcode...</p>
+          </div>
         </div>
-      </Transition>
-
-      {/* Barcode Scanner Modal */}
-      {showBarcodeScanner && (
-        <BarcodeScanner
-          onBarcodeDetected={handleBarcodeDetected}
-          onClose={handleBarcodeScannerClose}
-        />
       )}
     </div>
   );
