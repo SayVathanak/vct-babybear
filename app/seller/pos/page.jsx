@@ -7,7 +7,7 @@ import { useAppContext } from '@/context/AppContext';
 import Loading from '@/components/Loading';
 import BarcodeScanner from '@/components/seller/BarcodeScanner';
 import { FaSearch, FaShoppingCart, FaTrash, FaPlus, FaMinus, FaTimesCircle, FaCheckCircle, FaBarcode, FaTimes, FaArrowRight, FaCamera, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
-import { Transition } from 'headlessui/react'; // Corrected import path for headlessui/react
+import { Transition } from '@headlessui/react';
 
 const POS = () => {
   // App context and states
@@ -25,7 +25,7 @@ const POS = () => {
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [barcodeLoading, setBarcodeLoading] = useState(false);
 
-  // Fetch seller’s products on component mount
+  // Fetch seller's products on component mount
   useEffect(() => {
     const fetchSellerProduct = async () => {
       if (!user) return;
@@ -59,15 +59,28 @@ const POS = () => {
       const localProduct = products.find(p => p.barcode === barcode);
 
       if (localProduct) {
-        addToCart(localProduct._id);
-        toast.success(`Scanned: ${localProduct.name}`, {
-          icon: <FaBarcode className="text-white" />,
-          style: {
-            borderRadius: '20px',
-            background: '#10B981',
-            color: '#ffffff',
-          },
-        });
+        // Check stock before adding
+        const currentCartQuantity = cartItems[localProduct._id] || 0;
+        if (currentCartQuantity >= localProduct.stock) {
+          toast.error(`Only ${localProduct.stock} items available in stock`, {
+            icon: <FaExclamationTriangle />,
+            style: {
+              borderRadius: '20px',
+              background: '#EF4444',
+              color: '#ffffff',
+            },
+          });
+        } else {
+          addToCart(localProduct._id, true); // Pass true to indicate it's from barcode scan
+          toast.success(`Scanned: ${localProduct.name}`, {
+            icon: <FaBarcode className="text-white" />,
+            style: {
+              borderRadius: '20px',
+              background: '#10B981',
+              color: '#ffffff',
+            },
+          });
+        }
       } else {
         // If not found locally, try API lookup
         const token = await getToken();
@@ -80,23 +93,40 @@ const POS = () => {
           const sellerProduct = products.find(p => p._id === data.product._id);
 
           if (sellerProduct) {
-            addToCart(data.product._id);
-            toast.success(`Scanned: ${data.product.name}`, {
-              icon: <FaBarcode className="text-white" />,
-              style: {
-                borderRadius: '20px',
-                background: '#10B981',
-                color: '#ffffff',
-              },
-            });
+            const currentCartQuantity = cartItems[data.product._id] || 0;
+            if (currentCartQuantity >= sellerProduct.stock) {
+              toast.error(`Only ${sellerProduct.stock} items available in stock`, {
+                icon: <FaExclamationTriangle />,
+              });
+            } else {
+              addToCart(data.product._id, true);
+              toast.success(`Scanned: ${data.product.name}`, {
+                icon: <FaBarcode className="text-white" />,
+                style: {
+                  borderRadius: '20px',
+                  background: '#10B981',
+                  color: '#ffffff',
+                },
+              });
+            }
           } else {
             toast.error('Product not found in your inventory', {
               icon: <FaBarcode />,
+              style: {
+                borderRadius: '20px',
+                background: '#EF4444',
+                color: '#ffffff',
+              },
             });
           }
         } else {
           toast.error(data.message || `Product not found for barcode: ${barcode}`, {
             icon: <FaBarcode />,
+            style: {
+              borderRadius: '20px',
+              background: '#EF4444',
+              color: '#ffffff',
+            },
           });
         }
       }
@@ -104,22 +134,46 @@ const POS = () => {
       console.error('Barcode lookup error:', error);
       toast.error(error.response?.data?.message || 'Failed to lookup barcode', {
         icon: <FaBarcode />,
+        style: {
+          borderRadius: '20px',
+          background: '#EF4444',
+          color: '#ffffff',
+        },
       });
     } finally {
       setBarcodeLoading(false);
     }
   };
 
+  // Handle barcode scanner close
+  const handleBarcodeScannerClose = () => {
+    setShowBarcodeScanner(false);
+    setBarcodeLoading(false);
+  };
+
   // Cart management functions
-  const addToCart = (productId) => {
+  const addToCart = (productId, fromBarcodeScanner = false) => {
+    const product = products.find(p => p._id === productId);
+    if (!product) return;
+
+    const currentQuantity = cartItems[productId] || 0;
+    
+    // Check stock availability
+    if (currentQuantity >= product.stock) {
+      toast.error(`Only ${product.stock} items available in stock`, {
+        icon: <FaExclamationTriangle />,
+      });
+      return;
+    }
+
     setCartItems((prev) => ({
       ...prev,
-      [productId]: (prev[productId] || 0) + 1,
+      [productId]: currentQuantity + 1,
     }));
 
-    // Don't show toast if called from barcode scanner (it shows its own toast)
-    if (!showBarcodeScanner && !barcodeLoading) {
-      toast.success('Added to cart', {
+    // Show toast only if not from barcode scanner (barcode scanner shows its own toast)
+    if (!fromBarcodeScanner) {
+      toast.success(`Added ${product.name} to cart`, {
         icon: <FaPlus className="text-white" />,
         style: {
           borderRadius: '20px',
@@ -145,12 +199,13 @@ const POS = () => {
   };
 
   const removeFromCart = (productId) => {
+    const product = products.find(p => p._id === productId);
     setCartItems((prev) => {
       const newCart = { ...prev };
       delete newCart[productId];
       return newCart;
     });
-    toast.success('Item removed from cart', {
+    toast.success(`Removed ${product?.name || 'item'} from cart`, {
       icon: <FaTrash />,
       style: {
         borderRadius: '20px',
@@ -163,8 +218,13 @@ const POS = () => {
   const clearCart = () => {
     if (Object.keys(cartItems).length === 0) return;
     setCartItems({});
-    toast.error('Sale Cleared', {
+    toast.error('Cart cleared', {
       icon: <FaTrash />,
+      style: {
+        borderRadius: '20px',
+        background: '#EF4444',
+        color: '#ffffff',
+      },
     });
   };
 
@@ -220,7 +280,12 @@ const POS = () => {
         setSearchTerm('');
         setIsCartOpen(false);
         toast.success('Sale completed successfully!', {
-          icon: <FaCheckCircle />,
+          icon: <FaCheckCircle className="text-white" />,
+          style: {
+            borderRadius: '20px',
+            background: '#10B981',
+            color: '#ffffff',
+          },
         });
       } else {
         toast.error(data.message || 'Failed to complete sale');
@@ -237,7 +302,7 @@ const POS = () => {
     setCompletedOrderDetails(null);
   };
 
-  // Render a shared component for the cart’s content
+  // Render a shared component for the cart's content
   const CartContents = () => (
     <>
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
@@ -245,7 +310,13 @@ const POS = () => {
           <div className="space-y-4">
             {cartDetails.items.map(item => (
               <div key={item._id} className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg">
-                <Image src={item.image[0]} alt={item.name} width={60} height={60} className="rounded-md object-cover flex-shrink-0 bg-white p-1" />
+                <Image 
+                  src={item.image[0]} 
+                  alt={item.name} 
+                  width={60} 
+                  height={60} 
+                  className="rounded-md object-cover flex-shrink-0 bg-white p-1" 
+                />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-800 line-clamp-1">{item.name}</p>
                   <p className="text-sm text-gray-500">{currency}{item.offerPrice.toFixed(2)} x {item.quantity}</p>
@@ -257,20 +328,25 @@ const POS = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => updateQuantity(item._id, item.quantity - 1)}
-                    className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center" // Corrected quotes
+                    className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
                   >
                     <FaMinus size={12} />
                   </button>
                   <span className="w-8 text-center font-semibold">{item.quantity}</span>
                   <button
                     onClick={() => updateQuantity(item._id, item.quantity + 1)}
-                    className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center disabled:opacity-50" // Corrected quotes
+                    className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center disabled:opacity-50 transition-colors"
                     disabled={item.quantity >= item.stock}
                   >
                     <FaPlus size={12} />
                   </button>
                 </div>
-                <button onClick={() => removeFromCart(item._id)} className="text-gray-400 hover:text-red-500 transition-colors"><FaTimesCircle size={20} /></button>
+                <button 
+                  onClick={() => removeFromCart(item._id)} 
+                  className="text-gray-400 hover:text-red-500 transition-colors"
+                >
+                  <FaTimesCircle size={20} />
+                </button>
               </div>
             ))}
           </div>
@@ -368,20 +444,29 @@ const POS = () => {
                 <FaSearch />
               </span>
               <input
-                type="text" // Corrected quotes
-                placeholder="Search by product name or scan barcode…" // Corrected quotes
+                type="text"
+                placeholder="Search by product name or scan barcode…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg py-3 pl-12 pr-4 text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" // Corrected quotes
+                className="w-full border border-gray-200 rounded-lg py-3 pl-12 pr-4 text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
             <button
               onClick={() => setShowBarcodeScanner(true)}
-              disabled={barcodeLoading}
+              disabled={barcodeLoading || showBarcodeScanner}
               className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
             >
-              {barcodeLoading ? <FaSpinner className="animate-spin" /> : <FaCamera />}
-              {barcodeLoading ? 'Processing...' : 'Scan'}
+              {barcodeLoading ? (
+                <>
+                  <FaSpinner className="animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <FaCamera />
+                  Scan
+                </>
+              )}
             </button>
           </div>
         </header>
@@ -396,7 +481,13 @@ const POS = () => {
                 disabled={processingOrder || product.stock === 0}
               >
                 <div className="relative w-full h-28">
-                  <Image src={product.image[0]} alt={product.name} fill sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw" className="object-contain" />
+                  <Image 
+                    src={product.image[0]} 
+                    alt={product.name} 
+                    fill 
+                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw" 
+                    className="object-contain" 
+                  />
                   {product.stock === 0 && (
                     <div className="absolute inset-0 bg-red-500 bg-opacity-20 flex items-center justify-center rounded-lg">
                       <span className="text-red-600 font-bold text-xs">OUT OF STOCK</span>
@@ -495,24 +586,13 @@ const POS = () => {
 
       {/* Barcode Scanner Modal */}
       {showBarcodeScanner && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-800">Scan Barcode</h3>
-              <button
-                onClick={() => setShowBarcodeScanner(false)}
-                className="text-gray-400 hover:text-gray-600 p-1"
-              >
-                <FaTimes size={20} />
-              </button>
-            </div>
-            <BarcodeScanner onBarcodeDetected={handleBarcodeDetected} />
-          </div>
-        </div>
+        <BarcodeScanner
+          onBarcodeDetected={handleBarcodeDetected}
+          onClose={handleBarcodeScannerClose}
+        />
       )}
     </div>
   );
 };
 
 export default POS;
-

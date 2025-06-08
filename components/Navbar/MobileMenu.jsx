@@ -214,7 +214,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
                             </div>
 
                             {/* Account Section */}
-                            <div className="p-5 pb-15 md:pb-5 mt-auto border-t border-gray-100 bg-gray-50">
+                            <div className="px-5 pb-10 md:pb-20 pt-5 mt-auto border-t border-gray-100 bg-gray-50">
                                 {isSeller && (
                                     <button
                                         onClick={() => {
