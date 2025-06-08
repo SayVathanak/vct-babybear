@@ -90,7 +90,7 @@ export default function RootLayout({ children }) {
               }
             `
           }} />
-          <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+          <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
         </head>
         <body className={`${outfit.className} antialiased text-gray-700`}>
           <Toaster />
