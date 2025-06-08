@@ -33,83 +33,6 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
     loadQuagga();
   }, []);
 
-  // Enhanced barcode validation for EAN codes
-  const validateEANBarcode = (code) => {
-    // Check if it's a valid EAN-13 or EAN-8
-    if (!/^\d{8}$/.test(code) && !/^\d{13}$/.test(code)) {
-      return false;
-    }
-    
-    // EAN-13 checksum validation
-    if (code.length === 13) {
-      const digits = code.split('').map(Number);
-      const checksum = digits.slice(0, 12).reduce((sum, digit, index) => {
-        return sum + digit * (index % 2 === 0 ? 1 : 3);
-      }, 0);
-      const calculatedCheck = (10 - (checksum % 10)) % 10;
-      return calculatedCheck === digits[12];
-    }
-    
-    // EAN-8 checksum validation
-    if (code.length === 8) {
-      const digits = code.split('').map(Number);
-      const checksum = digits.slice(0, 7).reduce((sum, digit, index) => {
-        return sum + digit * (index % 2 === 0 ? 3 : 1);
-      }, 0);
-      const calculatedCheck = (10 - (checksum % 10)) % 10;
-      return calculatedCheck === digits[7];
-    }
-    
-    return true;
-  };
-
-  // Enhanced detection handler with better EAN support
-  const enhancedDetectionHandler = (result) => {
-    if (!scanningActive || cleanupRef.current) return;
-    const code = result.codeResult.code;
-    const format = result.codeResult.format;
-    
-    console.log(`Barcode detected: ${code}, Format: ${format}`);
-    
-    // Skip if already detected
-    if (detectedCodes.has(code)) return;
-    
-    // Validate EAN barcode
-    if (validateEANBarcode(code)) {
-      // Additional confidence check for EAN codes
-      if (format === 'ean_13' || format === 'ean_8' || 
-          (format === 'ean' && (code.length === 8 || code.length === 13))) {
-        
-        setDetectedCodes(prev => new Set([...prev, code]));
-        setScanningActive(false);
-        
-        // Provide visual feedback
-        const canvas = Quagga.canvas.dom.overlay;
-        const ctx = Quagga.canvas.ctx.overlay;
-        
-        if (canvas && ctx) {
-          ctx.strokeStyle = '#00FF00';
-          ctx.lineWidth = 4;
-          ctx.strokeRect(0, 0, canvas.width, canvas.height);
-          
-          // Flash effect
-          setTimeout(() => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-          }, 500);
-        }
-        
-        setTimeout(() => {
-          if (!cleanupRef.current) {
-            cleanup();
-            onBarcodeDetected(code);
-          }
-        }, 200);
-      }
-    } else {
-      console.warn(`Invalid EAN barcode detected: ${code}`);
-    }
-  };
-
   // Cleanup function
   const cleanup = () => {
     cleanupRef.current = true;
@@ -156,47 +79,36 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
         }
 
         // Set explicit dimensions on the container
-        scannerElement.style.width = '640px'; // Increased for better EAN scanning
-        scannerElement.style.height = '480px';
+        scannerElement.style.width = '320px';
+        scannerElement.style.height = '240px';
 
-        // Enhanced Quagga configuration for better EAN-13 scanning
-        const enhancedQuaggaConfig = {
+        Quagga.init({
           inputStream: {
             name: "Live",
             type: "LiveStream",
             target: scannerElement,
             constraints: {
-              width: { min: 640, ideal: 1280, max: 1920 }, // Higher resolution for better EAN scanning
-              height: { min: 480, ideal: 720, max: 1080 },
-              facingMode: "environment"
+              width: { min: 320, ideal: 640, max: 1920 },
+              height: { min: 240, ideal: 480, max: 1080 },
+              facingMode: "environment" // Use back camera
             }
           },
           locator: {
             patchSize: "medium",
-            halfSample: false // Better quality for EAN barcodes
+            halfSample: true
           },
-          numOfWorkers: Math.min(navigator.hardwareConcurrency || 2, 4),
+          numOfWorkers: Math.min(navigator.hardwareConcurrency || 1, 2),
           decoder: {
             readers: [
-              "ean_reader",        // Primary for EAN-13 like your image
-              "ean_8_reader",      // For EAN-8
-              "code_128_reader",   // Common in retail
-              "code_39_reader",    // Alternative format
-              "code_93_reader"     // Additional support
-            ],
-            multiple: false // Focus on single barcode detection
+              "ean_reader",
+              "ean_8_reader",
+              "code_128_reader", // Add more barcode types
+              "code_39_reader"
+            ]
           },
           locate: true,
-          frequency: 5, // Slower frequency for better accuracy with EAN codes
-          debug: {
-            drawBoundingBox: true,
-            showFrequency: true,
-            drawScanline: true,
-            showPattern: true
-          }
-        };
-
-        Quagga.init(enhancedQuaggaConfig, (err) => {
+          frequency: 10 // Reduce frequency to improve performance
+        }, (err) => {
           setIsInitializing(false);
           
           if (err) {
@@ -229,8 +141,31 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
           }
         });
 
-        // Use enhanced detection handler
-        Quagga.onDetected(enhancedDetectionHandler);
+        // Set up barcode detection handler with debouncing
+        Quagga.onDetected((result) => {
+          if (!scanningActive || cleanupRef.current) return;
+
+          const code = result.codeResult.code;
+          
+          // Skip if we've already detected this code recently
+          if (detectedCodes.has(code)) return;
+          
+          console.log('Barcode detected:', code);
+
+          // Validate barcode format (EAN-13, EAN-8, or other common formats)
+          if (code && (/^\d{13}$/.test(code) || /^\d{8}$/.test(code) || /^[A-Za-z0-9]{6,}$/.test(code))) {
+            setDetectedCodes(prev => new Set([...prev, code]));
+            setScanningActive(false);
+            
+            // Delay to prevent double scanning
+            setTimeout(() => {
+              if (!cleanupRef.current) {
+                cleanup();
+                onBarcodeDetected(code);
+              }
+            }, 100);
+          }
+        });
 
         // Handle processing errors and visual feedback
         Quagga.onProcessed((result) => {
@@ -243,8 +178,8 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
             if (result && drawingCtx && drawingCanvas) {
               // Clear previous drawings
               drawingCtx.clearRect(0, 0, 
-                parseInt(drawingCanvas.getAttribute("width")) || 640, 
-                parseInt(drawingCanvas.getAttribute("height")) || 480
+                parseInt(drawingCanvas.getAttribute("width")) || 320, 
+                parseInt(drawingCanvas.getAttribute("height")) || 240
               );
 
               // Draw visual feedback for detected barcodes
@@ -294,8 +229,8 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
     const barcode = prompt('Enter barcode:');
     if (barcode && barcode.trim()) {
       const trimmedBarcode = barcode.trim();
-      // Use enhanced validation
-      if (validateEANBarcode(trimmedBarcode) || /^[A-Za-z0-9]{6,}$/.test(trimmedBarcode)) {
+      // Validate common barcode formats
+      if (/^\d{13}$/.test(trimmedBarcode) || /^\d{8}$/.test(trimmedBarcode) || /^[A-Za-z0-9]{6,}$/.test(trimmedBarcode)) {
         cleanup();
         onBarcodeDetected(trimmedBarcode);
       } else {
@@ -366,7 +301,7 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
             ) : (
               <div className="space-y-4">
                 {/* Camera Preview */}
-                <div className="relative bg-black rounded-lg overflow-hidden mx-auto" style={{ width: '640px', height: '480px' }}>
+                <div className="relative bg-black rounded-lg overflow-hidden mx-auto" style={{ width: '320px', height: '240px' }}>
                   <div
                     ref={scannerRef}
                     className="w-full h-full flex items-center justify-center"
@@ -376,7 +311,7 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
                         <div className="border-2 border-white border-dashed w-3/4 h-20 rounded-lg flex items-center justify-center">
                           <div className="flex items-center gap-2 text-white text-sm">
                             <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                            <span>Scanning for EAN barcodes...</span>
+                            <span>Scanning...</span>
                           </div>
                         </div>
                       </div>
@@ -391,7 +326,7 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
                     Make sure the barcode is clearly visible and well-lit
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    Optimized for EAN-13, EAN-8, Code 128, Code 39, and Code 93
+                    Supports EAN-13, EAN-8, Code 128, and Code 39
                   </p>
                 </div>
 
