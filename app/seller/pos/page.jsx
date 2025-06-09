@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useAppContext } from '@/context/AppContext';
 import Loading from '@/components/Loading';
 import BarcodeScanner from '@/components/seller/BarcodeScanner';
-import { FaSearch, FaShoppingCart, FaTrash, FaPlus, FaMinus, FaTimesCircle, FaCheckCircle, FaBarcode, FaTimes, FaArrowRight, FaCamera, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
+import { FaSearch, FaShoppingCart, FaTrash, FaPlus, FaMinus, FaTimesCircle, FaCheckCircle, FaBarcode, FaTimes, FaArrowRight, FaCamera, FaExclamationTriangle, FaSpinner, FaQuestionCircle } from 'react-icons/fa';
 import { Transition } from '@headlessui/react';
 
 const POS = () => {
@@ -24,6 +24,10 @@ const POS = () => {
   // Barcode scanner states
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [barcodeLoading, setBarcodeLoading] = useState(false);
+  const [scannerKey, setScannerKey] = useState(0); // Key to force remount scanner
+
+  // Sale confirmation states
+  const [showSaleConfirmation, setShowSaleConfirmation] = useState(false);
 
   // Fetch seller's products on component mount
   useEffect(() => {
@@ -49,12 +53,10 @@ const POS = () => {
     fetchSellerProduct();
   }, [user, getToken]);
 
-  // Updated handleBarcodeDetected function for page.jsx
+  // Updated handleBarcodeDetected function
   const handleBarcodeDetected = async (barcodeText) => {
     console.log('Barcode detected:', barcodeText);
     setBarcodeLoading(true);
-
-    // Keep the scanner open for continuous scanning - don't close it
 
     try {
       // Step 1: First, try to find the product locally by barcode
@@ -77,7 +79,6 @@ const POS = () => {
         });
 
         setBarcodeLoading(false);
-        // Don't close scanner - keep it open for continuous scanning
         return;
       }
 
@@ -107,7 +108,6 @@ const POS = () => {
             },
             duration: 2000,
           });
-          // Keep scanner open for continuous scanning
         } else {
           toast.error('Product not found in your inventory', {
             icon: <FaBarcode />,
@@ -158,21 +158,16 @@ const POS = () => {
       });
     } finally {
       setBarcodeLoading(false);
-      // Keep the scanner open for continuous scanning
-      // Scanner will only close when user manually closes it
     }
   };
 
-  // Updated scanner close function
+  // Updated scanner close function with proper cleanup
   const handleBarcodeScannerClose = () => {
     setShowBarcodeScanner(false);
     setBarcodeLoading(false);
+    // Force remount the scanner component next time by incrementing key
+    setScannerKey(prev => prev + 1);
   };
-
-  // Remove the auto-close function since we want continuous scanning
-  // const handleBarcodeScannerCloseAfterScan = () => {
-  //   // This function is no longer needed
-  // };
 
   // Handle scanner open with error handling
   const handleOpenScanner = async () => {
@@ -298,14 +293,20 @@ const POS = () => {
     return { items, subtotal, totalItems };
   }, [cartItems, products]);
 
-  // Checkout function
-  const handleCheckout = async () => {
+  // Show sale confirmation
+  const handleShowSaleConfirmation = () => {
     if (cartDetails.items.length === 0) {
       toast.error("Cart is empty");
       return;
     }
+    setShowSaleConfirmation(true);
+  };
 
+  // Checkout function
+  const handleCheckout = async () => {
+    setShowSaleConfirmation(false);
     setProcessingOrder(true);
+    
     try {
       const token = await getToken();
       const orderPayload = {
@@ -343,6 +344,69 @@ const POS = () => {
     setSaleCompleted(false);
     setCompletedOrderDetails(null);
   };
+
+  // Sale Confirmation Modal Component
+  const SaleConfirmationModal = () => (
+    <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="text-center mb-6">
+          <FaQuestionCircle className="text-blue-500 text-5xl mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Confirm Sale</h2>
+          <p className="text-gray-600">Review the items before completing the sale</p>
+        </div>
+
+        <div className="bg-gray-50 rounded-lg p-4 mb-6 max-h-60 overflow-y-auto">
+          <h3 className="font-semibold text-gray-800 mb-3">Items in Cart:</h3>
+          <div className="space-y-2">
+            {cartDetails.items.map(item => (
+              <div key={item._id} className="flex justify-between items-center text-sm">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-gray-800 truncate">{item.name}</p>
+                  <p className="text-gray-500">Qty: {item.quantity}</p>
+                </div>
+                <p className="font-semibold text-gray-800 ml-2">
+                  {currency}{(item.offerPrice * item.quantity).toFixed(2)}
+                </p>
+              </div>
+            ))}
+          </div>
+          
+          <div className="border-t border-gray-300 mt-4 pt-4">
+            <div className="flex justify-between items-center text-lg font-bold">
+              <span className="text-gray-800">Total:</span>
+              <span className="text-blue-600">{currency}{cartDetails.subtotal.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => setShowSaleConfirmation(false)}
+            className="w-full px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            Review Cart
+          </button>
+          <button
+            onClick={handleCheckout}
+            disabled={processingOrder}
+            className="w-full px-6 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          >
+            {processingOrder ? (
+              <>
+                <FaSpinner className="animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <FaCheckCircle />
+                Complete Sale
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   // Render a shared component for the cart's content
   const CartContents = () => (
@@ -423,18 +487,11 @@ const POS = () => {
             Clear
           </button>
           <button
-            onClick={handleCheckout}
+            onClick={handleShowSaleConfirmation}
             disabled={processingOrder || cartDetails.items.length === 0}
             className="w-full bg-green-500 text-white font-bold py-3.5 rounded-lg hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
-            {processingOrder ? (
-              <>
-                <FaSpinner className="animate-spin" />
-                Processing...
-              </>
-            ) : (
-              'Complete Sale'
-            )}
+            Complete Sale
           </button>
         </div>
       </div>
@@ -475,7 +532,10 @@ const POS = () => {
 
   return (
     <div className="flex flex-col md:flex-row bg-gray-50 md:h-screen md:overflow-hidden">
-      {/* Scanbot Barcode Scanner Modal */}
+      {/* Sale Confirmation Modal */}
+      {showSaleConfirmation && <SaleConfirmationModal />}
+
+      {/* Barcode Scanner Modal */}
       {showBarcodeScanner && (
         <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
           <div className="relative w-full h-full max-w-2xl max-h-2xl">
@@ -489,6 +549,7 @@ const POS = () => {
               <p className="text-sm font-medium">Point camera at barcode to scan</p>
             </div>
             <BarcodeScanner
+              key={scannerKey} // Force remount with key
               onBarcodeDetected={handleBarcodeDetected}
               onClose={handleBarcodeScannerClose}
             />
@@ -631,23 +692,12 @@ const POS = () => {
           <FaShoppingCart />
           <span>View Cart ({cartDetails.totalItems})</span>
           {cartDetails.totalItems > 0 && (
-            <>
-              <span>•</span>
-              <span>{currency}{cartDetails.subtotal.toFixed(2)}</span>
-            </>
+            <span className="bg-white text-indigo-600 px-2 py-1 rounded-full text-sm font-bold">
+              {currency}{cartDetails.subtotal.toFixed(2)}
+            </span>
           )}
         </button>
       </div>
-
-      {/* Loading overlay for barcode processing */}
-      {barcodeLoading && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center">
-          <div className="bg-white rounded-2xl p-8 flex flex-col items-center gap-4">
-            <FaSpinner className="animate-spin text-4xl text-indigo-600" />
-            <p className="text-lg font-semibold text-gray-800">Processing barcode...</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

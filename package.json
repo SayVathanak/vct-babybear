@@ -27,6 +27,7 @@
     "clsx": "^2.1.1",
     "framer-motion": "^12.6.3",
     "html2canvas": "^1.4.1",
+    "html5-qrcode": "^2.3.8",
     "inngest": "^3.32.9",
     "jsbarcode": "^3.11.6",
     "jspdf": "^3.0.1",

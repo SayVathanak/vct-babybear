@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Script from 'next/script'
 
-// SVG Icons
+// SVG Icons (keeping all the same icons)
 const IconCamera = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
     <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2-2h-3l-2.5-3z"></path>
@@ -89,8 +89,27 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
   const [torchSupported, setTorchSupported] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
 
-  // Clean up function - modified to not reset the code reader unless explicitly closing
-  const cleanup = useCallback((fullCleanup = false) => {
+  // Initialize or reinitialize ZXing reader
+  const initializeReader = useCallback(() => {
+    if (!window.ZXingBrowser) {
+      console.error('ZXing library not loaded');
+      return false;
+    }
+
+    try {
+      // Always create a new reader instance
+      codeReaderRef.current = new window.ZXingBrowser.BrowserMultiFormatReader();
+      console.log('ZXing BrowserMultiFormatReader initialized/reinitialized');
+      return true;
+    } catch (err) {
+      console.error('Failed to initialize ZXing reader:', err);
+      setError('Failed to initialize barcode scanner');
+      return false;
+    }
+  }, []);
+
+  // Clean up function
+  const cleanup = useCallback((resetReader = false) => {
     if (scanningIntervalRef.current) {
       clearInterval(scanningIntervalRef.current);
       scanningIntervalRef.current = null;
@@ -99,8 +118,8 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-    // Only reset code reader on full cleanup (when closing scanner)
-    if (fullCleanup && codeReaderRef.current) {
+    // Only reset reader if explicitly requested (when closing scanner)
+    if (resetReader && codeReaderRef.current) {
       try {
         codeReaderRef.current.reset();
         codeReaderRef.current = null;
@@ -113,7 +132,8 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
   const startCamera = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    // Only clean up camera stream, not the code reader
+    
+    // Clean up existing camera stream
     if (scanningIntervalRef.current) {
       clearInterval(scanningIntervalRef.current);
       scanningIntervalRef.current = null;
@@ -121,6 +141,14 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
+    }
+
+    // Ensure reader is ready
+    if (!codeReaderRef.current) {
+      if (!initializeReader()) {
+        setIsLoading(false);
+        return;
+      }
     }
 
     try {
@@ -202,30 +230,26 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
       setError(errorMessage);
       setIsLoading(false);
     }
-  }, [selectedCameraId]);
+  }, [selectedCameraId, initializeReader]);
+
+  // Check ZXing library status and initialize reader
+  useEffect(() => {
+    if (window.ZXingBrowser) {
+      setIsZxingLoaded(true);
+      initializeReader();
+    }
+  }, [initializeReader]);
 
   // Initialize camera on mount and when camera changes
   useEffect(() => {
-    startCamera();
-    return () => cleanup(true); // Full cleanup on unmount
-  }, [startCamera, cleanup]);
-
-  // Initialize ZXing reader when library loads
-  useEffect(() => {
-    if (!isZxingLoaded || codeReaderRef.current) return;
-
-    try {
-      if (window.ZXingBrowser) {
-        codeReaderRef.current = new window.ZXingBrowser.BrowserMultiFormatReader();
-        console.log('ZXing BrowserMultiFormatReader initialized');
-      }
-    } catch (err) {
-      console.error('Failed to initialize ZXing reader:', err);
-      setError('Failed to initialize barcode scanner');
+    // Only start camera if ZXing is loaded or will be loaded
+    if (isZxingLoaded || window.ZXingBrowser) {
+      startCamera();
     }
-  }, [isZxingLoaded]);
+    return () => cleanup(true); // Full cleanup on unmount
+  }, [startCamera, cleanup, isZxingLoaded]);
 
-  // Barcode scanning logic - improved to not auto-close
+  // Barcode scanning logic
   useEffect(() => {
     if (!isScanning || isPaused || !isZxingLoaded || !videoRef.current || !canvasRef.current || !codeReaderRef.current) {
       return;
@@ -299,13 +323,17 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
   // Event handlers
   const handleClose = useCallback(() => {
     setIsScanning(false);
-    cleanup(true); // Full cleanup when closing
+    cleanup(true); // Full cleanup including reader reset when closing
     onClose();
   }, [onClose, cleanup]);
 
   const handleRetry = useCallback(() => {
+    // Reinitialize reader if needed before retrying
+    if (!codeReaderRef.current) {
+      initializeReader();
+    }
     startCamera();
-  }, [startCamera]);
+  }, [startCamera, initializeReader]);
 
   const handleCameraSwitch = useCallback((event) => {
     setSelectedCameraId(event.target.value);
@@ -339,6 +367,8 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
         onLoad={() => {
           console.log('ZXing library loaded successfully');
           setIsZxingLoaded(true);
+          // Initialize reader immediately when library loads
+          initializeReader();
         }}
         onError={() => {
           console.error("Failed to load ZXing script");
