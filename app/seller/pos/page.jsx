@@ -49,14 +49,12 @@ const POS = () => {
     fetchSellerProduct();
   }, [user, getToken]);
 
-  // Improved handleBarcodeDetected function for page.jsx
-  // Improved handleBarcodeDetected function for page.jsx
+  // Updated handleBarcodeDetected function for page.jsx
   const handleBarcodeDetected = async (barcodeText) => {
     console.log('Barcode detected:', barcodeText);
     setBarcodeLoading(true);
 
-    // Don't close the scanner immediately - keep it open for continuous scanning
-    // setShowBarcodeScanner(false); // Remove this line
+    // Keep the scanner open for continuous scanning - don't close it
 
     try {
       // Step 1: First, try to find the product locally by barcode
@@ -75,19 +73,17 @@ const POS = () => {
             background: '#10B981',
             color: '#ffffff',
           },
-          duration: 2000, // Show for 2 seconds
+          duration: 2000,
         });
 
         setBarcodeLoading(false);
-        // Auto-close scanner after successful scan
-        handleBarcodeScannerCloseAfterScan();
+        // Don't close scanner - keep it open for continuous scanning
         return;
       }
 
-      // Step 2: If not found locally, try the most reliable API endpoint
+      // Step 2: If not found locally, try the API endpoint
       const token = await getToken();
 
-      // Using the barcode-search endpoint with query parameter (most reliable)
       const { data } = await axios.get(
         `/api/product/barcode-search?barcode=${encodeURIComponent(normalizedBarcode)}`,
         {
@@ -111,10 +107,7 @@ const POS = () => {
             },
             duration: 2000,
           });
-
-          // Auto-close scanner after successful scan
-          handleBarcodeScannerCloseAfterScan();
-
+          // Keep scanner open for continuous scanning
         } else {
           toast.error('Product not found in your inventory', {
             icon: <FaBarcode />,
@@ -166,24 +159,20 @@ const POS = () => {
     } finally {
       setBarcodeLoading(false);
       // Keep the scanner open for continuous scanning
-      // Don't close it automatically
+      // Scanner will only close when user manually closes it
     }
   };
 
-  // Updated barcode scanner close function
+  // Updated scanner close function
   const handleBarcodeScannerClose = () => {
     setShowBarcodeScanner(false);
     setBarcodeLoading(false);
   };
 
-  // Optional: Add a function to manually close scanner after successful scan
-  const handleBarcodeScannerCloseAfterScan = () => {
-    // This can be called if you want to close scanner after each successful scan
-    setTimeout(() => {
-      setShowBarcodeScanner(false);
-      setBarcodeLoading(false);
-    }, 1500); // Close after 1.5 seconds
-  };
+  // Remove the auto-close function since we want continuous scanning
+  // const handleBarcodeScannerCloseAfterScan = () => {
+  //   // This function is no longer needed
+  // };
 
   // Handle scanner open with error handling
   const handleOpenScanner = async () => {
