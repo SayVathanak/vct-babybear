@@ -11,8 +11,11 @@ const productSchema = new mongoose.Schema({
     barcode: { type: String, unique: true, sparse: true }, // Added barcode field
     date: { type: Number, required: true },
     isAvailable: { type: Boolean, default: true },
-})
+});
 
-const Product = mongoose.models.product || mongoose.model('product', productSchema)
+// Add this to your Product.js schema
+productSchema.index({ barcode: 1 });
 
-export default Product
+const Product = mongoose.models.product || mongoose.model('product', productSchema);
+
+export default Product;
