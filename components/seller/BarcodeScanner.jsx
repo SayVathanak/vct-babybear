@@ -74,8 +74,24 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
   const [torchSupported, setTorchSupported] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
 
-  // Clean up function
-  const cleanup = useCallback(() => {
+  // Initialize ZXing reader when library loads
+  const initializeReader = useCallback(() => {
+    if (window.ZXingBrowser && !codeReaderRef.current) {
+      try {
+        codeReaderRef.current = new window.ZXingBrowser.BrowserMultiFormatReader();
+        console.log('ZXing BrowserMultiFormatReader initialized');
+        return true;
+      } catch (err) {
+        console.error('Failed to initialize ZXing reader:', err);
+        setError('Failed to initialize barcode scanner');
+        return false;
+      }
+    }
+    return !!codeReaderRef.current;
+  }, []);
+
+  // Clean up function - but preserve the reader for reuse
+  const cleanup = useCallback((preserveReader = true) => {
     if (scanningIntervalRef.current) {
       clearInterval(scanningIntervalRef.current);
       scanningIntervalRef.current = null;
@@ -84,19 +100,20 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-    if (codeReaderRef.current) {
+    if (!preserveReader && codeReaderRef.current) {
       try {
         codeReaderRef.current.reset();
       } catch (e) {
         console.log('Error resetting code reader:', e);
       }
+      codeReaderRef.current = null;
     }
   }, []);
 
   const startCamera = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    cleanup();
+    cleanup(true); // Preserve reader
 
     try {
       // Get available cameras first
@@ -181,8 +198,15 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
   // Initialize camera on mount and when camera changes
   useEffect(() => {
     startCamera();
-    return cleanup;
-  }, [startCamera, cleanup]);
+    return () => cleanup(false); // Full cleanup on unmount
+  }, [startCamera]);
+
+  // Initialize reader when ZXing loads
+  useEffect(() => {
+    if (isZxingLoaded) {
+      initializeReader();
+    }
+  }, [isZxingLoaded, initializeReader]);
 
   // Barcode scanning logic
   useEffect(() => {
@@ -190,19 +214,8 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
       return;
     }
 
-    // Initialize ZXing reader
-    if (!codeReaderRef.current && window.ZXingBrowser) {
-      try {
-        codeReaderRef.current = new window.ZXingBrowser.BrowserMultiFormatReader();
-        console.log('ZXing BrowserMultiFormatReader initialized');
-      } catch (err) {
-        console.error('Failed to initialize ZXing reader:', err);
-        setError('Failed to initialize barcode scanner');
-        return;
-      }
-    }
-
-    if (!codeReaderRef.current) {
+    // Ensure reader is initialized
+    if (!initializeReader()) {
       return;
     }
 
@@ -240,12 +253,21 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
               lastScanTimeRef.current = now;
               console.log('Barcode detected:', barcodeText);
               
-              // Stop scanning before calling the callback
-              setIsScanning(false);
-              cleanup();
+              // Temporarily pause scanning but keep reader alive
+              if (scanningIntervalRef.current) {
+                clearInterval(scanningIntervalRef.current);
+                scanningIntervalRef.current = null;
+              }
               
               // Call the callback
               onBarcodeDetected(barcodeText);
+              
+              // Resume scanning after 3 seconds to allow for another scan
+              setTimeout(() => {
+                if (isScanning) {
+                  setIsScanning(true); // This will trigger the effect again
+                }
+              }, 3000);
             }
           }
         } catch (decodeError) {
@@ -265,12 +287,12 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
         scanningIntervalRef.current = null;
       }
     };
-  }, [isScanning, isZxingLoaded, onBarcodeDetected, debugMode, cleanup]);
+  }, [isScanning, isZxingLoaded, onBarcodeDetected, debugMode, initializeReader]);
 
   // Event handlers
   const handleClose = useCallback(() => {
     setIsScanning(false);
-    cleanup();
+    cleanup(false); // Full cleanup on close
     onClose();
   }, [onClose, cleanup]);
 
@@ -298,6 +320,12 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
     }
   }, [isTorchOn, torchSupported]);
 
+  const handleResumeScan = useCallback(() => {
+    if (!isScanning) {
+      setIsScanning(true);
+    }
+  }, [isScanning]);
+
   return (
     <>
       <Script
@@ -322,6 +350,17 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
               <span>Scan Barcode</span>
             </h2>
             <div className="flex items-center gap-2">
+              {/* Resume scan button */}
+              {!isScanning && !isLoading && !error && (
+                <button
+                  onClick={handleResumeScan}
+                  className="p-2 rounded-full bg-green-600 hover:bg-green-700 text-white text-xs px-3"
+                  title="Resume Scanning"
+                >
+                  Resume
+                </button>
+              )}
+              
               {/* Debug toggle (remove in production) */}
               <button
                 onClick={() => setDebugMode(!debugMode)}
@@ -425,13 +464,24 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
             </div>
           )}
 
+          {/* Paused Overlay */}
+          {!isScanning && !isLoading && !error && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="bg-black bg-opacity-70 text-white p-4 rounded-lg text-center">
+                <p className="text-lg mb-2">Scanning Paused</p>
+                <p className="text-sm text-gray-300">Click Resume to continue scanning</p>
+              </div>
+            </div>
+          )}
+
           {/* Debug info */}
-          {debugMode && isScanning && (
+          {debugMode && (
             <div className="absolute top-4 left-4 bg-black bg-opacity-70 text-white p-2 rounded text-xs max-w-xs">
               <p>Video: {videoRef.current?.videoWidth || 0}x{videoRef.current?.videoHeight || 0}</p>
               <p>Ready State: {videoRef.current?.readyState || 'N/A'}</p>
               <p>ZXing Loaded: {isZxingLoaded ? 'Yes' : 'No'}</p>
               <p>Reader: {codeReaderRef.current ? 'Ready' : 'Not Ready'}</p>
+              <p>Scanning: {isScanning ? 'Yes' : 'No'}</p>
             </div>
           )}
         </div>
