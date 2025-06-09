@@ -50,112 +50,139 @@ const POS = () => {
   }, [user, getToken]);
 
   // Improved handleBarcodeDetected function for page.jsx
-const handleBarcodeDetected = async (barcodeText) => {
-  console.log('Barcode detected:', barcodeText);
-  setBarcodeLoading(true);
-  setShowBarcodeScanner(false);
+  // Improved handleBarcodeDetected function for page.jsx
+  const handleBarcodeDetected = async (barcodeText) => {
+    console.log('Barcode detected:', barcodeText);
+    setBarcodeLoading(true);
 
-  try {
-    // Step 1: First, try to find the product locally by barcode
-    const normalizedBarcode = barcodeText.trim();
-    const localProduct = products.find(p => 
-      p.barcode === normalizedBarcode || 
-      (p.barcode && p.barcode.toLowerCase() === normalizedBarcode.toLowerCase())
-    );
+    // Don't close the scanner immediately - keep it open for continuous scanning
+    // setShowBarcodeScanner(false); // Remove this line
 
-    if (localProduct) {
-      addToCart(localProduct._id, true);
-      toast.success(`Scanned: ${localProduct.name}`, {
-        icon: <FaBarcode className="text-white" />,
-        style: {
-          borderRadius: '20px',
-          background: '#10B981',
-          color: '#ffffff',
-        },
-      });
-      return;
-    }
+    try {
+      // Step 1: First, try to find the product locally by barcode
+      const normalizedBarcode = barcodeText.trim();
+      const localProduct = products.find(p =>
+        p.barcode === normalizedBarcode ||
+        (p.barcode && p.barcode.toLowerCase() === normalizedBarcode.toLowerCase())
+      );
 
-    // Step 2: If not found locally, try the most reliable API endpoint
-    const token = await getToken();
-    
-    // Using the barcode-search endpoint with query parameter (most reliable)
-    const { data } = await axios.get(
-      `/api/product/barcode-search?barcode=${encodeURIComponent(normalizedBarcode)}`, 
-      {
-        headers: { Authorization: `Bearer ${token}` },
-        timeout: 8000 // 8 second timeout
-      }
-    );
-
-    if (data.success && data.product) {
-      // Check if product is in the seller's current inventory
-      const sellerProduct = products.find(p => p._id === data.product._id);
-
-      if (sellerProduct) {
-        addToCart(data.product._id, true);
-        toast.success(`Scanned: ${data.product.name}`, {
+      if (localProduct) {
+        addToCart(localProduct._id, true);
+        toast.success(`Scanned: ${localProduct.name}`, {
           icon: <FaBarcode className="text-white" />,
           style: {
             borderRadius: '20px',
             background: '#10B981',
             color: '#ffffff',
           },
+          duration: 2000, // Show for 2 seconds
         });
+
+        setBarcodeLoading(false);
+        // Auto-close scanner after successful scan
+        handleBarcodeScannerCloseAfterScan();
+        return;
+      }
+
+      // Step 2: If not found locally, try the most reliable API endpoint
+      const token = await getToken();
+
+      // Using the barcode-search endpoint with query parameter (most reliable)
+      const { data } = await axios.get(
+        `/api/product/barcode-search?barcode=${encodeURIComponent(normalizedBarcode)}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 8000 // 8 second timeout
+        }
+      );
+
+      if (data.success && data.product) {
+        // Check if product is in the seller's current inventory
+        const sellerProduct = products.find(p => p._id === data.product._id);
+
+        if (sellerProduct) {
+          addToCart(data.product._id, true);
+          toast.success(`Scanned: ${data.product.name}`, {
+            icon: <FaBarcode className="text-white" />,
+            style: {
+              borderRadius: '20px',
+              background: '#10B981',
+              color: '#ffffff',
+            },
+            duration: 2000,
+          });
+
+          // Auto-close scanner after successful scan
+          handleBarcodeScannerCloseAfterScan();
+
+        } else {
+          toast.error('Product not found in your inventory', {
+            icon: <FaBarcode />,
+            style: {
+              borderRadius: '20px',
+              background: '#EF4444',
+              color: '#ffffff',
+            },
+            duration: 3000,
+          });
+        }
       } else {
-        toast.error('Product not found in your inventory', {
+        toast.error(data?.message || `Product not found for barcode: ${normalizedBarcode}`, {
           icon: <FaBarcode />,
           style: {
             borderRadius: '20px',
             background: '#EF4444',
             color: '#ffffff',
           },
+          duration: 3000,
         });
       }
-    } else {
-      toast.error(data?.message || `Product not found for barcode: ${normalizedBarcode}`, {
+    } catch (error) {
+      console.error('Barcode lookup error:', error);
+
+      let errorMessage = 'Failed to lookup barcode';
+
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Barcode lookup timed out';
+      } else if (error.response?.status === 404) {
+        errorMessage = `Product not found for barcode: ${barcodeText.trim()}`;
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Authentication failed. Please log in again.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage, {
         icon: <FaBarcode />,
         style: {
           borderRadius: '20px',
           background: '#EF4444',
           color: '#ffffff',
         },
+        duration: 3000,
       });
+    } finally {
+      setBarcodeLoading(false);
+      // Keep the scanner open for continuous scanning
+      // Don't close it automatically
     }
-  } catch (error) {
-    console.error('Barcode lookup error:', error);
-    
-    let errorMessage = 'Failed to lookup barcode';
-    
-    if (error.code === 'ECONNABORTED') {
-      errorMessage = 'Barcode lookup timed out';
-    } else if (error.response?.status === 404) {
-      errorMessage = `Product not found for barcode: ${barcodeText.trim()}`;
-    } else if (error.response?.status === 401) {
-      errorMessage = 'Authentication failed. Please log in again.';
-    } else if (error.response?.data?.message) {
-      errorMessage = error.response.data.message;
-    } else if (error.message) {
-      errorMessage = error.message;
-    }
-    
-    toast.error(errorMessage, {
-      icon: <FaBarcode />,
-      style: {
-        borderRadius: '20px',
-        background: '#EF4444',
-        color: '#ffffff',
-      },
-    });
-  } finally {
-    setBarcodeLoading(false);
-  }
-};
+  };
 
-  // Handle barcode scanner close
+  // Updated barcode scanner close function
   const handleBarcodeScannerClose = () => {
     setShowBarcodeScanner(false);
     setBarcodeLoading(false);
+  };
+
+  // Optional: Add a function to manually close scanner after successful scan
+  const handleBarcodeScannerCloseAfterScan = () => {
+    // This can be called if you want to close scanner after each successful scan
+    setTimeout(() => {
+      setShowBarcodeScanner(false);
+      setBarcodeLoading(false);
+    }, 1500); // Close after 1.5 seconds
   };
 
   // Handle scanner open with error handling
@@ -336,12 +363,12 @@ const handleBarcodeDetected = async (barcodeText) => {
           <div className="space-y-4">
             {cartDetails.items.map(item => (
               <div key={item._id} className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg">
-                <Image 
-                  src={item.image[0]} 
-                  alt={item.name} 
-                  width={60} 
-                  height={60} 
-                  className="rounded-md object-cover flex-shrink-0 bg-white p-1" 
+                <Image
+                  src={item.image[0]}
+                  alt={item.name}
+                  width={60}
+                  height={60}
+                  className="rounded-md object-cover flex-shrink-0 bg-white p-1"
                 />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-800 line-clamp-1">{item.name}</p>
@@ -566,12 +593,12 @@ const handleBarcodeDetected = async (barcodeText) => {
                 className="bg-white rounded-xl border border-gray-200 p-4 text-center transition-all duration-300 hover:shadow-lg hover:border-indigo-500 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex flex-col justify-between group"
               >
                 <div className="relative w-full h-28">
-                  <Image 
-                    src={product.image[0]} 
-                    alt={product.name} 
-                    fill 
-                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw" 
-                    className="object-contain" 
+                  <Image
+                    src={product.image[0]}
+                    alt={product.name}
+                    fill
+                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                    className="object-contain"
                   />
                 </div>
                 <div className="mt-3">
