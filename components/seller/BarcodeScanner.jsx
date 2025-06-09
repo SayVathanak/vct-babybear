@@ -5,7 +5,7 @@ import Script from 'next/script'
 // SVG Icons
 const IconCamera = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2-2h-3l-2.5-3z"></path>
+    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3l2.5-3z"></path>
     <circle cx="12" cy="13" r="3"></circle>
   </svg>
 );
@@ -67,6 +67,7 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [isZxingLoaded, setIsZxingLoaded] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
+  const [scanningPaused, setScanningPaused] = useState(false);
 
   // Camera feature states
   const [cameras, setCameras] = useState([]);
@@ -163,6 +164,7 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
 
         setIsLoading(false);
         setIsScanning(true);
+        setScanningPaused(false);
       }
     } catch (err) {
       console.error("Camera error:", err);
@@ -195,28 +197,15 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
     }
   }, [selectedCameraId, cleanup]);
 
-  // Initialize camera on mount and when camera changes
-  useEffect(() => {
-    startCamera();
-    return () => cleanup(false); // Full cleanup on unmount
-  }, [startCamera]);
-
-  // Initialize reader when ZXing loads
-  useEffect(() => {
-    if (isZxingLoaded) {
-      initializeReader();
-    }
-  }, [isZxingLoaded, initializeReader]);
-
-  // Barcode scanning logic
-  useEffect(() => {
-    if (!isScanning || !isZxingLoaded || !videoRef.current || !canvasRef.current) {
+  // Start scanning function
+  const startScanning = useCallback(() => {
+    if (!isZxingLoaded || !videoRef.current || !canvasRef.current || !initializeReader()) {
       return;
     }
 
-    // Ensure reader is initialized
-    if (!initializeReader()) {
-      return;
+    // Clear any existing interval
+    if (scanningIntervalRef.current) {
+      clearInterval(scanningIntervalRef.current);
     }
 
     // Start scanning with interval-based approach for better reliability
@@ -225,7 +214,7 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
         const video = videoRef.current;
         const canvas = canvasRef.current;
         
-        if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) {
+        if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA || scanningPaused) {
           return;
         }
 
@@ -253,20 +242,15 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
               lastScanTimeRef.current = now;
               console.log('Barcode detected:', barcodeText);
               
-              // Temporarily pause scanning but keep reader alive
-              if (scanningIntervalRef.current) {
-                clearInterval(scanningIntervalRef.current);
-                scanningIntervalRef.current = null;
-              }
+              // Pause scanning temporarily
+              setScanningPaused(true);
               
               // Call the callback
               onBarcodeDetected(barcodeText);
               
-              // Resume scanning after 3 seconds to allow for another scan
+              // Resume scanning after 3 seconds
               setTimeout(() => {
-                if (isScanning) {
-                  setIsScanning(true); // This will trigger the effect again
-                }
+                setScanningPaused(false);
               }, 3000);
             }
           }
@@ -280,6 +264,31 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
         console.error('Scanning error:', scanError);
       }
     }, 100); // Scan every 100ms
+  }, [isZxingLoaded, onBarcodeDetected, debugMode, initializeReader, scanningPaused]);
+
+  // Initialize camera on mount and when camera changes
+  useEffect(() => {
+    startCamera();
+    return () => cleanup(false); // Full cleanup on unmount
+  }, [startCamera]);
+
+  // Initialize reader when ZXing loads
+  useEffect(() => {
+    if (isZxingLoaded) {
+      initializeReader();
+    }
+  }, [isZxingLoaded, initializeReader]);
+
+  // Start/stop scanning based on state
+  useEffect(() => {
+    if (isScanning && !error) {
+      startScanning();
+    } else {
+      if (scanningIntervalRef.current) {
+        clearInterval(scanningIntervalRef.current);
+        scanningIntervalRef.current = null;
+      }
+    }
 
     return () => {
       if (scanningIntervalRef.current) {
@@ -287,7 +296,7 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
         scanningIntervalRef.current = null;
       }
     };
-  }, [isScanning, isZxingLoaded, onBarcodeDetected, debugMode, initializeReader]);
+  }, [isScanning, error, startScanning]);
 
   // Event handlers
   const handleClose = useCallback(() => {
@@ -306,10 +315,10 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
 
   const handleToggleTorch = useCallback(async () => {
     if (!streamRef.current || !torchSupported) return;
-    
+
     const track = streamRef.current.getVideoTracks()[0];
     const newTorchState = !isTorchOn;
-    
+
     try {
       await track.applyConstraints({
         advanced: [{ torch: newTorchState }]
@@ -324,7 +333,12 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
     if (!isScanning) {
       setIsScanning(true);
     }
+    setScanningPaused(false);
   }, [isScanning]);
+
+  const handlePauseScan = useCallback(() => {
+    setScanningPaused(true);
+  }, []);
 
   return (
     <>
@@ -350,14 +364,18 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
               <span>Scan Barcode</span>
             </h2>
             <div className="flex items-center gap-2">
-              {/* Resume scan button */}
-              {!isScanning && !isLoading && !error && (
+              {/* Pause/Resume scan button */}
+              {isScanning && !isLoading && !error && (
                 <button
-                  onClick={handleResumeScan}
-                  className="p-2 rounded-full bg-green-600 hover:bg-green-700 text-white text-xs px-3"
-                  title="Resume Scanning"
+                  onClick={scanningPaused ? handleResumeScan : handlePauseScan}
+                  className={`p-2 rounded-full text-white text-xs px-3 transition-colors ${
+                    scanningPaused 
+                      ? 'bg-green-600 hover:bg-green-700' 
+                      : 'bg-yellow-600 hover:bg-yellow-700'
+                  }`}
+                  title={scanningPaused ? "Resume Scanning" : "Pause Scanning"}
                 >
-                  Resume
+                  {scanningPaused ? 'Resume' : 'Pause'}
                 </button>
               )}
               
@@ -450,7 +468,7 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
           )}
 
           {/* Scanning Overlay */}
-          {isScanning && !error && (
+          {isScanning && !error && !scanningPaused && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               {/* Scanning frame */}
               <div className="relative w-11/12 max-w-sm h-48">
@@ -465,11 +483,13 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
           )}
 
           {/* Paused Overlay */}
-          {!isScanning && !isLoading && !error && (
+          {(scanningPaused || (!isScanning && !isLoading && !error)) && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="bg-black bg-opacity-70 text-white p-4 rounded-lg text-center">
                 <p className="text-lg mb-2">Scanning Paused</p>
-                <p className="text-sm text-gray-300">Click Resume to continue scanning</p>
+                <p className="text-sm text-gray-300">
+                  {scanningPaused ? 'Resuming in a moment...' : 'Click Resume to continue scanning'}
+                </p>
               </div>
             </div>
           )}
@@ -482,6 +502,7 @@ const BarcodeScanner = ({ onBarcodeDetected, onClose }) => {
               <p>ZXing Loaded: {isZxingLoaded ? 'Yes' : 'No'}</p>
               <p>Reader: {codeReaderRef.current ? 'Ready' : 'Not Ready'}</p>
               <p>Scanning: {isScanning ? 'Yes' : 'No'}</p>
+              <p>Paused: {scanningPaused ? 'Yes' : 'No'}</p>
             </div>
           )}
         </div>
