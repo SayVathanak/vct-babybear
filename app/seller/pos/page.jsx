@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
@@ -25,11 +25,6 @@ const POS = () => {
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [barcodeLoading, setBarcodeLoading] = useState(false);
 
-  // ZXing scanner states
-  const [cameraStream, setCameraStream] = useState(null);
-  const [codeReader, setCodeReader] = useState(null);
-  const videoRef = useRef(null);
-
   // Fetch seller's products on component mount
   useEffect(() => {
     const fetchSellerProduct = async () => {
@@ -53,110 +48,6 @@ const POS = () => {
     };
     fetchSellerProduct();
   }, [user, getToken]);
-
-  // Cleanup camera stream on unmount
-  useEffect(() => {
-    return () => {
-      stopScanning();
-    };
-  }, []);
-
-  // Initialize ZXing scanner
-  const initializeZXingScanner = async () => {
-    try {
-      // Check if ZXing is loaded
-      if (!window.ZXing) {
-        toast.error('Barcode scanner library not loaded');
-        return;
-      }
-      
-      // Get camera stream
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      });
-      setCameraStream(stream);
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      
-      // Initialize code reader
-      const reader = new window.ZXing.BrowserMultiFormatReader();
-      setCodeReader(reader);
-      
-      // Start scanning
-      reader.decodeFromVideoDevice(undefined, videoRef.current, (result, err) => {
-        if (result) {
-          handleBarcodeDetected(result.text);
-          stopScanning();
-        }
-      });
-    } catch (error) {
-      console.error('Scanner initialization failed:', error);
-      toast.error('Failed to initialize camera scanner');
-    }
-  };
-
-  // Stop scanning
-  const stopScanning = () => {
-    if (codeReader) {
-      codeReader.reset();
-      setCodeReader(null);
-    }
-    
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
-      setCameraStream(null);
-    }
-    
-    setShowBarcodeScanner(false);
-  };
-
-  // Alternative method using canvas for manual decoding
-  const scanBarcodeFromVideo = async () => {
-    if (!videoRef.current || !window.ZXing) return false;
-    
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    const video = videoRef.current;
-    
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    try {
-      const codeReader = new window.ZXing.BrowserMultiFormatReader();
-      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-      const result = await codeReader.decodeFromImageData(imageData);
-      
-      if (result) {
-        handleBarcodeDetected(result.text);
-        return true;
-      }
-    } catch (error) {
-      // No barcode found
-    }
-    
-    return false;
-  };
-
-  // Continuous scanning loop
-  const startContinuousScanning = () => {
-    const scanLoop = async () => {
-      if (showBarcodeScanner) {
-        const found = await scanBarcodeFromVideo();
-        if (!found) {
-          setTimeout(scanLoop, 100); // Scan every 100ms
-        }
-      }
-    };
-    scanLoop();
-  };
 
   // Handle barcode detection from Scanbot scanner
   const handleBarcodeDetected = async (barcodeText) => {
@@ -235,13 +126,12 @@ const POS = () => {
       });
     } finally {
       setBarcodeLoading(false);
-      stopScanning(); // Ensure scanner is stopped
     }
   };
 
   // Handle barcode scanner close
   const handleBarcodeScannerClose = () => {
-    stopScanning();
+    setShowBarcodeScanner(false);
     setBarcodeLoading(false);
   };
 
@@ -273,14 +163,6 @@ const POS = () => {
       }
 
       setShowBarcodeScanner(true);
-      
-      // Try to initialize ZXing scanner first, fallback to original scanner
-      if (window.ZXing) {
-        await initializeZXingScanner();
-      } else {
-        // Fallback to original BarcodeScanner component
-        console.log('ZXing not available, using fallback scanner');
-      }
     } catch (error) {
       console.error('Error opening scanner:', error);
       toast.error('Failed to open camera scanner', {
@@ -554,7 +436,7 @@ const POS = () => {
 
   return (
     <div className="flex flex-col md:flex-row bg-gray-50 md:h-screen md:overflow-hidden">
-      {/* ZXing Barcode Scanner Modal */}
+      {/* Scanbot Barcode Scanner Modal */}
       {showBarcodeScanner && (
         <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
           <div className="relative w-full h-full max-w-2xl max-h-2xl">
@@ -567,23 +449,10 @@ const POS = () => {
             <div className="absolute top-4 left-4 z-10 bg-white bg-opacity-20 backdrop-blur-sm text-white px-4 py-2 rounded-lg">
               <p className="text-sm font-medium">Point camera at barcode to scan</p>
             </div>
-            
-            {/* ZXing Video Scanner */}
-            {window.ZXing ? (
-              <video 
-                ref={videoRef}
-                className="w-full h-full object-cover rounded-lg"
-                autoPlay
-                playsInline
-                muted
-              />
-            ) : (
-              /* Fallback to original BarcodeScanner component */
-              <BarcodeScanner
-                onBarcodeDetected={handleBarcodeDetected}
-                onClose={handleBarcodeScannerClose}
-              />
-            )}
+            <BarcodeScanner
+              onBarcodeDetected={handleBarcodeDetected}
+              onClose={handleBarcodeScannerClose}
+            />
           </div>
         </div>
       )}
