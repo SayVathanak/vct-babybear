@@ -2,7 +2,7 @@
 "use client";
 import React from "react";
 import { FiSearch, FiX, FiShoppingCart } from "react-icons/fi";
-import { CiReceipt } from "react-icons/ci";
+import { CiReceipt, CiSearch, CiCircleRemove, CiMenuBurger } from "react-icons/ci";
 import { BsBag } from "react-icons/bs";
 import { LuReceiptText } from "react-icons/lu";
 import { useAppContext } from "@/context/AppContext";
@@ -60,7 +60,7 @@ const NavActions = ({ isAllProductsPage, isHomePage, searchOpen, onToggleSearch,
                     className="focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors hover:bg-gray-100 touch-manipulation"
                     style={{ touchAction: 'manipulation' }} // Prevent iOS double-tap zoom
                 >
-                    {searchOpen ? <FiX size={22} /> : <FiSearch size={22} />}
+                    {searchOpen ? <CiCircleRemove size={22} /> : <CiSearch size={22} />}
                 </button>
             )}
 
@@ -71,7 +71,7 @@ const NavActions = ({ isAllProductsPage, isHomePage, searchOpen, onToggleSearch,
                 aria-label="Shopping cart"
                 style={{ touchAction: 'manipulation' }}
             >
-                <LuReceiptText size={22} />
+                <CiReceipt size={22} />
                 {cartCount > 0 && (
                     <span className="absolute -bottom-2 -right-2 bg-sky-300/90 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                         {cartCount}
