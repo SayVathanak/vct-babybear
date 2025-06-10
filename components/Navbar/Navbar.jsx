@@ -97,7 +97,7 @@ const Navbar = () => {
                         style={{ touchAction: 'manipulation' }}
                     >
                        <div className="transform -scale-x-100">
-                          <CiMenuFries size={22} />
+                          <CiMenuFries size={24} />
                         </div>
                     </button>
                 </div>
