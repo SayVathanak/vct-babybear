@@ -60,7 +60,7 @@ const NavActions = ({ isAllProductsPage, isHomePage, searchOpen, onToggleSearch,
                     className="focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors hover:bg-gray-100 touch-manipulation"
                     style={{ touchAction: 'manipulation' }} // Prevent iOS double-tap zoom
                 >
-                    {searchOpen ? <CiCircleRemove size={22} /> : <CiSearch size={22} />}
+                    {searchOpen ? <CiCircleRemove size={24} /> : <CiSearch size={24} />}
                 </button>
             )}
 
@@ -71,7 +71,7 @@ const NavActions = ({ isAllProductsPage, isHomePage, searchOpen, onToggleSearch,
                 aria-label="Shopping cart"
                 style={{ touchAction: 'manipulation' }}
             >
-                <CiReceipt size={22} />
+                <CiReceipt size={24} />
                 {cartCount > 0 && (
                     <span className="absolute -bottom-2 -right-2 bg-black text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                         {cartCount}
