@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useAppContext } from "@/context/AppContext";
 import { usePathname } from "next/navigation";
 import { FiMenu } from "react-icons/fi";
-import { CiMenuBurger } from "react-icons/ci";
+import { CiMenuFries, CiMenuBurger } from "react-icons/ci";
 import { AnimatePresence } from "framer-motion";
 
 import Logo from "./Logo";
@@ -96,7 +96,9 @@ const Navbar = () => {
                         className="focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors touch-manipulation"
                         style={{ touchAction: 'manipulation' }}
                     >
-                        <CiMenuBurger size={24} />
+                       <div className="transform -scale-x-100">
+                          <CiMenuFries size={22} />
+                        </div>
                     </button>
                 </div>
 
