@@ -238,22 +238,22 @@ const AddProduct = () => {
 
     // --- MAIN RENDER ---
     return (
-        <div className="flex-1 bg-gray-50 min-h-screen">
-            <div className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-4xl">
+        <div className="flex-1 min-h-screen">
+            <div className="container">
                 {/* Header */}
-                <div className="mb-6 sm:mb-8">
+                {/* <div className="mb-6 sm:mb-8">
                     <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">Add New Product</h1>
                     <p className="text-gray-500 text-sm sm:text-base mt-2">Fill in the details below to add a new product to your inventory.</p>
-                </div>
+                </div> */}
 
                 {/* Form Card */}
-                <form onSubmit={handleSubmit} className="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-lg space-y-6">
+                <form onSubmit={handleSubmit} className="bg-white p-4 space-y-6">
                     
                     {/* Image Upload Section */}
                     <div>
                         <label className="text-sm sm:text-base font-semibold text-gray-700 block mb-2">Product Images</label>
                         <p className="text-xs sm:text-sm text-gray-500 mb-3">Upload up to 4 images. First image will be primary.</p>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                        <div className="grid grid-cols-4 gap-3 sm:gap-4">
                             {[...Array(4)].map((_, index) => (
                                 <label key={index} htmlFor={`image${index}`} className="cursor-pointer">
                                     <input onChange={(e) => {
@@ -261,7 +261,7 @@ const AddProduct = () => {
                                         updatedFiles[index] = e.target.files[0];
                                         setFiles(updatedFiles);
                                     }} type="file" id={`image${index}`} hidden accept="image/*" />
-                                    <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 min-h-[80px] sm:min-h-[120px]">
+                                    <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center transition-all duration-200 min-h-[80px] sm:min-h-[120px]">
                                         {files[index] ? (
                                             <Image
                                                 src={URL.createObjectURL(files[index])}
@@ -272,7 +272,7 @@ const AddProduct = () => {
                                             />
                                         ) : (
                                             <div className="text-center text-gray-400">
-                                                <FaUpload className="mx-auto text-lg sm:text-2xl" />
+                                                <FaUpload className="mx-auto text-sm md:text-2xl" />
                                                 <span className="text-xs sm:text-sm mt-1 block">Upload</span>
                                             </div>
                                         )}
@@ -285,11 +285,11 @@ const AddProduct = () => {
                     {/* Product Information */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                         <div className="flex flex-col gap-2">
-                            <label className="font-semibold text-gray-700 text-sm sm:text-base" htmlFor="product-name">Product Name</label>
+                            <label className="font-semibold text-gray-700 text-sm sm:text-base" htmlFor="product-name">Product Name <span className="top-1 right-2 text-red-500">*</span></label>
                             <input
                                 id="product-name"
                                 type="text"
-                                placeholder="e.g., Organic Baby Formula"
+                                // placeholder="e.g., Enfagrow® PREMIUM Toddler"
                                 className="w-full p-3 sm:p-4 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-h-[44px] sm:min-h-[48px]"
                                 onChange={(e) => setName(e.target.value)}
                                 value={name}
@@ -317,14 +317,46 @@ const AddProduct = () => {
                         </div>
                     </div>
 
+                    {/* Pricing Section */}
+                    <div className="grid grid-cols-2 gap-4 sm:gap-6">
+                        <div className="flex flex-col gap-2">
+                            <label className="font-semibold text-gray-700 text-sm sm:text-base" htmlFor="product-price">Product Price <span className="top-1 right-2 text-red-500">*</span></label>
+                            <input
+                                id="product-price"
+                                type="number"
+                                step="0.01"
+                                placeholder="$0.00"
+                                className="w-full p-3 sm:p-4 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-h-[44px] sm:min-h-[48px]"
+                                onChange={(e) => setPrice(e.target.value)}
+                                value={price}
+                                required
+                            />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label className="font-semibold text-gray-700 text-sm sm:text-base" htmlFor="offer-price">
+                                Offer Price 
+                                <span className="text-xs sm:text-sm text-gray-500 font-normal ml-1">(Optional)</span>
+                            </label>
+                            <input
+                                id="offer-price"
+                                type="number"
+                                step="0.01"
+                                // placeholder="$0.00"
+                                className="w-full p-3 sm:p-4 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-h-[44px] sm:min-h-[48px]"
+                                onChange={(e) => setOfferPrice(e.target.value)}
+                                value={offerPrice}
+                            />
+                        </div>
+                    </div>
+
                     {/* Description */}
                     <div className="flex flex-col gap-2">
-                        <label className="font-semibold text-gray-700 text-sm sm:text-base" htmlFor="product-description">Product Description</label>
+                        <label className="font-semibold text-gray-700 text-sm sm:text-base" htmlFor="product-description">Product Description <span className="top-1 right-2 text-red-500">*</span></label>
                         <textarea
                             id="product-description"
                             rows={4}
                             className="w-full p-3 sm:p-4 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
-                            placeholder="Describe the product, its features, and benefits."
+                            // placeholder="Describe the product, its features, and benefits."
                             onChange={(e) => setDescription(e.target.value)}
                             value={description}
                             required
@@ -338,7 +370,7 @@ const AddProduct = () => {
                             <input
                                 id="product-barcode"
                                 type="text"
-                                placeholder="Enter 12 or 13-digit barcode"
+                                // placeholder="Enter 12 or 13-digit barcode"
                                 className="w-full p-3 sm:p-4 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-h-[44px] sm:min-h-[48px]"
                                 onChange={handleBarcodeChange}
                                 value={barcode}
@@ -391,14 +423,14 @@ const AddProduct = () => {
                     </div>
 
                     {/* Pricing Section */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    {/* <div className="grid grid-cols-2 gap-4 sm:gap-6">
                         <div className="flex flex-col gap-2">
                             <label className="font-semibold text-gray-700 text-sm sm:text-base" htmlFor="product-price">Product Price</label>
                             <input
                                 id="product-price"
                                 type="number"
                                 step="0.01"
-                                placeholder="0.00"
+                                placeholder="$0.00"
                                 className="w-full p-3 sm:p-4 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-h-[44px] sm:min-h-[48px]"
                                 onChange={(e) => setPrice(e.target.value)}
                                 value={price}
@@ -414,13 +446,13 @@ const AddProduct = () => {
                                 id="offer-price"
                                 type="number"
                                 step="0.01"
-                                placeholder="0.00 (defaults to regular price)"
+                                // placeholder="$0.00"
                                 className="w-full p-3 sm:p-4 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-h-[44px] sm:min-h-[48px]"
                                 onChange={(e) => setOfferPrice(e.target.value)}
                                 value={offerPrice}
                             />
                         </div>
-                    </div>
+                    </div> */}
                     
                     {/* Action Buttons */}
                     <div className="pt-6 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
