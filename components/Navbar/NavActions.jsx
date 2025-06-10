@@ -3,6 +3,7 @@
 import React from "react";
 import { FiSearch, FiX, FiShoppingCart } from "react-icons/fi";
 import { CiReceipt } from "react-icons/ci";
+import { BsBag } from "react-icons/bs";
 import { useAppContext } from "@/context/AppContext";
 
 const NavActions = ({ isAllProductsPage, isHomePage, searchOpen, onToggleSearch, onShowCart, searchInputRef }) => {
@@ -69,7 +70,7 @@ const NavActions = ({ isAllProductsPage, isHomePage, searchOpen, onToggleSearch,
                 aria-label="Shopping cart"
                 style={{ touchAction: 'manipulation' }}
             >
-                <CiReceipt size={22} />
+                <BsBag size={22} />
                 {cartCount > 0 && (
                     <span className="absolute -bottom-2 -right-2 bg-sky-300/90 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                         {cartCount}
