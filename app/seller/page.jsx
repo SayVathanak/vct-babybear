@@ -167,20 +167,29 @@ const AddProduct = () => {
         return (
             <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
                 <div className="bg-white p-4 sm:p-6 rounded-xl shadow-2xl max-w-sm sm:max-w-md w-full mx-auto">
-                    <div className="flex justify-between items-center mb-3 sm:mb-4">
+                    <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Product Barcode</h3>
-                        <button onClick={() => setShowBarcodeModal(false)} className="text-gray-400 hover:text-gray-700 p-1">
+                        <button 
+                            onClick={() => setShowBarcodeModal(false)} 
+                            className="text-gray-400 hover:text-gray-700 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        >
                             <FaTimes className="text-lg" />
                         </button>
                     </div>
-                    <div ref={barcodeRef} className="text-center p-3 sm:p-4 bg-gray-50 rounded-lg overflow-x-auto">
-                        <Barcode value={barcode} width={1} height={40} />
+                    <div ref={barcodeRef} className="text-center p-4 bg-gray-50 rounded-lg overflow-x-auto">
+                        <Barcode value={barcode} width={1} height={50} />
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-2 mt-4">
-                        <button onClick={handleDownload} className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors">
+                    <div className="flex flex-col sm:flex-row gap-3 mt-4">
+                        <button 
+                            onClick={handleDownload} 
+                            className="flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors min-h-[44px]"
+                        >
                             <FaDownload /> Download
                         </button>
-                        <button onClick={() => setShowBarcodeModal(false)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">
+                        <button 
+                            onClick={() => setShowBarcodeModal(false)} 
+                            className="px-4 py-3 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors min-h-[44px]"
+                        >
                             Close
                         </button>
                     </div>
@@ -208,7 +217,10 @@ const AddProduct = () => {
             <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
                 <div className="bg-white p-4 sm:p-6 rounded-xl shadow-2xl max-w-sm sm:max-w-md w-full mx-auto">
                     <div id="barcode-scanner" className="w-full"></div>
-                    <button onClick={() => setShowScanner(false)} className="w-full mt-3 px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">
+                    <button 
+                        onClick={() => setShowScanner(false)} 
+                        className="w-full mt-4 px-4 py-3 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors min-h-[44px]"
+                    >
                         Cancel Scan
                     </button>
                 </div>
@@ -226,23 +238,22 @@ const AddProduct = () => {
 
     // --- MAIN RENDER ---
     return (
-        // Responsive container with proper padding and margins
         <div className="flex-1 bg-gray-50 min-h-screen">
-            <div className="container mx-auto p-3 sm:p-4 lg:p-6 max-w-4xl">
-                {/* Responsive Header */}
-                <div className="mb-4 sm:mb-6">
-                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">Add New Product</h1>
-                    <p className="text-gray-500 text-xs sm:text-sm mt-1">Fill in the details below to add a new product to your inventory.</p>
+            <div className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-4xl">
+                {/* Header */}
+                <div className="mb-6 sm:mb-8">
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">Add New Product</h1>
+                    <p className="text-gray-500 text-sm sm:text-base mt-2">Fill in the details below to add a new product to your inventory.</p>
                 </div>
 
-                {/* Responsive Form Card */}
-                <form onSubmit={handleSubmit} className="bg-white p-2.5 sm:p-5 lg:p-6 rounded-xl shadow-lg space-y-3 sm:space-y-6">
+                {/* Form Card */}
+                <form onSubmit={handleSubmit} className="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-lg space-y-6">
                     
-                    {/* Responsive Image Upload Section */}
+                    {/* Image Upload Section */}
                     <div>
-                        <label className="text-sm font-semibold text-gray-700 block mb-1 sm:mb-2">Product Images</label>
-                        <p className="text-xs text-gray-500 mb-2">Upload up to 4 images. First image will be primary.</p>
-                        <div className="grid grid-cols-4 gap-1.5 sm:gap-3">
+                        <label className="text-sm sm:text-base font-semibold text-gray-700 block mb-2">Product Images</label>
+                        <p className="text-xs sm:text-sm text-gray-500 mb-3">Upload up to 4 images. First image will be primary.</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                             {[...Array(4)].map((_, index) => (
                                 <label key={index} htmlFor={`image${index}`} className="cursor-pointer">
                                     <input onChange={(e) => {
@@ -250,19 +261,19 @@ const AddProduct = () => {
                                         updatedFiles[index] = e.target.files[0];
                                         setFiles(updatedFiles);
                                     }} type="file" id={`image${index}`} hidden accept="image/*" />
-                                    <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 min-h-[60px] sm:min-h-[100px]">
+                                    <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 min-h-[80px] sm:min-h-[120px]">
                                         {files[index] ? (
                                             <Image
                                                 src={URL.createObjectURL(files[index])}
                                                 alt={`Product image ${index + 1}`}
-                                                width={60}
-                                                height={60}
+                                                width={80}
+                                                height={80}
                                                 className="object-cover w-full h-full rounded-lg"
                                             />
                                         ) : (
                                             <div className="text-center text-gray-400">
-                                                <FaUpload className="mx-auto text-sm sm:text-xl" />
-                                                <span className="text-[10px] sm:text-xs mt-0.5 sm:mt-1 block">Upload</span>
+                                                <FaUpload className="mx-auto text-lg sm:text-2xl" />
+                                                <span className="text-xs sm:text-sm mt-1 block">Upload</span>
                                             </div>
                                         )}
                                     </div>
@@ -271,25 +282,25 @@ const AddProduct = () => {
                         </div>
                     </div>
 
-                    {/* Responsive Product Information */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-4">
-                        <div className="flex flex-col gap-1">
-                            <label className="font-semibold text-gray-700 text-sm" htmlFor="product-name">Product Name</label>
+                    {/* Product Information */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                        <div className="flex flex-col gap-2">
+                            <label className="font-semibold text-gray-700 text-sm sm:text-base" htmlFor="product-name">Product Name</label>
                             <input
                                 id="product-name"
                                 type="text"
                                 placeholder="e.g., Organic Baby Formula"
-                                className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                className="w-full p-3 sm:p-4 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-h-[44px] sm:min-h-[48px]"
                                 onChange={(e) => setName(e.target.value)}
                                 value={name}
                                 required
                             />
                         </div>
-                        <div className="flex flex-col gap-1">
-                            <label className="font-semibold text-gray-700 text-sm" htmlFor="category">Category</label>
+                        <div className="flex flex-col gap-2">
+                            <label className="font-semibold text-gray-700 text-sm sm:text-base" htmlFor="category">Category</label>
                             <select
                                 id="category"
-                                className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
+                                className="w-full p-3 sm:p-4 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white min-h-[44px] sm:min-h-[48px]"
                                 onChange={(e) => setCategory(e.target.value)}
                                 value={category}
                             >
@@ -306,13 +317,13 @@ const AddProduct = () => {
                         </div>
                     </div>
 
-                    {/* Responsive Description */}
-                    <div className="flex flex-col gap-1">
-                        <label className="font-semibold text-gray-700 text-sm" htmlFor="product-description">Product Description</label>
+                    {/* Description */}
+                    <div className="flex flex-col gap-2">
+                        <label className="font-semibold text-gray-700 text-sm sm:text-base" htmlFor="product-description">Product Description</label>
                         <textarea
                             id="product-description"
-                            rows={3}
-                            className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+                            rows={4}
+                            className="w-full p-3 sm:p-4 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
                             placeholder="Describe the product, its features, and benefits."
                             onChange={(e) => setDescription(e.target.value)}
                             value={description}
@@ -320,107 +331,109 @@ const AddProduct = () => {
                         ></textarea>
                     </div>
                     
-                    {/* Responsive Barcode Section */}
-                    <div className="flex flex-col gap-1">
-                        <label className="font-semibold text-gray-700 text-sm" htmlFor="product-barcode">Barcode (EAN-13)</label>
-                        <div className="flex flex-col gap-1.5">
+                    {/* Barcode Section */}
+                    <div className="flex flex-col gap-2">
+                        <label className="font-semibold text-gray-700 text-sm sm:text-base" htmlFor="product-barcode">Barcode (EAN-13)</label>
+                        <div className="flex flex-col gap-3">
                             <input
                                 id="product-barcode"
                                 type="text"
                                 placeholder="Enter 12 or 13-digit barcode"
-                                className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                className="w-full p-3 sm:p-4 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-h-[44px] sm:min-h-[48px]"
                                 onChange={handleBarcodeChange}
                                 value={barcode}
                             />
-                            <div className="flex gap-1.5">
+                            <div className="grid grid-cols-2 gap-3">
                                 <button
                                     type="button"
                                     onClick={() => setShowScanner(true)}
-                                    className="flex items-center justify-center gap-1 px-2.5 py-1.5 bg-gray-700 text-white text-xs rounded-lg hover:bg-gray-800 transition-colors flex-1"
+                                    className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-700 text-white text-sm sm:text-base font-medium rounded-lg hover:bg-gray-800 transition-colors min-h-[44px] sm:min-h-[48px]"
                                 >
-                                    <FaBarcode /> Scan
+                                    <FaBarcode /> Scan Barcode
                                 </button>
                                 <button
                                     type="button"
                                     onClick={generateBarcode}
                                     disabled={isGeneratingBarcode}
-                                    className="flex items-center justify-center gap-1 px-2.5 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex-1"
+                                    className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white text-sm sm:text-base font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors min-h-[44px] sm:min-h-[48px]"
                                 >
-                                    <FaRandom /> {isGeneratingBarcode ? 'Gen...' : 'Generate'}
+                                    <FaRandom /> {isGeneratingBarcode ? 'Generating...' : 'Generate'}
                                 </button>
                             </div>
                         </div>
                         
-                        {/* Responsive Barcode Actions */}
-                        <div className="flex flex-wrap gap-1.5 mt-1 items-center">
+                        {/* Barcode Actions */}
+                        <div className="flex flex-wrap gap-3 mt-2 items-center">
                             <button
                                 type="button"
                                 onClick={generateBarcodeFromName}
                                 disabled={isGeneratingBarcode || !name.trim()}
-                                className="px-2 py-0.5 text-xs bg-green-100 text-green-800 rounded-full hover:bg-green-200 disabled:opacity-50 disabled:bg-gray-100 transition-colors"
+                                className="px-3 py-2 text-sm bg-green-100 text-green-800 rounded-full hover:bg-green-200 disabled:opacity-50 disabled:bg-gray-100 transition-colors min-h-[36px] font-medium"
                             >
-                                From Name
+                                Generate from Name
                             </button>
                             {barcode && (
                                 <>
                                     <button
                                         type="button"
                                         onClick={() => setShowBarcodeModal(true)}
-                                        className="px-2 py-0.5 text-xs bg-purple-100 text-purple-800 rounded-full hover:bg-purple-200 transition-colors"
+                                        className="px-3 py-2 text-sm bg-purple-100 text-purple-800 rounded-full hover:bg-purple-200 transition-colors min-h-[36px] font-medium"
                                     >
-                                        View
+                                        View Barcode
                                     </button>
-                                    <span className={`text-xs flex items-center gap-1 ${validateBarcode(barcode) ? 'text-green-600' : 'text-red-600'}`}>
+                                    <span className={`text-sm flex items-center gap-2 px-3 py-2 rounded-full font-medium ${validateBarcode(barcode) ? 'text-green-700 bg-green-100' : 'text-red-700 bg-red-100'}`}>
                                         {validateBarcode(barcode) ? <FaCheckCircle /> : <FaExclamationTriangle />}
-                                        {validateBarcode(barcode) ? 'Valid' : 'Invalid'}
+                                        {validateBarcode(barcode) ? 'Valid Format' : 'Invalid Format'}
                                     </span>
                                 </>
                             )}
                         </div>
                     </div>
 
-                    {/* Responsive Pricing Section */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                        <div className="flex flex-col gap-1">
-                            <label className="font-semibold text-gray-700 text-sm" htmlFor="product-price">Product Price</label>
+                    {/* Pricing Section */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        <div className="flex flex-col gap-2">
+                            <label className="font-semibold text-gray-700 text-sm sm:text-base" htmlFor="product-price">Product Price</label>
                             <input
                                 id="product-price"
                                 type="number"
-                                placeholder="$0.00"
-                                className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                step="0.01"
+                                placeholder="0.00"
+                                className="w-full p-3 sm:p-4 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-h-[44px] sm:min-h-[48px]"
                                 onChange={(e) => setPrice(e.target.value)}
                                 value={price}
                                 required
                             />
                         </div>
-                        <div className="flex flex-col gap-1">
-                            <label className="font-semibold text-gray-700 text-sm" htmlFor="offer-price">
+                        <div className="flex flex-col gap-2">
+                            <label className="font-semibold text-gray-700 text-sm sm:text-base" htmlFor="offer-price">
                                 Offer Price 
-                                <span className="text-xs text-gray-500 font-normal ml-1">(Optional)</span>
+                                <span className="text-xs sm:text-sm text-gray-500 font-normal ml-1">(Optional)</span>
                             </label>
                             <input
                                 id="offer-price"
                                 type="number"
-                                placeholder="$0.00"
-                                className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                step="0.01"
+                                placeholder="0.00 (defaults to regular price)"
+                                className="w-full p-3 sm:p-4 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-h-[44px] sm:min-h-[48px]"
                                 onChange={(e) => setOfferPrice(e.target.value)}
                                 value={offerPrice}
                             />
                         </div>
                     </div>
                     
-                    {/* Responsive Action Buttons */}
-                    <div className="pt-2 sm:pt-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 sm:gap-0">
+                    {/* Action Buttons */}
+                    <div className="pt-6 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
                         <button 
                             type="button" 
                             onClick={clearForm}
-                            className="flex items-center justify-center gap-2 px-3 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors order-2 sm:order-1 text-sm"
+                            className="flex items-center justify-center gap-2 px-4 py-3 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors order-2 sm:order-1 text-sm sm:text-base font-medium min-h-[48px] sm:min-h-[52px]"
                         >
-                            <FaTrash className="text-xs" /> Clear Form
+                            <FaTrash className="text-sm" /> Clear Form
                         </button>
                         <button 
                             type="submit"
-                            className="px-4 sm:px-8 py-2 sm:py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 order-1 sm:order-2 text-sm sm:text-base"
+                            className="px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 order-1 sm:order-2 text-sm sm:text-base min-h-[48px] sm:min-h-[52px]"
                         >
                             ADD PRODUCT
                         </button>
