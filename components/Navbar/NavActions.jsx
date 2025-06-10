@@ -73,7 +73,7 @@ const NavActions = ({ isAllProductsPage, isHomePage, searchOpen, onToggleSearch,
             >
                 <CiReceipt size={22} />
                 {cartCount > 0 && (
-                    <span className="absolute -bottom-2 -right-2 bg-sky-300/90 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    <span className="absolute -bottom-2 -right-2 bg-black text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                         {cartCount}
                     </span>
                 )}
