@@ -236,13 +236,13 @@ const AddProduct = () => {
                 </div>
 
                 {/* Responsive Form Card */}
-                <form onSubmit={handleSubmit} className="bg-white p-3 sm:p-5 lg:p-6 rounded-xl shadow-lg space-y-4 sm:space-y-6">
+                <form onSubmit={handleSubmit} className="bg-white p-2.5 sm:p-5 lg:p-6 rounded-xl shadow-lg space-y-3 sm:space-y-6">
                     
                     {/* Responsive Image Upload Section */}
                     <div>
-                        <label className="text-sm sm:text-base font-semibold text-gray-700 block mb-2">Product Images</label>
-                        <p className="text-xs text-gray-500 mb-3">Upload up to 4 images. First image will be primary.</p>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                        <label className="text-sm font-semibold text-gray-700 block mb-1 sm:mb-2">Product Images</label>
+                        <p className="text-xs text-gray-500 mb-2">Upload up to 4 images. First image will be primary.</p>
+                        <div className="grid grid-cols-4 gap-1.5 sm:gap-3">
                             {[...Array(4)].map((_, index) => (
                                 <label key={index} htmlFor={`image${index}`} className="cursor-pointer">
                                     <input onChange={(e) => {
@@ -250,19 +250,19 @@ const AddProduct = () => {
                                         updatedFiles[index] = e.target.files[0];
                                         setFiles(updatedFiles);
                                     }} type="file" id={`image${index}`} hidden accept="image/*" />
-                                    <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 min-h-[80px] sm:min-h-[100px]">
+                                    <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 min-h-[60px] sm:min-h-[100px]">
                                         {files[index] ? (
                                             <Image
                                                 src={URL.createObjectURL(files[index])}
                                                 alt={`Product image ${index + 1}`}
-                                                width={80}
-                                                height={80}
+                                                width={60}
+                                                height={60}
                                                 className="object-cover w-full h-full rounded-lg"
                                             />
                                         ) : (
                                             <div className="text-center text-gray-400">
-                                                <FaUpload className="mx-auto text-lg sm:text-xl" />
-                                                <span className="text-xs mt-1 block">Upload</span>
+                                                <FaUpload className="mx-auto text-sm sm:text-xl" />
+                                                <span className="text-[10px] sm:text-xs mt-0.5 sm:mt-1 block">Upload</span>
                                             </div>
                                         )}
                                     </div>
@@ -272,24 +272,24 @@ const AddProduct = () => {
                     </div>
 
                     {/* Responsive Product Information */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-                        <div className="flex flex-col gap-1 sm:gap-2">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-4">
+                        <div className="flex flex-col gap-1">
                             <label className="font-semibold text-gray-700 text-sm" htmlFor="product-name">Product Name</label>
                             <input
                                 id="product-name"
                                 type="text"
                                 placeholder="e.g., Organic Baby Formula"
-                                className="w-full p-2 sm:p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                 onChange={(e) => setName(e.target.value)}
                                 value={name}
                                 required
                             />
                         </div>
-                        <div className="flex flex-col gap-1 sm:gap-2">
+                        <div className="flex flex-col gap-1">
                             <label className="font-semibold text-gray-700 text-sm" htmlFor="category">Category</label>
                             <select
                                 id="category"
-                                className="w-full p-2 sm:p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
+                                className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
                                 onChange={(e) => setCategory(e.target.value)}
                                 value={category}
                             >
@@ -307,12 +307,12 @@ const AddProduct = () => {
                     </div>
 
                     {/* Responsive Description */}
-                    <div className="flex flex-col gap-1 sm:gap-2">
+                    <div className="flex flex-col gap-1">
                         <label className="font-semibold text-gray-700 text-sm" htmlFor="product-description">Product Description</label>
                         <textarea
                             id="product-description"
                             rows={3}
-                            className="w-full p-2 sm:p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+                            className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
                             placeholder="Describe the product, its features, and benefits."
                             onChange={(e) => setDescription(e.target.value)}
                             value={description}
@@ -321,54 +321,54 @@ const AddProduct = () => {
                     </div>
                     
                     {/* Responsive Barcode Section */}
-                    <div className="flex flex-col gap-1 sm:gap-2">
+                    <div className="flex flex-col gap-1">
                         <label className="font-semibold text-gray-700 text-sm" htmlFor="product-barcode">Barcode (EAN-13)</label>
-                        <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="flex flex-col gap-1.5">
                             <input
                                 id="product-barcode"
                                 type="text"
                                 placeholder="Enter 12 or 13-digit barcode"
-                                className="flex-1 p-2 sm:p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                 onChange={handleBarcodeChange}
                                 value={barcode}
                             />
-                            <div className="flex gap-2">
+                            <div className="flex gap-1.5">
                                 <button
                                     type="button"
                                     onClick={() => setShowScanner(true)}
-                                    className="flex items-center justify-center gap-1 px-3 py-2 sm:py-2.5 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-800 transition-colors whitespace-nowrap flex-1 sm:flex-initial"
+                                    className="flex items-center justify-center gap-1 px-2.5 py-1.5 bg-gray-700 text-white text-xs rounded-lg hover:bg-gray-800 transition-colors flex-1"
                                 >
-                                    <FaBarcode /> <span className="hidden xs:inline">Scan</span>
+                                    <FaBarcode /> Scan
                                 </button>
                                 <button
                                     type="button"
                                     onClick={generateBarcode}
                                     disabled={isGeneratingBarcode}
-                                    className="flex items-center justify-center gap-1 px-3 py-2 sm:py-2.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors whitespace-nowrap flex-1 sm:flex-initial"
+                                    className="flex items-center justify-center gap-1 px-2.5 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex-1"
                                 >
-                                    <FaRandom /> <span className="hidden xs:inline">{isGeneratingBarcode ? 'Gen...' : 'Generate'}</span>
+                                    <FaRandom /> {isGeneratingBarcode ? 'Gen...' : 'Generate'}
                                 </button>
                             </div>
                         </div>
                         
                         {/* Responsive Barcode Actions */}
-                        <div className="flex flex-wrap gap-2 mt-2 items-center">
+                        <div className="flex flex-wrap gap-1.5 mt-1 items-center">
                             <button
                                 type="button"
                                 onClick={generateBarcodeFromName}
                                 disabled={isGeneratingBarcode || !name.trim()}
-                                className="px-2 sm:px-2.5 py-1 text-xs bg-green-100 text-green-800 rounded-full hover:bg-green-200 disabled:opacity-50 disabled:bg-gray-100 transition-colors"
+                                className="px-2 py-0.5 text-xs bg-green-100 text-green-800 rounded-full hover:bg-green-200 disabled:opacity-50 disabled:bg-gray-100 transition-colors"
                             >
-                                Generate From Name
+                                From Name
                             </button>
                             {barcode && (
                                 <>
                                     <button
                                         type="button"
                                         onClick={() => setShowBarcodeModal(true)}
-                                        className="px-2 sm:px-2.5 py-1 text-xs bg-purple-100 text-purple-800 rounded-full hover:bg-purple-200 transition-colors"
+                                        className="px-2 py-0.5 text-xs bg-purple-100 text-purple-800 rounded-full hover:bg-purple-200 transition-colors"
                                     >
-                                        View Barcode
+                                        View
                                     </button>
                                     <span className={`text-xs flex items-center gap-1 ${validateBarcode(barcode) ? 'text-green-600' : 'text-red-600'}`}>
                                         {validateBarcode(barcode) ? <FaCheckCircle /> : <FaExclamationTriangle />}
@@ -380,29 +380,29 @@ const AddProduct = () => {
                     </div>
 
                     {/* Responsive Pricing Section */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                        <div className="flex flex-col gap-1 sm:gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+                        <div className="flex flex-col gap-1">
                             <label className="font-semibold text-gray-700 text-sm" htmlFor="product-price">Product Price</label>
                             <input
                                 id="product-price"
                                 type="number"
                                 placeholder="$0.00"
-                                className="w-full p-2 sm:p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                 onChange={(e) => setPrice(e.target.value)}
                                 value={price}
                                 required
                             />
                         </div>
-                        <div className="flex flex-col gap-1 sm:gap-2">
+                        <div className="flex flex-col gap-1">
                             <label className="font-semibold text-gray-700 text-sm" htmlFor="offer-price">
                                 Offer Price 
-                                <span className="text-xs text-gray-500 font-normal ml-1">(Optional - defaults to regular price)</span>
+                                <span className="text-xs text-gray-500 font-normal ml-1">(Optional)</span>
                             </label>
                             <input
                                 id="offer-price"
                                 type="number"
-                                placeholder="$0.00 (Leave empty to use regular price)"
-                                className="w-full p-2 sm:p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                placeholder="$0.00"
+                                className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                 onChange={(e) => setOfferPrice(e.target.value)}
                                 value={offerPrice}
                             />
@@ -410,17 +410,17 @@ const AddProduct = () => {
                     </div>
                     
                     {/* Responsive Action Buttons */}
-                    <div className="pt-3 sm:pt-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-0">
+                    <div className="pt-2 sm:pt-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 sm:gap-0">
                         <button 
                             type="button" 
                             onClick={clearForm}
-                            className="flex items-center justify-center gap-2 px-4 py-2 sm:py-2.5 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors order-2 sm:order-1"
+                            className="flex items-center justify-center gap-2 px-3 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors order-2 sm:order-1 text-sm"
                         >
-                            <FaTrash className="text-sm" /> Clear Form
+                            <FaTrash className="text-xs" /> Clear Form
                         </button>
                         <button 
                             type="submit"
-                            className="px-6 sm:px-8 py-2.5 sm:py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 order-1 sm:order-2"
+                            className="px-4 sm:px-8 py-2 sm:py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 order-1 sm:order-2 text-sm sm:text-base"
                         >
                             ADD PRODUCT
                         </button>
