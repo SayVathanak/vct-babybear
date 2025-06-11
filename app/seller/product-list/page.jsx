@@ -8,6 +8,7 @@ import Loading from "@/components/Loading";
 import axios from "axios";
 import toast from "react-hot-toast";
 import QuickEditModal from "@/components/seller/QuickEditModal";
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 const ProductList = () => {
   const { router, getToken, user } = useAppContext()
@@ -21,7 +22,7 @@ const ProductList = () => {
   const [sortBy, setSortBy] = useState("newest")
   const [isFiltersOpen, setIsFiltersOpen] = useState(false)
   const [deleteConfirmation, setDeleteConfirmation] = useState(null)
-  const [viewMode, setViewMode] = useState("table") // table, cards, grid
+  const [viewMode, setViewMode] = useState("cards") // table, cards, grid
 
   const categories = [
     { value: '', label: 'All Categories' },
@@ -214,11 +215,10 @@ const ProductList = () => {
     <div className="flex items-center bg-gray-100 rounded-lg p-1">
       <button
         onClick={() => setViewMode("table")}
-        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-          viewMode === "table"
+        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === "table"
             ? "bg-white text-gray-900 shadow-sm"
             : "text-gray-600 hover:text-gray-900"
-        }`}
+          }`}
         title="Table View"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -227,11 +227,10 @@ const ProductList = () => {
       </button>
       <button
         onClick={() => setViewMode("cards")}
-        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-          viewMode === "cards"
+        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === "cards"
             ? "bg-white text-gray-900 shadow-sm"
             : "text-gray-600 hover:text-gray-900"
-        }`}
+          }`}
         title="Card View"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -240,11 +239,10 @@ const ProductList = () => {
       </button>
       <button
         onClick={() => setViewMode("grid")}
-        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-          viewMode === "grid"
+        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === "grid"
             ? "bg-white text-gray-900 shadow-sm"
             : "text-gray-600 hover:text-gray-900"
-        }`}
+          }`}
         title="Grid View"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -293,8 +291,8 @@ const ProductList = () => {
           onClick={() => toggleAvailability(product._id, product.isAvailable)}
           disabled={updatingProductId === product._id}
           className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${product.isAvailable
-              ? 'bg-green-100 text-green-700 hover:bg-green-200'
-              : 'bg-red-100 text-red-700 hover:bg-red-200'
+            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+            : 'bg-red-100 text-red-700 hover:bg-red-200'
             }`}
         >
           {updatingProductId === product._id ? (
@@ -315,7 +313,7 @@ const ProductList = () => {
             className="flex items-center justify-center gap-1 px-2 py-1 bg-green-500 text-white text-xs rounded-md hover:bg-green-600 transition-colors"
             aria-label="View product"
           >
-            <span className="hidden sm:inline">View</span>
+            <span className="inline">View</span>
             <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
               <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
               <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
@@ -326,7 +324,7 @@ const ProductList = () => {
             className="flex items-center justify-center gap-1 px-2 py-1 bg-blue-500 text-white text-xs rounded-md hover:bg-blue-600 transition-colors"
             aria-label="Quick edit"
           >
-            <span className="hidden sm:inline">Edit</span>
+            <span className="inline">Edit</span>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
               <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
             </svg>
@@ -372,8 +370,8 @@ const ProductList = () => {
             onClick={() => toggleAvailability(product._id, product.isAvailable)}
             disabled={updatingProductId === product._id}
             className={`px-2 py-1 rounded-full text-xs font-medium transition-colors ${product.isAvailable
-                ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                : 'bg-red-100 text-red-700 hover:bg-red-200'
+              ? 'bg-green-100 text-green-700 hover:bg-green-200'
+              : 'bg-red-100 text-red-700 hover:bg-red-200'
               }`}
           >
             {updatingProductId === product._id ? (
@@ -387,18 +385,18 @@ const ProductList = () => {
           </button>
         </div>
       </div>
-      
+
       <div className="p-4">
         <p className={`text-sm font-medium line-clamp-2 mb-2 ${!product.isAvailable ? 'text-gray-400' : 'text-gray-800'}`}>
           {product.name}
         </p>
-        
+
         <div className="flex items-center mb-2">
           <span className="px-2 py-0.5 bg-blue-50 rounded-full text-xs font-medium text-blue-600">
             {categories.find(cat => cat.value === product.category)?.label || product.category}
           </span>
         </div>
-        
+
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center">
             <p className="text-lg font-medium text-gray-900">
@@ -411,7 +409,7 @@ const ProductList = () => {
             )}
           </div>
         </div>
-        
+
         <div className="flex gap-1">
           <button
             onClick={() => router.push(`/product/${product._id}`)}
@@ -526,67 +524,85 @@ const ProductList = () => {
 
               {/* Filters and Search */}
               <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  {/* Search and Category Filters */}
-                  <div className="flex flex-col sm:flex-row gap-3 flex-1">
-                    <div className="relative flex-1 max-w-md">
-                      <input
-                        type="text"
-                        placeholder="Search products or barcode..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                      />
-                      <svg className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                    </div>
-                    
-                    <select
-                      value={filterCategory}
-                      onChange={(e) => setFilterCategory(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white min-w-0 sm:min-w-[200px]"
-                    >
-                      {categories.map(category => (
-                        <option key={category.value} value={category.value}>
-                          {category.label}
-                        </option>
-                      ))}
-                    </select>
-
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white min-w-0 sm:min-w-[150px]"
-                    >
-                      <option value="newest">Newest First</option>
-                      <option value="oldest">Oldest First</option>
-                      <option value="name-asc">Name A-Z</option>
-                      <option value="name-desc">Name Z-A</option>
-                      <option value="price-asc">Price Low-High</option>
-                      <option value="price-desc">Price High-Low</option>
-                    </select>
-                  </div>
-
-                  {/* View Mode and Reset */}
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={resetFilters}
-                      className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-                    >
-                      Reset Filters
-                    </button>
-                    <ViewModeSelector />
-                  </div>
+                {/* Toggle Header */}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm md:text-lg font-medium text-gray-900">Filters & Search</h3>
+                  <button
+                    onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+                    className="flex items-center gap-2 px-3 py-1 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                  >
+                    {isFiltersOpen ? 'Hide Filters' : 'Show Filters'}
+                    {isFiltersOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
                 </div>
 
-                {/* Results Summary */}
-                <div className="mt-3 pt-3 border-t border-gray-100">
-                  <p className="text-sm text-gray-600">
-                    Showing {sortedProducts.length} of {products.length} products
-                    {searchTerm && ` for "${searchTerm}"`}
-                    {filterCategory && ` in ${categories.find(cat => cat.value === filterCategory)?.label}`}
-                  </p>
+                {/* Collapsible Content */}
+                <div className={`transition-all duration-300 ease-in-out ${isFiltersOpen
+                    ? 'max-h-96 opacity-100 mt-4'
+                    : 'max-h-0 opacity-0 overflow-hidden'
+                  }`}>
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    {/* Search and Category Filters */}
+                    <div className="flex flex-col sm:flex-row gap-3 flex-1">
+                      <div className="relative flex-1 max-w-md">
+                        <input
+                          type="text"
+                          placeholder="Search products or barcode..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                        <svg className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
+
+                      <select
+                        value={filterCategory}
+                        onChange={(e) => setFilterCategory(e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white min-w-0 sm:min-w-[200px]"
+                      >
+                        {categories.map(category => (
+                          <option key={category.value} value={category.value}>
+                            {category.label}
+                          </option>
+                        ))}
+                      </select>
+
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white min-w-0 sm:min-w-[150px]"
+                      >
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="name-asc">Name A-Z</option>
+                        <option value="name-desc">Name Z-A</option>
+                        <option value="price-asc">Price Low-High</option>
+                        <option value="price-desc">Price High-Low</option>
+                      </select>
+                    </div>
+
+                    {/* View Mode and Reset */}
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={resetFilters}
+                        className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                      >
+                        Reset Filters
+                      </button>
+                      <ViewModeSelector />
+                    </div>
+                  </div>
+
+                  {/* Results Summary */}
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-sm text-gray-600">
+                      Showing {sortedProducts.length} of {products.length} products
+                      {searchTerm && ` for "${searchTerm}"`}
+                      {filterCategory && ` in ${categories.find(cat => cat.value === filterCategory)?.label}`}
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -600,8 +616,8 @@ const ProductList = () => {
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
                   <p className="text-gray-500 mb-4">
-                    {products.length === 0 
-                      ? "You haven't added any products yet." 
+                    {products.length === 0
+                      ? "You haven't added any products yet."
                       : "Try adjusting your search or filter criteria."}
                   </p>
                   {products.length === 0 && (
@@ -679,11 +695,10 @@ const ProductList = () => {
                                   <button
                                     onClick={() => toggleAvailability(product._id, product.isAvailable)}
                                     disabled={updatingProductId === product._id}
-                                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                                      product.isAvailable
+                                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${product.isAvailable
                                         ? 'bg-green-100 text-green-700 hover:bg-green-200'
                                         : 'bg-red-100 text-red-700 hover:bg-red-200'
-                                    }`}
+                                      }`}
                                   >
                                     {updatingProductId === product._id ? (
                                       <span className="flex items-center">
@@ -748,7 +763,8 @@ const ProductList = () => {
 
                   {/* Card View (Mobile-friendly) */}
                   {viewMode === "cards" && (
-                    <div className="space-y-3">
+                    // <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       {sortedProducts.map((product) => (
                         <ProductCard key={product._id} product={product} />
                       ))}
@@ -757,7 +773,7 @@ const ProductList = () => {
 
                   {/* Grid View */}
                   {viewMode === "grid" && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                       {sortedProducts.map((product) => (
                         <ProductGrid key={product._id} product={product} />
                       ))}
