@@ -2,14 +2,18 @@
 import Navbar from '@/components/seller/Navbar'
 import Sidebar from '@/components/seller/Sidebar'
 import React from 'react'
+import { usePathname } from 'next/navigation'
 
 const Layout = ({ children }) => {
+  const pathname = usePathname()
+  const hideSidebar = pathname === '/seller/pos'
+
   return (
     <div>
-      <Navbar/>
+      <Navbar />
       <div className='flex w-full'>
-        <Sidebar />
-        {children}
+        {!hideSidebar && <Sidebar />}
+        <div className='flex-1'>{children}</div>
       </div>
     </div>
   )
