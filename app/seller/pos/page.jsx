@@ -7,6 +7,7 @@ import { useAppContext } from '@/context/AppContext';
 import Loading from '@/components/Loading';
 import BarcodeScanner from '@/components/seller/BarcodeScanner';
 import { FaSearch, FaShoppingCart, FaTrash, FaPlus, FaMinus, FaTimesCircle, FaCheckCircle, FaBarcode, FaTimes, FaArrowRight, FaCamera, FaExclamationTriangle, FaSpinner, FaQuestionCircle } from 'react-icons/fa';
+import { CiBarcode } from "react-icons/ci";
 import { Transition } from '@headlessui/react';
 
 const POS = () => {
@@ -601,23 +602,24 @@ const POS = () => {
       {/* Main Product Area */}
       <main className="w-full md:w-3/5 lg:w-2/3 flex flex-col pb-28 md:pb-0">
         <header className="p-4 md:p-6 border-b border-gray-200 bg-white">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="relative w-full">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                 <FaSearch />
               </span>
               <input
                 type="text"
-                placeholder="Search by product name or scan barcode…"
+                placeholder="Search product…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full border border-gray-200 rounded-lg py-3 pl-12 pr-4 text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
+        
             <button
               onClick={handleOpenScanner}
               disabled={barcodeLoading || showBarcodeScanner}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
+              className="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
               {barcodeLoading ? (
                 <>
@@ -626,7 +628,7 @@ const POS = () => {
                 </>
               ) : (
                 <>
-                  <FaCamera />
+                  <CiBarcode size={24} />
                   Scan Barcode
                 </>
               )}
