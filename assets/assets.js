@@ -1,4 +1,5 @@
 import logo from "./logo.svg";
+import excel_icon from "./excel_icon.svg"
 import tag from "./tag.svg";
 import blissful_logo from "./blissful_logo.svg";
 import line_chart from "./line_chart.png"
@@ -55,6 +56,7 @@ import product_details_page_apple_earphone_image4 from "./product_details_page_a
 import product_details_page_apple_earphone_image5 from "./product_details_page_apple_earphone_image5.png";
 
 export const assets = {
+  excel_icon,
   tag,
   logo,
   search_icon,

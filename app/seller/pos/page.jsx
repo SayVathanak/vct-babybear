@@ -307,7 +307,7 @@ const POS = () => {
   const handleCheckout = async () => {
     setShowSaleConfirmation(false);
     setProcessingOrder(true);
-    
+
     try {
       const token = await getToken();
       const orderPayload = {
@@ -371,7 +371,7 @@ const POS = () => {
               </div>
             ))}
           </div>
-          
+
           <div className="border-t border-gray-300 mt-4 pt-4">
             <div className="flex justify-between items-center text-lg font-bold">
               <span className="text-gray-800">Total:</span>
@@ -609,13 +609,13 @@ const POS = () => {
               </span>
               <input
                 type="text"
-                placeholder="Search product…"
+                placeholder="Search products…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full border border-gray-200 rounded-lg py-3 pl-12 pr-4 text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
-        
+
             <button
               onClick={handleOpenScanner}
               disabled={barcodeLoading || showBarcodeScanner}
@@ -637,7 +637,7 @@ const POS = () => {
         </header>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 md:gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2">
             {filteredProducts.map(product => (
               <button
                 key={product._id}
@@ -653,7 +653,8 @@ const POS = () => {
                     className="object-contain"
                   />
                 </div>
-                <div className="mt-3">
+                {/* Apply text-center to this div */}
+                <div className="mt-3 text-center">
                   <p className="font-semibold text-gray-800 text-sm line-clamp-2 h-10">{product.name}</p>
                   <p className="text-indigo-600 font-bold mt-2 text-lg">{currency}{product.offerPrice.toFixed(2)}</p>
                   {product.barcode && (

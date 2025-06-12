@@ -24,6 +24,7 @@ import {
 } from 'recharts';
 import TimeFrameSelector from "@/components/seller/TimeFrameSelector";
 import DateRangeSelector from "@/components/seller/DateRangeSelector";
+import * as XLSX from 'xlsx'; // Import xlsx library
 
 const Analytics = () => {
   const { currency, getToken, user } = useAppContext();
@@ -39,7 +40,7 @@ const Analytics = () => {
     averageOrderValue: 0,
     topProducts: [],
     salesByDate: [],
-    salesByCity: []
+    salesByState: [] // FIX: Changed from salesByCity to salesByState to match usage
   });
 
   const fetchSellerOrders = async () => {
@@ -73,8 +74,10 @@ const Analytics = () => {
     // Process top products
     const productMap = new Map();
     orders.forEach(order => {
-      order.items.forEach(item => {
-        const productId = item.product._id;
+      order.items?.forEach(item => { // Defensive check for items
+        const productId = item.product?._id;
+        if (!productId) return;
+
         const currentCount = productMap.get(productId) || { 
           name: item.product.name, 
           count: 0, 
@@ -102,7 +105,8 @@ const Analytics = () => {
     // Process sales by state
     const stateMap = new Map();
     orders.forEach(order => {
-      const state = order.address.state;
+      const state = order.address?.state;
+      if (!state) return;
       const currentTotal = stateMap.get(state) || 0;
       stateMap.set(state, currentTotal + order.amount);
     });
@@ -127,26 +131,23 @@ const Analytics = () => {
     const dateMap = new Map();
     
     // Filter orders based on time frame
-    const filteredOrders = orders.filter(order => {
+    const filtered = orders.filter(order => {
       const orderDate = new Date(order.date);
       if (timeFrame === 'weekly') {
-        // Last 7 days
         const weekAgo = new Date(today);
         weekAgo.setDate(today.getDate() - 7);
         return orderDate >= weekAgo;
       } else if (timeFrame === 'monthly') {
-        // Last 30 days
         const monthAgo = new Date(today);
         monthAgo.setDate(today.getDate() - 30);
         return orderDate >= monthAgo;
       } else {
-        // All time - no filter
         return true;
       }
     });
     
     // Group by date
-    filteredOrders.forEach(order => {
+    filtered.forEach(order => {
       const orderDate = new Date(order.date);
       let dateKey;
       
@@ -192,35 +193,30 @@ const Analytics = () => {
     const dateMap = new Map();
     
     // Filter orders based on custom date range
-    const filteredOrders = orders.filter(order => {
+    const filtered = orders.filter(order => {
       const orderDate = new Date(order.date);
       return orderDate >= startDate && orderDate <= endDate;
     });
     
-    // Determine appropriate date format based on range duration
     const rangeDuration = (endDate - startDate) / (1000 * 60 * 60 * 24); // duration in days
     let dateFormat;
     
     if (rangeDuration <= 14) {
-      // For ranges up to 2 weeks, show each day
       dateFormat = { month: 'short', day: 'numeric' };
     } else if (rangeDuration <= 90) {
-      // For ranges up to 3 months, group by week
       dateFormat = { month: 'short', day: 'numeric' };
     } else {
-      // For longer ranges, group by month
       dateFormat = { month: 'short', year: 'numeric' };
     }
     
     // Group by date
-    filteredOrders.forEach(order => {
+    filtered.forEach(order => {
       const orderDate = new Date(order.date);
       let dateKey;
       
       if (rangeDuration <= 14) {
         dateKey = orderDate.toLocaleDateString(undefined, dateFormat);
       } else if (rangeDuration <= 90) {
-        // Get week number
         const weekNumber = getWeekNumber(orderDate);
         dateKey = `Week ${weekNumber}`;
       } else {
@@ -268,14 +264,12 @@ const Analytics = () => {
       let ordersToProcess;
       
       if (customDateRange && customDateRange.startDate && customDateRange.endDate) {
-        // Filter orders by custom date range
         ordersToProcess = orders.filter(order => {
           const orderDate = new Date(order.date);
           return orderDate >= customDateRange.startDate && orderDate <= customDateRange.endDate;
         });
         setFilteredOrders(ordersToProcess);
       } else {
-        // Apply time frame filtering
         const today = new Date();
         
         if (selectedTimeFrame === 'weekly') {
@@ -295,14 +289,12 @@ const Analytics = () => {
             return orderDate >= monthAgo;
           });
         } else {
-          // All time
           ordersToProcess = orders;
         }
         
         setFilteredOrders(ordersToProcess);
       }
       
-      // Use setTimeout to prevent UI freezing during heavy data processing
       setTimeout(() => {
         processAnalytics(ordersToProcess);
         setLoading(false);
@@ -311,16 +303,81 @@ const Analytics = () => {
   }, [selectedTimeFrame, customDateRange, orders]);
 
   const handleTimeFrameChange = (timeFrame) => {
-    // Reset custom date range when switching to preset time frames
     setCustomDateRange(null);
     setSelectedTimeFrame(timeFrame);
   };
 
   const handleDateRangeChange = (dateRange) => {
-    // When applying a custom date range, set timeFrame to null to indicate custom mode
     setCustomDateRange(dateRange);
     setSelectedTimeFrame(null);
   };
+  
+  // Function to handle exporting data to Excel
+  const handleExportToExcel = () => {
+    // Create a new workbook
+    const wb = XLSX.utils.book_new();
+
+    // 1. Summary Sheet
+    const summaryData = [
+      ["Analytics Summary"],
+      [],
+      ["Metric", "Value"],
+      ["Total Sales", `${currency}${analytics.totalSales.toFixed(2)}`],
+      ["Total Orders", analytics.totalOrders],
+      ["Average Order Value", `${currency}${analytics.averageOrderValue}`],
+    ];
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+
+    // 2. Sales by Date Sheet
+    const salesByDateData = [
+      ["Date", "Amount"],
+      ...analytics.salesByDate.map(item => [item.date, item.amount])
+    ];
+    const wsSalesByDate = XLSX.utils.aoa_to_sheet(salesByDateData);
+    XLSX.utils.book_append_sheet(wb, wsSalesByDate, "Sales by Date");
+
+    // 3. Top Products Sheet
+    const topProductsData = [
+      ["Product Name", "Quantity Sold", "Revenue"],
+      ...analytics.topProducts.map(item => [item.name, item.count, item.revenue])
+    ];
+    const wsTopProducts = XLSX.utils.aoa_to_sheet(topProductsData);
+    XLSX.utils.book_append_sheet(wb, wsTopProducts, "Top Products");
+
+    // 4. Sales by Province Sheet
+    const salesByStateData = [
+      ["Province", "Total Sales"],
+      ...analytics.salesByState.map(item => [item.state, item.sales])
+    ];
+    const wsSalesByState = XLSX.utils.aoa_to_sheet(salesByStateData);
+    XLSX.utils.book_append_sheet(wb, wsSalesByState, "Sales by Province");
+
+    // 5. All Filtered Orders Sheet
+    const allOrdersData = [
+        ["Date", "Customer", "Items", "Amount", "Status", "Street", "City", "Province", "Postal Code", "Country", "Phone"],
+        ...filteredOrders.map(order => [
+            new Date(order.date).toLocaleDateString(),
+            order.address?.fullName,
+            order.items?.map(item => `${item.quantity} x ${item.product?.name}`).join(", ") ?? 'N/A', // FIX: Add optional chaining
+            order.amount,
+            order.status,
+            order.address?.street,
+            order.address?.city,
+            order.address?.state,
+            order.address?.postalCode,
+            order.address?.country,
+            order.address?.phone,
+        ])
+    ];
+    const wsAllOrders = XLSX.utils.aoa_to_sheet(allOrdersData);
+    XLSX.utils.book_append_sheet(wb, wsAllOrders, "All Orders in Range");
+
+    // Generate the Excel file and trigger a download
+    XLSX.writeFile(wb, "Sales_Analytics.xlsx");
+    toast.success("Successfully exported to Excel!");
+  };
+
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
@@ -333,14 +390,23 @@ const Analytics = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-y-3 gap-x-2 sm:gap-x-4">
             <h2 className="text-lg sm:text-3xl font-medium">Sales Analytics</h2>
             
-            <div className="flex flex-row justify-between sm:gap-3">
-              {/* Time Frame Selector */}
-              <TimeFrameSelector 
-                selectedTimeFrame={selectedTimeFrame}
-                onTimeFrameChange={handleTimeFrameChange}
-              />
-              {/* Date Range Selector */}
-              <DateRangeSelector onDateRangeChange={handleDateRangeChange} />
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between sm:gap-3">
+              {/* Time Frame and Date Selectors */}
+              <div className="flex flex-row justify-between sm:gap-3">
+                <TimeFrameSelector 
+                  selectedTimeFrame={selectedTimeFrame}
+                  onTimeFrameChange={handleTimeFrameChange}
+                />
+                <DateRangeSelector onDateRangeChange={handleDateRangeChange} />
+              </div>
+              {/* Export Button */}
+              <button
+                onClick={handleExportToExcel}
+                className="mt-2 sm:mt-0 w-full sm:w-auto px-3 py-2 text-xs sm:text-sm text-black bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 flex items-center justify-center gap-2"
+              >
+                <Image src={assets.excel_icon} alt="Export" width={16} height={16} />
+                Export
+              </button>
             </div>
           </div>
 
@@ -412,7 +478,7 @@ const Analytics = () => {
                       dataKey="name" 
                       width={80} 
                       tick={{fontSize: 9}}
-                      tickFormatter={(value) => value.length > 12 ? `${value.substring(0, 12)}...` : value}
+                      tickFormatter={(value) => value && value.length > 12 ? `${value.substring(0, 12)}...` : value}
                     />
                     <Tooltip formatter={(value, name) => [
                       name === 'revenue' ? `${currency}${value}` : value,
@@ -438,10 +504,10 @@ const Analytics = () => {
                     cy="50%"
                     outerRadius={60}
                     innerRadius={0}
-                    label={(entry) => entry.state.length > 10 ? `${entry.state.substring(0, 5)}...` : entry.state}
+                    label={(entry) => entry.state && entry.state.length > 10 ? `${entry.state.substring(0, 5)}...` : entry.state}
                     labelLine={false}
                   >
-                    {analytics.salesByState.map((entry, index) => (
+                    {analytics.salesByState?.map((entry, index) => ( // FIX: Add optional chaining
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -481,10 +547,10 @@ const Analytics = () => {
                         {new Date(order.date).toLocaleDateString()}
                       </td>
                       <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap truncate max-w-[100px] sm:max-w-none">
-                        {order.address.fullName}
+                        {order.address?.fullName}
                       </td>
                       <td className="px-2 sm:px-6 py-2 sm:py-4 max-md:hidden truncate max-w-[100px] md:max-w-[200px] lg:max-w-none">
-                        {order.items.map((item) => item.product.name).join(", ")}
+                        {order.items?.map((item) => item.product?.name).join(", ") ?? 'N/A'}
                       </td>
                       <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
                         {currency}{order.amount}
