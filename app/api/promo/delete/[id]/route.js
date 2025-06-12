@@ -44,7 +44,7 @@ export async function DELETE(request, { params }) {
 
     return NextResponse.json({
       success: true,
-      message: "Promo code deleted successfully by a seller", // Updated message for clarity
+      message: "Promo code removed", // Updated message for clarity
     });
 
   } catch (error) {
