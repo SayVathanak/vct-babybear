@@ -25,13 +25,13 @@ const DateRangeSelector = ({ onDateRangeChange }) => {
       <button
         type="button"
         onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-        className="flex items-center justify-center px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        className="flex items-center justify-center w-full px-2 py-2 sm:px-3 bg-gray-50 rounded-md text-xs font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
       >
         {/* Filter Icon */}
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
-        <span className="hidden md:inline">
+        <span className="hidden md:inline whitespace-nowrap">
           {startDate && endDate 
             ? `${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`
             : "Custom Date Range"}
