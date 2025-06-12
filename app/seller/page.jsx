@@ -673,9 +673,47 @@ const AddProduct = () => {
     };
 
     // Scanner event handlers
-    const handleScanSuccess = (decodedText) => {
+    // const handleScanSuccess = (decodedText) => {
+    //     setBarcode(decodedText);
+    //     toast.success(`Barcode scanned: ${decodedText}`);
+    // };
+
+    const handleScanSuccess = async (decodedText) => {
         setBarcode(decodedText);
         toast.success(`Barcode scanned: ${decodedText}`);
+
+        // Show loading indicator
+        toast.loading('Searching for product information...');
+
+        try {
+            // Make an API call to a product database using the barcode
+            const response = await axios.get(`/api/product/lookup/${decodedText}`);
+
+            if (response.data && response.data.success) {
+                // Auto-populate fields with retrieved data
+                setName(response.data.product.name || '');
+                setDescription(response.data.product.description || '');
+
+                // If there's an image URL, you could create a File object from it
+                if (response.data.product.imageUrl) {
+                    const imageResponse = await fetch(response.data.product.imageUrl);
+                    const blob = await imageResponse.blob();
+                    const file = new File([blob], "product-image.jpg", { type: blob.type });
+                    setFiles([file]);
+                }
+
+                // Leave price, offer price, and category empty as specified
+                toast.dismiss();
+                toast.success('Product information retrieved successfully');
+            } else {
+                toast.dismiss();
+                toast.warning('Product not found in database. Please enter details manually.');
+            }
+        } catch (error) {
+            toast.dismiss();
+            toast.error('Error retrieving product information');
+            console.error('Product lookup error:', error);
+        }
     };
 
     const handleCloseScanner = () => {
@@ -746,6 +784,7 @@ const AddProduct = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Left Column */}
                     <div className="space-y-6">
+
                         {/* Image Upload */}
                         <div>
                             <label className="block text-gray-700 font-medium mb-2">Product Images</label>
@@ -754,7 +793,15 @@ const AddProduct = () => {
                                     type="file"
                                     multiple
                                     accept="image/*"
-                                    onChange={(e) => setFiles(Array.from(e.target.files))}
+                                    onChange={(e) => {
+                                        const newFiles = Array.from(e.target.files);
+                                        if (newFiles.length > 0) {
+                                            // Append new files to existing files
+                                            setFiles(prevFiles => [...prevFiles, ...newFiles]);
+                                            // Clear the input so the same files can be selected again if needed
+                                            e.target.value = '';
+                                        }
+                                    }}
                                     className="hidden"
                                     id="image-upload"
                                 />
@@ -766,17 +813,37 @@ const AddProduct = () => {
 
                                 {files.length > 0 && (
                                     <div className="mt-4">
-                                        <p className="text-sm text-green-600 font-medium">
-                                            {files.length} file(s) selected
-                                        </p>
-                                        <div className="grid grid-cols-4 gap-3 mt-3">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <p className="text-sm text-green-600 font-medium">
+                                                {files.length} file(s) selected
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={() => setFiles([])}
+                                                className="text-xs text-red-500 hover:text-red-700 font-medium"
+                                            >
+                                                Clear All
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-4 gap-3">
                                             {files.map((file, index) => (
-                                                <div key={index} className="relative">
+                                                <div key={index} className="relative group">
                                                     <img
                                                         src={URL.createObjectURL(file)}
                                                         alt={`preview ${index}`}
                                                         className="w-20 h-20 object-cover rounded-lg border"
                                                     />
+                                                    {/* Delete button for individual image */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
+                                                        }}
+                                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        title="Remove image"
+                                                    >
+                                                        ×
+                                                    </button>
                                                 </div>
                                             ))}
                                         </div>
