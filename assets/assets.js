@@ -1,5 +1,5 @@
 import logo from "./logo.svg";
-import excel_icon from "./excel_icon.svg"
+import excel_icon from "./excel_icon.svg";
 import tag from "./tag.svg";
 import blissful_logo from "./blissful_logo.svg";
 import line_chart from "./line_chart.png"
