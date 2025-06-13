@@ -195,29 +195,31 @@ const ProductCard = ({ product }) => {
                             </button>
                         </div>
                     ) : (
-                        <div className="space-y-2">
-                            {/* Price row */}
-                            <div className="flex items-baseline gap-1 sm:gap-2 text-gray-900">
-                                <span className="text-base sm:text-lg font-semibold">
-                                    {currency}{product.offerPrice || product.price}
-                                </span>
-                                {product.offerPrice && product.offerPrice < product.price && (
-                                    <span className="text-xs sm:text-sm text-gray-400 line-through">
-                                        {currency}{product.price}
+                        <div className="grid grid-cols-[1fr_1.5fr] sm:grid-cols-[1fr_2fr] gap-2 sm:gap-3 items-center">
+                            {/* Price column - 1fr on mobile, 1fr on desktop */}
+                            <div className="flex flex-col min-w-0">
+                                <div className="flex flex-col sm:flex-row sm:items-baseline gap-0 sm:gap-2 text-gray-900">
+                                    <span className="text-base sm:text-lg font-semibold truncate">
+                                        {currency}{product.offerPrice || product.price}
                                     </span>
-                                )}
+                                    {product.offerPrice && product.offerPrice < product.price && (
+                                        <span className="text-xs sm:text-sm text-gray-400 line-through">
+                                            {currency}{product.price}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
 
-                            {/* Quantity selector row */}
-                            <div className="quantity-selector flex items-center justify-center bg-gray-50 rounded-xl p-1 max-w-full">
+                            {/* Quantity selector column - 1.5fr on mobile, 2fr on desktop */}
+                            <div className="quantity-selector flex items-center justify-between bg-gray-50 rounded-xl p-1">
                                 <button
                                     onClick={(e) => decreaseQty(product._id, currentQuantity, e)}
-                                    className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-gray-600 hover:bg-white rounded-lg transition-colors active:scale-95 flex-shrink-0"
+                                    className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-gray-600 hover:bg-white rounded-lg transition-colors active:scale-95 flex-shrink-0"
                                     aria-label="Decrease quantity"
                                 >
-                                    <FaMinus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                    <FaMinus className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
                                 </button>
-                                <span className="px-3 sm:px-4 font-semibold text-gray-800 text-sm sm:text-base min-w-0 text-center">
+                                <span className="px-2 sm:px-3 font-semibold text-gray-800 text-sm sm:text-base min-w-0 text-center">
                                     {currentQuantity}
                                 </span>
                                 <button
@@ -226,10 +228,10 @@ const ProductCard = ({ product }) => {
                                         e.preventDefault();
                                         increaseQty(product._id, 1, e);
                                     }}
-                                    className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-gray-600 hover:bg-white rounded-lg transition-colors active:scale-95 flex-shrink-0"
+                                    className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-gray-600 hover:bg-white rounded-lg transition-colors active:scale-95 flex-shrink-0"
                                     aria-label="Increase quantity"
                                 >
-                                    <FaPlus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                    <FaPlus className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
                                 </button>
                             </div>
                         </div>
