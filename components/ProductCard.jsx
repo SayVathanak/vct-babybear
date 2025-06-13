@@ -203,7 +203,7 @@ const ProductCard = ({ product }) => {
                                         {currency}{product.offerPrice || product.price}
                                     </span>
                                     {product.offerPrice && product.offerPrice < product.price && (
-                                        <span className="text-sm text-gray-400 line-through">
+                                        <span className="text-xs text-gray-400 line-through">
                                             {currency}{product.price}
                                         </span>
                                     )}
