@@ -71,7 +71,7 @@ const ProductCard = ({ product }) => {
         <div className="flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
             {/* Product image container */}
             <div
-                className={`cursor-pointer relative bg-gray-50 w-full h-48 flex items-center justify-center overflow-hidden ${!isAvailable ? 'opacity-70' : ''}`}
+                className={`cursor-pointer relative bg-white w-full h-48 flex items-center justify-center overflow-hidden ${!isAvailable ? 'opacity-70' : ''}`}
                 onClick={handleCardClick}
             >
                 {/* Discount badge */}
@@ -138,9 +138,9 @@ const ProductCard = ({ product }) => {
                             </div>
                             <button
                                 disabled
-                                className="px-4 py-2 text-gray-400 bg-gray-100 rounded-xl text-sm font-medium cursor-not-allowed"
+                                className="px-2 py-2 text-gray-400 bg-gray-100 rounded-xl text-sm font-medium cursor-not-allowed"
                             >
-                                Not Available
+                                Unavailable
                             </button>
                         </div>
                     ) : !isInCart ? (
@@ -160,11 +160,10 @@ const ProductCard = ({ product }) => {
                             <button
                                 onClick={handleAddToCart}
                                 disabled={isAddingToCart}
-                                className={`p-2 rounded-full text-sm font-medium flex items-center transition-all duration-200 ${
-                                    isAddingToCart
+                                className={`p-2 rounded-full text-sm font-medium flex items-center transition-all duration-200 ${isAddingToCart
                                         ? "bg-gray-100 text-gray-400"
                                         : "bg-black text-white hover:bg-gray-800"
-                                }`}
+                                    }`}
                             >
                                 {isAddingToCart ? (
                                     <span className="flex items-center">
@@ -196,8 +195,8 @@ const ProductCard = ({ product }) => {
                             </button>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 gap-3 items-center">
-                            {/* Price column */}
+                        <div className="grid grid-cols-[1fr_2fr] gap-3 items-center">
+                            {/* Price column - 1fr */}
                             <div className="flex flex-col">
                                 <div className="flex items-baseline gap-2 text-gray-900">
                                     <span className="text-lg">
@@ -210,8 +209,8 @@ const ProductCard = ({ product }) => {
                                     )}
                                 </div>
                             </div>
-                            
-                            {/* Quantity selector column */}
+
+                            {/* Quantity selector column - 2fr */}
                             <div className="quantity-selector flex items-center justify-between bg-gray-50 rounded-xl p-1">
                                 <button
                                     onClick={(e) => decreaseQty(product._id, currentQuantity, e)}
