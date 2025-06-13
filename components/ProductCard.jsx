@@ -138,7 +138,7 @@ const ProductCard = ({ product }) => {
                             </div>
                             <button
                                 disabled
-                                className="px-2 py-2 text-gray-400 bg-gray-100 rounded-xl text-sm font-medium cursor-not-allowed"
+                                className="px-2 py-2 text-gray-400 text-sm font-medium cursor-not-allowed"
                             >
                                 Unavailable
                             </button>
