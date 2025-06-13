@@ -164,7 +164,7 @@ const RelatedProducts = ({
                     ))}
                 </div>
 
-                {relatedProducts.length >= maxProducts && (
+                {/* {relatedProducts.length >= maxProducts && (
                     <div className="text-center mt-6">
                         <button 
                             onClick={() => window.location.href = `/category/${currentProduct.category}`}
@@ -176,7 +176,7 @@ const RelatedProducts = ({
                             </svg>
                         </button>
                     </div>
-                )}
+                )} */}
             </div>
         </div>
     );

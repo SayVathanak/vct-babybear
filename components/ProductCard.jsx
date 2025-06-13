@@ -3,9 +3,9 @@ import React from "react";
 import { assets } from "@/assets/assets";
 import Image from "next/image";
 import { useAppContext } from "@/context/AppContext";
-import { FaShoppingCart, FaChevronLeft, FaPlus, FaMinus } from "react-icons/fa";
-import { CiShoppingCart } from "react-icons/ci";
-import { IoMdCheckmarkCircleOutline } from "react-icons/io";
+import { FaPlus, FaMinus } from "react-icons/fa";
+import { IoMdAdd } from "react-icons/io";
+import { IoHeartOutline, IoHeart } from "react-icons/io5";
 import { MdOutlineError } from "react-icons/md";
 import toast from "react-hot-toast";
 
@@ -29,7 +29,7 @@ const ProductCard = ({ product }) => {
 
     const currentQuantity = cartItems[product._id] || 0;
     const isInCart = currentQuantity > 0;
-    const isAvailable = product.isAvailable !== false; // If undefined, treat as available
+    const isAvailable = product.isAvailable !== false;
 
     // Calculate discount percentage
     const calculateDiscount = () => {
@@ -41,8 +41,8 @@ const ProductCard = ({ product }) => {
     const discountPercentage = calculateDiscount();
 
     const handleAddToCart = (e) => {
-        e.stopPropagation(); // Prevent event bubbling
-        e.preventDefault(); // Prevent default behavior
+        e.stopPropagation();
+        e.preventDefault();
 
         if (!isAvailable) {
             toast.error("This product is currently not available");
@@ -53,13 +53,10 @@ const ProductCard = ({ product }) => {
         toast.success("Added to cart");
     };
 
-    // Handle card click to navigate to product detail
     const handleCardClick = (e) => {
-        // Only navigate if not clicking on interactive elements
         if (e.target.closest('button') || e.target.closest('.quantity-selector')) {
             return;
         }
-
         router.push("/product/" + product._id);
         scrollTo(0, 0);
     };
@@ -71,161 +68,171 @@ const ProductCard = ({ product }) => {
     };
 
     return (
-        <div className="flex flex-col rounded-lg overflow-hidden bg-white shadow-md">
+        <div className="flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
             {/* Product image container */}
             <div
-                className={`cursor-pointer relative bg-white w-full h-52 flex items-center justify-center overflow-hidden ${!isAvailable ? 'opacity-70' : ''
-                    }`}
+                className={`cursor-pointer relative bg-gray-50 w-full h-48 flex items-center justify-center overflow-hidden ${!isAvailable ? 'opacity-70' : ''}`}
                 onClick={handleCardClick}
             >
                 {/* Discount badge */}
                 {discountPercentage > 0 && (
-                    <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold z-10">
-                        {discountPercentage}% OFF
+                    <div className="absolute top-3 left-3 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold z-10">
+                        -{discountPercentage}%
                     </div>
                 )}
+
+                {/* Wishlist button */}
+                <button
+                    className="absolute top-3 right-3 bg-white p-2 rounded-full shadow-sm hover:shadow-md transition-shadow duration-200 z-10"
+                    onClick={handleWishlist}
+                    aria-label="Add to wishlist"
+                >
+                    <IoHeartOutline className="h-4 w-4 text-gray-600 hover:text-red-500 transition-colors" />
+                </button>
 
                 {/* Product image */}
                 <Image
                     src={product.image?.[0] || "/fallback-image.jpg"}
                     alt={product.name || "Product Image"}
-                    className="object-contain w-full md:w-4/5 md:h-4/5"
-                    width={800}
-                    height={800}
+                    className="object-contain w-full h-full p-4"
+                    width={400}
+                    height={400}
                 />
 
-                {/* Wishlist button */}
-                <button
-                    className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.1)]"
-                    onClick={handleWishlist}
-                    aria-label="Add to wishlist"
-                >
-                    <Image
-                        className="h-3 w-3"
-                        src={assets.heart_icon}
-                        alt="Add to wishlist"
-                    />
-                </button>
+                {/* Out of stock overlay */}
+                {!isAvailable && (
+                    <div className="absolute inset-0 bg-white bg-opacity-80 flex items-center justify-center">
+                        <div className="text-red-500 text-sm font-medium flex items-center">
+                            <MdOutlineError className="mr-1" />
+                            Out of Stock
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Product info section */}
-            <div className="flex flex-col p-3 flex-grow">
+            <div className="flex flex-col p-4 flex-grow">
                 {/* Product name */}
                 <h3
-                    className={`text-md md:text-base font-medium mb-1 line-clamp-2 cursor-pointer ${!isAvailable ? 'text-gray-400' : 'text-gray-800'
-                        }`}
+                    className={`text-sm font-medium mb-2 line-clamp-2 cursor-pointer leading-relaxed ${!isAvailable ? 'text-gray-400' : 'text-gray-800'}`}
                     onClick={handleCardClick}
                 >
                     {product.name}
                 </h3>
 
-                {/* Product description - hidden on small screens */}
-                {/* <p className="w-full text-xs text-gray-500 max-sm:hidden line-clamp-1 mb-2">
-                    {product.description || "No description available"}
-                </p> */}
-
-                {/* Price and availability */}
-                <div className="flex items-center justify-between mb-3 mt-auto">
-                    <div className="flex flex-col">
-                        <div className={`flex items-center ${!isAvailable ? 'text-gray-400' : 'text-gray-900'}`}>
-                            <span className="text-base font-medium">
-                                {currency}
-                                {product.offerPrice || product.price}
-                            </span>
-                            {product.offerPrice < product.price && (
-                                <span className="text-xs font-normal text-red-400 line-through ml-2">
-                                    ${product.price}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Availability indicator */}
-                    {isAvailable ? (
-                        <div className="text-green-600 text-xs flex items-center">
-                            <IoMdCheckmarkCircleOutline className="mr-1" />
-                            <span>In Stock</span>
-                        </div>
-                    ) : (
-                        <div className="text-red-500 text-xs flex items-center">
-                            <MdOutlineError className="mr-1" />
-                            <span>Out of Stock</span>
-                        </div>
-                    )}
-                </div>
-
-                {/* Add to cart or quantity selector */}
-                <div className="w-full h-[38px]">
+                {/* Price and Add to Cart / Quantity Selector */}
+                <div className="mt-auto">
                     {!isAvailable ? (
-                        <button
-                            disabled
-                            className="w-full px-4 py-2 text-gray-400 bg-gray-100 rounded-md text-sm flex items-center justify-center cursor-not-allowed"
-                        >
-                            Not Available
-                        </button>
+                        <div className="flex items-center justify-between">
+                            <div className="flex flex-col">
+                                <div className="flex items-baseline gap-2 text-gray-400">
+                                    <span className="text-lg">
+                                        {currency}{product.offerPrice || product.price}
+                                    </span>
+                                    {product.offerPrice && product.offerPrice < product.price && (
+                                        <span className="text-sm text-gray-400 line-through">
+                                            {currency}{product.price}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            <button
+                                disabled
+                                className="px-4 py-2 text-gray-400 bg-gray-100 rounded-xl text-sm font-medium cursor-not-allowed"
+                            >
+                                Not Available
+                            </button>
+                        </div>
                     ) : !isInCart ? (
-                        <button
-                            onClick={handleAddToCart}
-                            disabled={isAddingToCart}
-                            className={`w-full px-4 py-2 text-sky-300 rounded-md text-sm flex items-center justify-center ${isAddingToCart
-                                ? "bg-white border border-sky-200"
-                                : "bg-white border border-sky-200"
+                        <div className="flex items-center justify-between">
+                            <div className="flex flex-col">
+                                <div className="flex items-baseline gap-2 text-gray-900">
+                                    <span className="text-lg">
+                                        {currency}{product.offerPrice || product.price}
+                                    </span>
+                                    {product.offerPrice && product.offerPrice < product.price && (
+                                        <span className="text-sm text-gray-400 line-through">
+                                            {currency}{product.price}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleAddToCart}
+                                disabled={isAddingToCart}
+                                className={`p-2 rounded-full text-sm font-medium flex items-center transition-all duration-200 ${
+                                    isAddingToCart
+                                        ? "bg-gray-100 text-gray-400"
+                                        : "bg-black text-white hover:bg-gray-800"
                                 }`}
-                        >
-                            {isAddingToCart ? (
-                                <span className="flex items-center">
-                                    <svg
-                                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <circle
-                                            className="opacity-25"
-                                            cx="12"
-                                            cy="12"
-                                            r="10"
-                                            stroke="currentColor"
-                                            strokeWidth="4"
-                                        ></circle>
-                                        <path
-                                            className="opacity-75"
-                                            fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                        ></path>
-                                    </svg>
-                                    Adding...
-                                </span>
-                            ) : (
-                                <>
-                                    {/* <FaShoppingCart className="mr-2" size={16} /> */}
-                                    <CiShoppingCart  className="mr-2 text-sky-300" size={20} />
-                                    Add to Cart
-                                </>
-                            )}
-                        </button>
+                            >
+                                {isAddingToCart ? (
+                                    <span className="flex items-center">
+                                        <svg
+                                            className="animate-spin -ml-1 mr-2 h-4 w-4"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            ></circle>
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                            ></path>
+                                        </svg>
+                                        Adding...
+                                    </span>
+                                ) : (
+                                    <IoMdAdd size={18} />
+                                )}
+                            </button>
+                        </div>
                     ) : (
-                        <div className="quantity-selector w-full h-full flex items-center justify-between border border-sky-200 rounded-md bg-white">
-                            <button
-                                onClick={(e) => decreaseQty(product._id, currentQuantity, e)}
-                                className="px-4 py-2 text-sky-300 flex-1 text-center"
-                                aria-label="Decrease quantity"
-                            >
-                                <FaMinus className="w-2.5 h-2.5 inline-block" />
-                            </button>
-                            <span className="px-4 py-2 flex-1 text-center font-medium">{currentQuantity}</span>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    // Fix: Pass 1 as quantity parameter instead of currentQuantity + 1
-                                    increaseQty(product._id, 1, e);
-                                }}
-                                className="px-4 py-2 text-sky-300 flex-1 text-center"
-                                aria-label="Increase quantity"
-                            >
-                                <FaPlus className="w-2.5 h-2.5 inline-block" />
-                            </button>
+                        <div className="grid grid-cols-2 gap-3 items-center">
+                            {/* Price column */}
+                            <div className="flex flex-col">
+                                <div className="flex items-baseline gap-2 text-gray-900">
+                                    <span className="text-lg">
+                                        {currency}{product.offerPrice || product.price}
+                                    </span>
+                                    {product.offerPrice && product.offerPrice < product.price && (
+                                        <span className="text-sm text-gray-400 line-through">
+                                            {currency}{product.price}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            {/* Quantity selector column */}
+                            <div className="quantity-selector flex items-center justify-between bg-gray-50 rounded-xl p-1">
+                                <button
+                                    onClick={(e) => decreaseQty(product._id, currentQuantity, e)}
+                                    className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-white rounded-lg transition-colors"
+                                    aria-label="Decrease quantity"
+                                >
+                                    <FaMinus className="w-2.5 h-2.5" />
+                                </button>
+                                <span className="px-2 font-semibold text-gray-800 text-sm">{currentQuantity}</span>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        increaseQty(product._id, 1, e);
+                                    }}
+                                    className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-white rounded-lg transition-colors"
+                                    aria-label="Increase quantity"
+                                >
+                                    <FaPlus className="w-2.5 h-2.5" />
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>

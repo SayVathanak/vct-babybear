@@ -326,7 +326,7 @@ const Analytics = () => {
                 className="px-3 py-2 text-xs sm:text-sm text-black bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 flex items-center justify-center gap-2"
               >
                 <Image src={assets.excel_icon} alt="Export" width={16} height={16} />
-                <span className="hidden md:inline">Export</span>
+                <span className="hidden md:inline">Export data</span>
               </button>
             </div>
           </div>

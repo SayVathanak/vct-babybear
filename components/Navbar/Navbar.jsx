@@ -2,9 +2,10 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { useAppContext } from "@/context/AppContext";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { FiMenu } from "react-icons/fi";
 import { CiMenuFries, CiMenuBurger } from "react-icons/ci";
+import { GoArrowLeft } from "react-icons/go";
 import { AnimatePresence } from "framer-motion";
 
 import Logo from "./Logo";
@@ -20,12 +21,18 @@ const Navbar = () => {
     const { showCartPopup, setShowCartPopup, searchOpen, setSearchOpen } = useAppContext();
 
     const searchInputRef = useRef(null);
+    const router = useRouter();
 
     const pathname = usePathname();
     const isAllProductsPage = pathname === "/all-products" || pathname.startsWith("/all-products?");
     const isHomePage = pathname === "/";
 
     const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
+
+    // Handle back navigation
+    const handleGoBack = () => {
+        router.back();
+    };
 
     // FIXED: Better search toggle with proper mobile keyboard handling
     const toggleSearch = () => {
@@ -88,8 +95,9 @@ const Navbar = () => {
     return (
         <>
             <nav className="fixed top-0 left-0 right-0 z-[55] bg-white border-b border-gray-200 shadow-sm px-4 pt-3 pb-2 md:px-12 flex items-center justify-between">
-                {/* Mobile Menu Toggle */}
+                {/* Left Side - Mobile Menu Toggle and Back Button */}
                 <div className="flex items-center gap-4">
+                    {/* Mobile Menu Toggle */}
                     <button
                         onClick={toggleMobileMenu}
                         aria-label="Toggle menu"
@@ -100,6 +108,18 @@ const Navbar = () => {
                           <CiMenuFries size={24} />
                         </div>
                     </button>
+                    
+                    {/* Back Button - Only show on non-home pages */}
+                    {!isHomePage && (
+                        <button
+                            onClick={handleGoBack}
+                            aria-label="Go back"
+                            className="focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors touch-manipulation"
+                            style={{ touchAction: 'manipulation' }}
+                        >
+                            <GoArrowLeft size={24} />
+                        </button>
+                    )}
                 </div>
 
                 {/* Centered Logo */}
