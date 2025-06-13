@@ -228,7 +228,7 @@ const ProductCard = ({ product }) => {
                                         e.preventDefault();
                                         increaseQty(product._id, 1, e);
                                     }}
-                                    className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-gray-600 hover:bg-white rounded-lg transition-colors active:scale-95 flex-shrink-0"
+                                    className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-gray-600 rounded-lg transition-colors active:scale-95 flex-shrink-0"
                                     aria-label="Increase quantity"
                                 >
                                     <FaPlus className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
