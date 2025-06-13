@@ -89,7 +89,7 @@ const HomeProducts = () => {
       {/* <h2 className="text-2xl text-blue-500 self-start mb-6 flex items-center gap-2">
         <CiShop className="text-2xl" /> Let's start shopping
       </h2> */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-3 pb-10 w-full">
+      <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-3 pb-10 w-full">
         {sortedProducts.length > 0 ? (
           sortedProducts.slice(0, 10).map((product, index) => (
             <ProductCard key={product._id || index} product={product} />
