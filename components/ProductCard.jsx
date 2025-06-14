@@ -68,15 +68,15 @@ const ProductCard = ({ product }) => {
     };
 
     return (
-        <div className="flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 w-full">
-            {/* Product image container */}
+        <div className="flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 w-full h-full">
+            {/* Product image container - Fixed height for consistent alignment */}
             <div
-                className={`cursor-pointer relative bg-white w-full aspect-square sm:h-48 flex items-center justify-center overflow-hidden ${!isAvailable ? 'opacity-70' : ''}`}
+                className={`cursor-pointer relative bg-white w-full h-48 flex items-center justify-center overflow-hidden ${!isAvailable ? 'opacity-70' : ''}`}
                 onClick={handleCardClick}
             >
                 {/* Discount badge */}
                 {discountPercentage > 0 && (
-                    <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold z-10">
+                    <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-red-500 text-white px-2 py-1 rounded-full text-xs  z-10">
                         -{discountPercentage}%
                     </div>
                 )}
@@ -90,14 +90,23 @@ const ProductCard = ({ product }) => {
                     <IoHeartOutline className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600 hover:text-red-500 transition-colors" />
                 </button>
 
-                {/* Product image */}
-                <Image
-                    src={product.image?.[0] || "/fallback-image.jpg"}
-                    alt={product.name || "Product Image"}
-                    className="object-contain w-full h-full p-3 sm:p-4"
-                    width={400}
-                    height={400}
-                />
+                {/* Product image - Consistent sizing and centering */}
+                <div className="relative w-full h-full flex items-center justify-center p-3">
+                    <Image
+                        src={product.image?.[0] || "/fallback-image.jpg"}
+                        alt={product.name || "Product Image"}
+                        className="object-contain max-w-full max-h-full"
+                        width={160}
+                        height={160}
+                        priority={false}
+                        style={{
+                            width: 'auto',
+                            height: 'auto',
+                            maxWidth: '100%',
+                            maxHeight: '100%'
+                        }}
+                    />
+                </div>
 
                 {/* Out of stock overlay */}
                 {!isAvailable && (
@@ -105,29 +114,32 @@ const ProductCard = ({ product }) => {
                         <div className="text-red-500 text-xs sm:text-sm font-medium flex items-center">
                             <MdOutlineError className="mr-1" />
                             <span className="hidden sm:inline">Out of Stock</span>
-                            <span className="sm:hidden">Unavailable</span>
+                            <span className="sm:hidden">N/A</span>
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* Product info section */}
-            <div className="flex flex-col p-3 sm:p-4 flex-grow">
-                {/* Product name */}
-                <h3
-                    className={`text-sm sm:text-base font-medium mb-2 line-clamp-2 cursor-pointer leading-relaxed ${!isAvailable ? 'text-gray-400' : 'text-gray-800'}`}
-                    onClick={handleCardClick}
-                >
-                    {product.name}
-                </h3>
+            {/* Product info section - Flexible height with consistent spacing */}
+            <div className="flex flex-col p-3 sm:p-4 flex-grow min-h-0">
+                {/* Product name - Single line with consistent height */}
+                <div className="h-6 mb-3 flex items-center">
+                    <h3
+                        className={`text-sm sm:text-base font-medium cursor-pointer truncate w-full ${!isAvailable ? 'text-gray-400' : 'text-gray-800'}`}
+                        onClick={handleCardClick}
+                        title={product.name}
+                    >
+                        {product.name}
+                    </h3>
+                </div>
 
-                {/* Price and Add to Cart / Quantity Selector */}
+                {/* Price and Add to Cart / Quantity Selector - Fixed at bottom */}
                 <div className="mt-auto">
                     {!isAvailable ? (
                         <div className="flex items-center justify-between">
                             <div className="flex flex-col">
                                 <div className="flex items-baseline gap-1 sm:gap-2 text-gray-400">
-                                    <span className="text-base sm:text-lg font-semibold">
+                                    <span className="text-base sm:text-lg ">
                                         {currency}{product.offerPrice || product.price}
                                     </span>
                                     {product.offerPrice && product.offerPrice < product.price && (
@@ -137,19 +149,12 @@ const ProductCard = ({ product }) => {
                                     )}
                                 </div>
                             </div>
-                            <button
-                                disabled
-                                className="px-3 py-1.5 text-gray-400 text-xs sm:text-sm font-medium cursor-not-allowed rounded-lg"
-                            >
-                                <span className="hidden sm:inline">Unavailable</span>
-                                <span className="sm:hidden">N/A</span>
-                            </button>
                         </div>
                     ) : !isInCart ? (
                         <div className="flex items-center justify-between gap-2">
                             <div className="flex flex-col min-w-0 flex-1">
                                 <div className="flex items-baseline gap-1 sm:gap-2 text-gray-900">
-                                    <span className="text-base sm:text-lg font-semibold truncate">
+                                    <span className="text-base sm:text-lg  truncate">
                                         {currency}{product.offerPrice || product.price}
                                     </span>
                                     {product.offerPrice && product.offerPrice < product.price && (
@@ -162,7 +167,7 @@ const ProductCard = ({ product }) => {
                             <button
                                 onClick={handleAddToCart}
                                 disabled={isAddingToCart}
-                                className={`p-2 sm:p-2.5 rounded-full text-sm font-medium flex items-center justify-center transition-all duration-200 flex-shrink-0 ${isAddingToCart
+                                className={`p-2 rounded-full text-sm font-medium flex items-center justify-center transition-all duration-200 flex-shrink-0 ${isAddingToCart
                                         ? "bg-gray-100 text-gray-400"
                                         : "bg-black text-white hover:bg-gray-800 active:scale-95"
                                     }`}
@@ -196,10 +201,10 @@ const ProductCard = ({ product }) => {
                         </div>
                     ) : (
                         <div className="grid grid-cols-[1fr_1.5fr] sm:grid-cols-[1fr_2fr] gap-2 sm:gap-3 items-center">
-                            {/* Price column - 1fr on mobile, 1fr on desktop */}
+                            {/* Price column */}
                             <div className="flex flex-col min-w-0">
-                                <div className="flex flex-col sm:flex-row sm:items-baseline gap-0 sm:gap-2 text-gray-900">
-                                    <span className="text-base sm:text-lg font-semibold truncate">
+                                <div className="flex flex-col sm:items-baseline gap-0 sm:gap-2 text-gray-900">
+                                    <span className="text-base sm:text-lg truncate">
                                         {currency}{product.offerPrice || product.price}
                                     </span>
                                     {product.offerPrice && product.offerPrice < product.price && (
@@ -210,7 +215,7 @@ const ProductCard = ({ product }) => {
                                 </div>
                             </div>
 
-                            {/* Quantity selector column - 1.5fr on mobile, 2fr on desktop */}
+                            {/* Quantity selector column */}
                             <div className="quantity-selector flex items-center justify-between bg-gray-50 rounded-xl p-1">
                                 <button
                                     onClick={(e) => decreaseQty(product._id, currentQuantity, e)}
@@ -219,7 +224,7 @@ const ProductCard = ({ product }) => {
                                 >
                                     <FaMinus className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
                                 </button>
-                                <span className="px-2 sm:px-3 font-semibold text-gray-800 text-sm sm:text-base min-w-0 text-center">
+                                <span className="px-2 sm:px-3  text-gray-800 text-sm sm:text-base min-w-0 text-center">
                                     {currentQuantity}
                                 </span>
                                 <button
@@ -228,7 +233,7 @@ const ProductCard = ({ product }) => {
                                         e.preventDefault();
                                         increaseQty(product._id, 1, e);
                                     }}
-                                    className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-gray-600 rounded-lg transition-colors active:scale-95 flex-shrink-0"
+                                    className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-gray-600 hover:bg-white rounded-lg transition-colors active:scale-95 flex-shrink-0"
                                     aria-label="Increase quantity"
                                 >
                                     <FaPlus className="w-2 h-2 sm:w-2.5 sm:h-2.5" />

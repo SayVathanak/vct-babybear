@@ -60,27 +60,6 @@ const Home = () => {
 
         <HomeProducts/>
 
-        {/* Featured Categories */}
-        <div className="py-8 md:py-12">
-          <h2 className="text-2xl md:text-3xl text-sky-300 mb-6 flex items-center gap-2 font-medium">
-             <CiGrid41 className="text-2xl md:text-3xl" />𝒮𝒽𝑜𝓅 𝒷𝓎 𝒸𝒶𝓉𝑒𝑔𝑜𝓇𝓎 ── .✦
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {categories.map((category, index) => (
-              <Link href={category.link} key={index} className="block">
-                <div className="flex flex-col items-center cursor-pointer group">
-                  <div className="w-full aspect-square bg-blue-50 rounded-lg flex items-center justify-center mb-3 group-hover:bg-blue-100 transition-all">
-                    <div className="w-1/2 h-1/2 flex items-center justify-center text-sky-300 group-hover:scale-110 transition-transform">
-                      {category.icon}
-                    </div>
-                  </div>
-                  <span className="text-gray-800 font-medium text-sm md:text-base group-hover:text-sky-500 transition-all">{category.name}</span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-
         <NewsLetter />
       </div>
       <Footer />
