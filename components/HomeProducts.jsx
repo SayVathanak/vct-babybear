@@ -12,9 +12,7 @@ import {
   CiFilter,
   CiShop,
   CiGrid41,
-  CiStar,
-  CiSquareChevLeft,
-  CiSquareChevRight
+  CiStar
 } from "react-icons/ci";
 
 const HomeProducts = () => {
@@ -101,22 +99,6 @@ const HomeProducts = () => {
 
       {/* Products Horizontal Scroll */}
       <div className="relative group">
-        {/* Left scroll button */}
-        <button
-          onClick={() => scrollLeft(containerRef)}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white shadow-lg rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-gray-50 -ml-4"
-        >
-          <CiSquareChevLeft className="text-xl text-gray-600" />
-        </button>
-
-        {/* Right scroll button */}
-        <button
-          onClick={() => scrollRight(containerRef)}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white shadow-lg rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-gray-50 -mr-4"
-        >
-          <CiSquareChevRight className="text-xl text-gray-600" />
-        </button>
-
         {/* Scrollable container */}
         <div 
           ref={containerRef}
