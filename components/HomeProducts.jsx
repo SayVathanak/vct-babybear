@@ -175,10 +175,10 @@ const HomeProducts = () => {
         <div className="max-w-7xl md:mx-auto w-full">
           {/* Category Navigation Buttons */}
           <div className="w-full overflow-x-auto mb-2">
-            <div className="flex space-x-4 py-2 min-w-max">
+            <div className="flex space-x-2 py-2 min-w-max">
               {categoryButtons.map((button, index) => (
                 <Link href={button.link} key={index}>
-                  <button className="px-4 py-2 rounded-sm bg-sky-50 text-sky-300 transition-all flex items-center gap-2 hover:text-sky-400 whitespace-nowrap">
+                  <button className="px-4 py-2 rounded-sm bg-sky-50 text-sky-300 transition-all flex items-center gap-2 whitespace-nowrap">
                     <span className="p-1 rounded-sm">{button.icon}</span> 
                     {button.name}
                   </button>
