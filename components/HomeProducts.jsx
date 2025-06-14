@@ -172,7 +172,7 @@ const HomeProducts = () => {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 w-full">
+        <div className="max-w-7xl md:mx-auto px-4 w-full">
           {/* Category Navigation Buttons */}
           <div className="w-full overflow-x-auto mb-2">
             <div className="flex space-x-4 py-2 min-w-max">
