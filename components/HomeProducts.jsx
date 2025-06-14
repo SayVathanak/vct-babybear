@@ -97,33 +97,48 @@ const HomeProducts = () => {
         </div>
       </div>
 
-      {/* Products Horizontal Scroll */}
+      {/* Products Horizontal Scroll with Peek Out Effect */}
       <div className="relative group">
-        {/* Scrollable container */}
-        <div 
-          ref={containerRef}
-          className="flex gap-2 pb-4 overflow-x-auto scrollbar-hide"
-          style={{
-            scrollBehavior: 'smooth',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none'
-          }}
-        >
-          {products.length > 0 ? (
-            products.map((product, index) => (
-              <div key={product._id || index} className="flex-shrink-0 w-48 sm:w-52">
-                <ProductCard product={product} />
+        {/* Container with peek out effect */}
+        <div className="overflow-hidden">
+          <div 
+            ref={containerRef}
+            className="flex gap-3 pb-4 overflow-x-auto scrollbar-hide peek-scroll-container"
+            style={{
+              scrollBehavior: 'smooth',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              // Add padding to show peek out effect
+              paddingRight: '60px', // Space to show partial next card
+              marginRight: '-60px'  // Negative margin to maintain container width
+            }}
+          >
+            {products.length > 0 ? (
+              products.map((product, index) => (
+                <div key={product._id || index} className="flex-shrink-0 w-48 sm:w-52">
+                  <ProductCard product={product} />
+                </div>
+              ))
+            ) : (
+              <div className="flex-none w-full flex flex-col items-center justify-center py-16">
+                <CiGrid41 className="text-6xl text-gray-300 mb-4" />
+                <p className="text-gray-500 text-lg">
+                  {title === "New arrivals" ? "Loading Products..." : "No recommendations available"}
+                </p>
               </div>
-            ))
-          ) : (
-            <div className="flex-none w-full flex flex-col items-center justify-center py-16">
-              <CiGrid41 className="text-6xl text-gray-300 mb-4" />
-              <p className="text-gray-500 text-lg">
-                {title === "New arrivals" ? "Loading Products..." : "No recommendations available"}
-              </p>
-            </div>
-          )}
+            )}
+            
+            {/* Add extra space at the end to ensure last item is fully visible */}
+            <div className="flex-shrink-0 w-4"></div>
+          </div>
         </div>
+        
+        {/* Optional: Visual indicator for more content */}
+        {products.length > 2 && (
+          <div className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-l from-white via-white/80 to-transparent w-16 h-full flex items-center justify-end pr-2 pointer-events-none">
+            <div className="w-1 h-8 bg-gray-200 rounded-full opacity-50"></div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -154,7 +169,7 @@ const HomeProducts = () => {
           </div>
         </div>
 
-        <div className="max-w-7xl md:mx-auto w-full">
+        <div className="max-w-7xl md:mx-auto w-full px-4">
           {/* Category Navigation Buttons */}
           <div className="w-full overflow-x-auto mb-2">
             <div className="flex space-x-2 py-2 min-w-max">
@@ -234,7 +249,7 @@ const HomeProducts = () => {
         </div>
       </div>
 
-      {/* Custom CSS for scrollbar hiding - This is crucial for the scroll to work */}
+      {/* Custom CSS for scrollbar hiding and peek effect */}
       <style jsx global>{`
         .scrollbar-hide {
           -ms-overflow-style: none;
@@ -249,9 +264,28 @@ const HomeProducts = () => {
           scroll-behavior: smooth;
         }
         
+        /* Peek scroll container specific styles */
+        .peek-scroll-container {
+          /* Ensure the scrolling behavior is smooth */
+          scroll-snap-type: x mandatory;
+        }
+        
+        .peek-scroll-container > div {
+          /* Optional: Add scroll snap for better UX */
+          scroll-snap-align: start;
+        }
+        
         /* Add some padding to prevent content cutoff */
         .group:hover .opacity-0 {
           opacity: 1;
+        }
+        
+        /* Responsive peek out adjustments */
+        @media (max-width: 640px) {
+          .peek-scroll-container {
+            padding-right: 40px !important;
+            margin-right: -40px !important;
+          }
         }
       `}</style>
     </>
