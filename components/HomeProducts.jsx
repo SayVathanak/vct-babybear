@@ -10,315 +10,201 @@ import {
   CiMedicalCross,
   CiHeart,
   CiFilter,
-  CiShop,
   CiGrid41,
-  CiStar
 } from "react-icons/ci";
 
+// Debounce utility to limit how often a function can run
+const debounce = (func, delay) => {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      func.apply(this, args);
+    }, delay);
+  };
+};
+
+const ProductScrollSection = ({
+  title,
+  products,
+  seeAllLink,
+  sectionId // Unique ID for saving scroll position
+}) => {
+  const containerRef = useRef(null);
+
+  // Effect to save the scroll position to sessionStorage on scroll
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = debounce(() => {
+      if (container) {
+        sessionStorage.setItem(`scrollPos-${sectionId}`, container.scrollLeft);
+      }
+    }, 200);
+
+    container.addEventListener('scroll', handleScroll);
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+    };
+  }, [sectionId]);
+
+  // Effect to restore the scroll position
+  useEffect(() => {
+    if (!products || products.length === 0) return;
+
+    const savedScrollPos = sessionStorage.getItem(`scrollPos-${sectionId}`);
+    if (containerRef.current && savedScrollPos) {
+      const timer = setTimeout(() => {
+        if (containerRef.current) {
+          containerRef.current.scrollLeft = parseInt(savedScrollPos, 10);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [sectionId, products]);
+
+  return (
+    <div className="py-4">
+      <div className="flex items-center justify-between mb-4 px-4 sm:px-0">
+        <h2 className="text-lg md:text-xl font-medium flex items-center gap-2">
+          {title}
+        </h2>
+        <Link href={seeAllLink} className="font-prata text-sm text-sky-300 hover:underline">
+          See all
+        </Link>
+      </div>
+
+      <div className="relative group">
+        <div className="overflow-x-auto scrollbar-hide">
+          {/* MODIFICATION: Added padding for peek-out effect and adjusted gap */}
+          <div
+            ref={containerRef}
+            className="flex gap-1.5 pb-4 px-4 sm:px-0"
+            style={{ scrollSnapType: 'x mandatory' }}
+          >
+            {products.length > 0 ? (
+              products.map((product, index) => (
+                // MODIFICATION: Card width is now responsive for the peek-out effect.
+                <div key={product._id || index} className="flex-shrink-0 w-[45%] sm:w-52" style={{ scrollSnapAlign: 'start' }}>
+                  <ProductCard product={product} />
+                </div>
+              ))
+            ) : (
+              <div className="flex-none w-full flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg">
+                <CiGrid41 className="text-6xl text-gray-300 mb-4" />
+                <p className="text-gray-500 text-lg">
+                  Loading products...
+                </p>
+              </div>
+            )}
+            {/* Padding element to ensure the last card can be scrolled fully into view */}
+            <div className="flex-shrink-0 w-1"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 const HomeProducts = () => {
-  const { products, router } = useAppContext();
+  const { products } = useAppContext();
   const [sortedProducts, setSortedProducts] = useState([]);
-  const [sortOption, setSortOption] = useState("name");
+  const [sortOption, setSortOption] = useState("newest");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Refs for scroll containers
-  const feedingEssentialsRef = useRef(null);
-  const playLearnRef = useRef(null);
-  const bathCareRef = useRef(null);
-  const onTheGoRef = useRef(null);
-  const bundlesGiftSetsRef = useRef(null);
-  const newArrivalsRef = useRef(null);
-  const parentFavoritesRef = useRef(null);
-
   const categoryButtons = [
-    { name: 'Baby Milk', icon: <CiPillsBottle1 className="text-xl" />, link: '/all-products?category=PowderedMilk' },
-    { name: 'Baby Hygiene', icon: <CiMedicalCross className="text-xl" />, link: '/all-products?category=Accessories' },
-    { name: 'Diapers', icon: <CiBandage className="text-xl" />, link: '/all-products?category=Diapers' },
-    { name: 'Baby Food', icon: <CiApple className="text-xl" />, link: '/all-products?category=Vitamins' },
-    { name: 'Feeding Essentials', icon: <CiShoppingCart className="text-xl" />, link: '/all-products?category=FeedingTools' },
-    { name: 'Bath & Care', icon: <CiHeart className="text-xl" />, link: '/all-products?category=NurseryItems' }
+    { name: 'Baby Milk', icon: <CiPillsBottle1 className="text-md md:text-xl" />, link: '/all-products?category=PowderedMilk' },
+    { name: 'Hygiene', icon: <CiMedicalCross className="text-md md:text-xl" />, link: '/all-products?category=Accessories' },
+    { name: 'Diapers', icon: <CiBandage className="text-md md:text-xl" />, link: '/all-products?category=Diapers' },
+    { name: 'Vitamins', icon: <CiApple className="text-md md:text-xl" />, link: '/all-products?category=Vitamins' },
+    { name: 'Feeding', icon: <CiShoppingCart className="text-md md:text-xl" />, link: '/all-products?category=FeedingTools' },
+    { name: 'Bath & Care', icon: <CiHeart className="text-md md:text-xl" />, link: '/all-products?category=BathBodyCare' }
   ];
 
-  // Function to filter products by category
   const getProductsByCategory = (categories) => {
-    return products.filter(product => 
-      categories.includes(product.category)
-    );
-  };
-
-  // Function to get products by multiple criteria
-  const getProductsByMultipleCategories = (categories, limit = 10) => {
-    const filteredProducts = getProductsByCategory(categories);
-    return filteredProducts.slice(0, limit);
+    if (!products) return [];
+    const cats = Array.isArray(categories) ? categories : [categories];
+    return products.filter(product => cats.includes(product.category));
   };
 
   useEffect(() => {
     if (products && products.length > 0) {
       const sorted = [...products].sort((a, b) => {
-        if (sortOption === "name") {
-          return a.name?.localeCompare(b.name || '') || 0;
-        } else if (sortOption === "price-low") {
-          return (a.offerPrice || a.price || 0) - (b.offerPrice || b.price || 0);
-        } else if (sortOption === "price-high") {
-          return (b.offerPrice || b.price || 0) - (a.offerPrice || a.price || 0);
-        } else if (sortOption === "newest") {
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+        switch (sortOption) {
+          case "name":
+            return a.name?.localeCompare(b.name || '') || 0;
+          case "price-low":
+            return (a.offerPrice || a.price || 0) - (b.offerPrice || b.price || 0);
+          case "price-high":
+            return (b.offerPrice || b.price || 0) - (a.offerPrice || a.price || 0);
+          case "newest":
+          default:
+            return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
         }
-        return 0;
       });
       setSortedProducts(sorted);
     }
   }, [products, sortOption]);
 
-  const scrollLeft = (containerRef) => {
-    if (containerRef.current) {
-      containerRef.current.scrollBy({
-        left: -300,
-        behavior: 'smooth'
-      });
-    }
-  };
-
-  const scrollRight = (containerRef) => {
-    if (containerRef.current) {
-      containerRef.current.scrollBy({
-        left: 300,
-        behavior: 'smooth'
-      });
-    }
-  };
-
-  const ProductScrollSection = ({
-    title,
-    products,
-    seeAllLink,
-    containerRef,
-    showFilters: showFiltersSection = false
-  }) => (
-    <div className="py-4">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg md:text-xl text-gray-900 flex items-center gap-2">
-          {title}
-        </h2>
-        <div className="flex items-center gap-4">
-          <Link href={seeAllLink} className="text-sm">
-            See all
-          </Link>
-          {showFiltersSection && (
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-1 text-gray-600 hover:text-gray-800 text-sm"
-            >
-              <CiFilter className="text-lg" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Products Horizontal Scroll with Peek Out Effect */}
-      <div className="relative group">
-        {/* Container with peek out effect */}
-        <div className="overflow-hidden">
-          <div
-            ref={containerRef}
-            className="flex gap-3 pb-4 overflow-x-auto scrollbar-hide peek-scroll-container"
-            style={{
-              scrollBehavior: 'smooth',
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-              // Add padding to show peek out effect
-              paddingRight: '60px', // Space to show partial next card
-              marginRight: '-60px'  // Negative margin to maintain container width
-            }}
-          >
-            {products.length > 0 ? (
-              products.map((product, index) => (
-                <div key={product._id || index} className="flex-shrink-0 w-48 sm:w-52">
-                  <ProductCard product={product} />
-                </div>
-              ))
-            ) : (
-              <div className="flex-none w-full flex flex-col items-center justify-center py-16">
-                <CiGrid41 className="text-6xl text-gray-300 mb-4" />
-                <p className="text-gray-500 text-lg">
-                  {title === "New Arrivals" ? "Loading Products..." : `No ${title.toLowerCase()} products available`}
-                </p>
-              </div>
-            )}
-
-            {/* Add extra space at the end to ensure last item is fully visible */}
-            <div className="flex-shrink-0 w-4"></div>
-          </div>
-        </div>
-
-        {/* Optional: Visual indicator for more content */}
-        {products.length > 2 && (
-          <div className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-l from-white via-white/80 to-transparent w-16 h-full flex items-center justify-end pr-2 pointer-events-none">
-            <div className="w-1 h-8 bg-gray-200 rounded-full opacity-50"></div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  const productSections = [
+    { id: 'parent-favorites', title: "Parent Favorites", categories: ['PowderedMilk', 'LiquidMilk', 'Vitamins', 'Diapers'], seeAllLink: "/all-products" },
+    { id: 'feeding-essentials', title: "Feeding Essentials", categories: ['FeedingTools', 'Bottles'], seeAllLink: "/all-products?category=FeedingTools" },
+    { id: 'play-learn', title: "Play & Learn", categories: ['Toys', 'Accessories'], seeAllLink: "/all-products?category=Toys" },
+    { id: 'bath-care', title: "Bath & Body Care", categories: ['BathBodyCare', 'NurseryItems', 'Diapers'], seeAllLink: "/all-products?category=BathBodyCare" },
+    { id: 'on-the-go', title: "On-the-Go", categories: ['Tumblers', 'Bottles'], seeAllLink: "/all-products?category=Tumblers" },
+    { id: 'new-arrivals', title: "New Arrivals", products: sortedProducts.slice(0, 10), seeAllLink: "/all-products" }
+  ];
 
   return (
     <>
-      <div className="flex flex-col items-center pt-6 md:pt-12 w-full overflow-hidden">
-        {/* Scrolling Text Animation */}
-        <div className="w-full overflow-hidden py-3 mb-2">
-          <div className="marquee-container">
-            <div className="animate-marquee">
-              <p className="whitespace-nowrap pr-10 text-xl text-sky-200 font-prata font-medium">
-                Baby Bear - Premium Imported Milk and Baby Essentials from the USA. Pure, Nutritious, and Safe for Your Little One.
-              </p>
-              <p className="whitespace-nowrap pr-10 text-xl text-sky-200 font-prata font-medium">
-                Baby Bear - Premium Imported Milk and Baby Essentials from the USA. Pure, Nutritious, and Safe for Your Little One.
-              </p>
-              <p className="whitespace-nowrap pr-10 text-xl text-sky-200 font-prata font-medium">
-                Baby Bear - Premium Imported Milk and Baby Essentials from the USA. Pure, Nutritious, and Safe for Your Little One.
-              </p>
-              <p className="whitespace-nowrap pr-10 text-xl text-sky-200 font-prata font-medium">
-                Baby Bear - Premium Imported Milk and Baby Essentials from the USA. Pure, Nutritious, and Safe for Your Little One.
-              </p>
-              <p className="whitespace-nowrap pr-10 text-xl text-sky-200 font-prata font-medium">
-                Baby Bear - Premium Imported Milk and Baby Essentials from the USA. Pure, Nutritious, and Safe for Your Little One.
-              </p>
-            </div>
+      <div className="w-full bg-white overflow-hidden">
+        <div className="w-full overflow-hidden py-3 font-prata">
+          <div className="animate-marquee whitespace-nowrap">
+            <span className="text-md md:text-lg text-sky-200 mx-2">
+              Premium USA-imported milk and baby essentials for your family.
+            </span>
+            <span className="text-md md:text-lg text-sky-200 mx-2">
+              Pure, nutritious, and trusted by parents everywhere.
+            </span>
+            <span className="text-md md:text-lg text-sky-200 mx-2">
+              Premium USA-imported milk and baby essentials for your family.
+            </span>
+            <span className="text-md md:text-lg text-sky-200 mx-2">
+              Pure, nutritious, and trusted by parents everywhere.
+            </span>
           </div>
         </div>
-
-        <div className="max-w-7xl md:mx-auto w-full">
-          {/* Category Navigation Buttons */}
-          <div className="w-full overflow-x-auto mb-2">
-            <div className="flex space-x-2 py-2 min-w-max">
+        {/* MODIFICATION: Removed max-w-7xl and mx-auto to allow full-width scroll on mobile */}
+        <div className="w-full">
+          <div className="w-full overflow-x-auto scrollbar-hide">
+            <div className="flex space-x-2 py-4 px-4 sm:px-6 lg:px-8 min-w-max">
               {categoryButtons.map((button, index) => (
                 <Link href={button.link} key={index}>
-                  <button className="px-4 py-2 rounded-sm bg-sky-50 text-sky-300 transition-all flex items-center gap-2 whitespace-nowrap">
-                    <span className="p-1 rounded-sm">{button.icon}</span>
-                    {button.name}
-                  </button>
+                  <div className="px-4 py-2 border rounded-full bg-white transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer">
+                    <span className="p-0.5 md:p-1 rounded-md bg-white">{button.icon}</span>
+                    <span className="font-medium text-xs md:text-sm">{button.name}</span>
+                  </div>
                 </Link>
               ))}
             </div>
           </div>
 
-          {/* Filter Options */}
-          {showFilters && (
-            <div className="mb-6 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setSortOption("name")}
-                  className={`px-3 py-1 rounded-full text-sm border transition-colors ${sortOption === "name"
-                    ? "bg-sky-500 text-white border-sky-500"
-                    : "bg-white text-gray-600 border-gray-300 hover:border-sky-300"
-                    }`}
-                >
-                  Name
-                </button>
-                <button
-                  onClick={() => setSortOption("price-low")}
-                  className={`px-3 py-1 rounded-full text-sm border transition-colors ${sortOption === "price-low"
-                    ? "bg-sky-500 text-white border-sky-500"
-                    : "bg-white text-gray-600 border-gray-300 hover:border-sky-300"
-                    }`}
-                >
-                  Price: Low to High
-                </button>
-                <button
-                  onClick={() => setSortOption("price-high")}
-                  className={`px-3 py-1 rounded-full text-sm border transition-colors ${sortOption === "price-high"
-                    ? "bg-sky-500 text-white border-sky-500"
-                    : "bg-white text-gray-600 border-gray-300 hover:border-sky-300"
-                    }`}
-                >
-                  Price: High to Low
-                </button>
-                <button
-                  onClick={() => setSortOption("newest")}
-                  className={`px-3 py-1 rounded-full text-sm border transition-colors ${sortOption === "newest"
-                    ? "bg-sky-500 text-white border-sky-500"
-                    : "bg-white text-gray-600 border-gray-300 hover:border-sky-300"
-                    }`}
-                >
-                  Newest
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Parent Favorites Section - Popular categories */}
-          <div className="border-t border-gray-100 pt-4">
+          {productSections.map(section => (
             <ProductScrollSection
-              title="Parent Favorites"
-              products={getProductsByMultipleCategories(['PowderedMilk', 'LiquidMilk', 'Vitamins', 'Diapers'], 10)}
-              seeAllLink="/all-products"
-              containerRef={parentFavoritesRef}
+              key={section.id}
+              sectionId={section.id}
+              title={section.title}
+              products={section.products || getProductsByCategory(section.categories).slice(0, 10)}
+              seeAllLink={section.seeAllLink}
             />
-          </div>
-
-          {/* Feeding Essentials Section - Bottles, Feeding Tools, Sippy Cups */}
-          <ProductScrollSection
-            title="Feeding Essentials"
-            products={getProductsByMultipleCategories(['FeedingTools', 'Bottles'], 10)}
-            seeAllLink="/all-products?category=FeedingTools"
-            containerRef={feedingEssentialsRef}
-            showFilters={true}
-          />
-
-          {/* Play & Learn Section - Baby Accessories and Toys */}
-          <div className="border-t border-gray-100 pt-4">
-            <ProductScrollSection
-              title="Play & Learn"
-              products={getProductsByMultipleCategories(['Toys', 'Accessories'], 10)}
-              seeAllLink="/all-products?category=Accessories"
-              containerRef={playLearnRef}
-            />
-          </div>
-
-          {/* Bath & Care Section - Nursery Items and Baby Care */}
-          <div className="border-t border-gray-100 pt-4">
-            <ProductScrollSection
-              title="Bath & Body Care"
-              products={getProductsByMultipleCategories(['BathBodyCare', 'NurseryItems', 'Diapers'], 10)}
-              seeAllLink="/all-products?category=BathBodyCare"
-              containerRef={bathCareRef}
-            />
-          </div>
-
-          {/* On-the-Go Section - Tumblers, Sippy Cups, Portable Items */}
-          <div className="border-t border-gray-100 pt-4">
-            <ProductScrollSection
-              title="On-the-Go"
-              products={getProductsByMultipleCategories(['Tumblers', 'Bottles'], 10)}
-              seeAllLink="/all-products?category=Tumblers"
-              containerRef={onTheGoRef}
-            />
-          </div>
-
-          {/* Bundles & Gift Sets Section - Mix of categories for gift sets */}
-          <div className="border-t border-gray-100 pt-4">
-            <ProductScrollSection
-              title="Bundles & Gift Sets"
-              products={getProductsByMultipleCategories(['FeedingTools', 'Accessories', 'NurseryItems'], 10)}
-              seeAllLink="/all-products"
-              containerRef={bundlesGiftSetsRef}
-            />
-          </div>
-
-          {/* New Arrivals Section - Recently added products (sorted by date) */}
-          <div className="border-t border-gray-100 pt-4">
-            <ProductScrollSection
-              title="New Arrivals"
-              products={sortedProducts.filter(product => product.date).sort((a, b) => b.date - a.date).slice(0, 10)}
-              seeAllLink="/all-products"
-              containerRef={newArrivalsRef}
-            />
-          </div>
+          ))}
 
         </div>
       </div>
 
-      {/* Custom CSS for scrollbar hiding and peek effect */}
       <style jsx global>{`
         .scrollbar-hide {
           -ms-overflow-style: none;
@@ -327,34 +213,13 @@ const HomeProducts = () => {
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
         }
-        
-        /* Ensure smooth scrolling works */
-        .scrollbar-hide {
-          scroll-behavior: smooth;
+        @keyframes marquee {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-50%); }
         }
-        
-        /* Peek scroll container specific styles */
-        .peek-scroll-container {
-          /* Ensure the scrolling behavior is smooth */
-          scroll-snap-type: x mandatory;
-        }
-        
-        .peek-scroll-container > div {
-          /* Optional: Add scroll snap for better UX */
-          scroll-snap-align: start;
-        }
-        
-        /* Add some padding to prevent content cutoff */
-        .group:hover .opacity-0 {
-          opacity: 1;
-        }
-        
-        /* Responsive peek out adjustments */
-        @media (max-width: 640px) {
-          .peek-scroll-container {
-            padding-right: 40px !important;
-            margin-right: -40px !important;
-          }
+        .animate-marquee {
+          display: inline-block;
+          animation: marquee 30s linear infinite;
         }
       `}</style>
     </>

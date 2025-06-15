@@ -1,8 +1,8 @@
-// components/ProductFilter.jsx
 import { useState, useEffect } from 'react';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 
 const ProductFilter = ({
+    router, // Receive router prop
     categories,
     selectedCategory,
     setSelectedCategory,
@@ -20,7 +20,6 @@ const ProductFilter = ({
     const [showPrice, setShowPrice] = useState(true);
     const [localPriceRange, setLocalPriceRange] = useState(priceRange);
 
-    // Sync local price range with props when component mounts or priceRange prop changes
     useEffect(() => {
         setLocalPriceRange(priceRange);
     }, [priceRange]);
@@ -48,84 +47,61 @@ const ProductFilter = ({
         { value: "priceDesc", label: "Price: High to Low" },
         { value: "popular", label: "Popularity" },
     ];
-
-    // Inside ProductFilter component
+    
+    // Updated to use Next.js router for navigation
     const handleCategoryChange = (category) => {
+        // Optimistically update the state for instant UI feedback
         setSelectedCategory(category);
-
-        // Update URL with the new category parameter
-        const url = new URL(window.location);
+    
+        const params = new URLSearchParams(window.location.search);
         if (category === "All") {
-            url.searchParams.delete('category');
+            params.delete('category');
         } else {
-            url.searchParams.set('category', category);
+            params.set('category', category);
         }
-        window.history.pushState({}, '', url);
+    
+        // Use the router to push the new URL state
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        router.push(newUrl, { scroll: false });
     };
 
     const handlePriceChange = (e, boundary) => {
-        const value = e.target.value ? Number(e.target.value) : (boundary === 'min' ? 0 : maxPossiblePrice);
-
-        // Update local state first
-        let newLocalRange;
-
-        // Ensure min doesn't exceed max and max doesn't go below min
-        if (boundary === 'min' && value > localPriceRange.max) {
-            newLocalRange = {
-                min: value,
-                max: value
-            };
-        } else if (boundary === 'max' && value < localPriceRange.min) {
-            newLocalRange = {
-                min: value,
-                max: value
-            };
-        } else {
-            newLocalRange = {
-                ...localPriceRange,
-                [boundary]: value
-            };
+        const value = Number(e.target.value);
+        let newRange = { ...localPriceRange, [boundary]: value };
+        if (newRange.min > newRange.max) {
+            newRange = boundary === 'min' ? { min: value, max: value } : { min: newRange.max, max: newRange.min };
         }
-
-        setLocalPriceRange(newLocalRange);
+        setLocalPriceRange(newRange);
     };
 
-    // Apply price range changes to parent state
     const applyPriceRange = () => {
         setPriceRange(localPriceRange);
     };
 
-    // Handle price range change when slider or input loses focus
-    const handlePriceInputBlur = () => {
-        applyPriceRange();
-    };
-
     const handleBrandToggle = (brand) => {
-        setSelectedBrands(prevBrands =>
-            prevBrands.includes(brand)
-                ? prevBrands.filter(b => b !== brand)
-                : [...prevBrands, brand]
+        setSelectedBrands(prev =>
+            prev.includes(brand) ? prev.filter(b => b !== brand) : [...prev, brand]
         );
     };
 
     return (
-        <div className="divide-y">
+        <div className="divide-y divide-gray-200">
             {/* Sort Options (for mobile) */}
-            <div className="lg:hidden pb-4">
-                <label htmlFor="mobileSort" className="block text-sm font-medium text-gray-700 mb-1">
+            {/* <div className="py-4 lg:hidden">
+                <label htmlFor="mobileSort" className="block text-sm font-medium text-gray-700 mb-2">
                     Sort By
                 </label>
                 <select
                     id="mobileSort"
                     value={sortOption}
                     onChange={(e) => setSortOption(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-md"
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500"
                 >
                     {sortOptions.map(option => (
                         <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
                 </select>
-            </div>
+            </div> */}
 
             {/* Categories */}
             <FilterSection
@@ -133,21 +109,73 @@ const ProductFilter = ({
                 isOpen={showCategories}
                 toggle={() => setShowCategories(!showCategories)}
             >
-                <ul className="space-y-2">
+                <ul className="space-y-1">
                     {categories.map(category => (
                         <li key={category}>
                             <button
                                 onClick={() => handleCategoryChange(category)}
-                                className={`w-full text-left py-2 rounded-md transition ${selectedCategory === category
-                                        ? 'text-gray-700'
-                                        : 'text-gray-400 hover:text-gray-600'
-                                    }`}
+                                className={`w-full text-left px-3 py-2 rounded-md transition text-sm flex justify-between items-center ${
+                                    selectedCategory === category
+                                        ? 'font-semibold bg-sky-100 text-sky-700'
+                                        : 'text-gray-600 hover:bg-gray-100'
+                                }`}
                             >
-                                ⤷ {categoryDisplayNames[category] || category}
+                                <span>{categoryDisplayNames[category] || category}</span>
+                                {selectedCategory === category && <span className="text-xs">✓</span>}
                             </button>
                         </li>
                     ))}
                 </ul>
+            </FilterSection>
+
+            {/* Price Range */}
+            <FilterSection
+                title="Price Range"
+                isOpen={showPrice}
+                toggle={() => setShowPrice(!showPrice)}
+            >
+                <div className="flex flex-col space-y-3">
+                    <input
+                        type="range"
+                        min="0"
+                        max={maxPossiblePrice}
+                        value={localPriceRange.max}
+                        onChange={(e) => handlePriceChange(e, 'max')}
+                        onMouseUp={applyPriceRange}
+                        onTouchEnd={applyPriceRange}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                     <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">
+                            ${localPriceRange.min.toLocaleString()}
+                        </span>
+                        <span className="text-gray-500">
+                            ${localPriceRange.max.toLocaleString()}
+                        </span>
+                    </div>
+                </div>
+            </FilterSection>
+
+            {/* Brands */}
+            <FilterSection
+                title="Brands"
+                isOpen={showBrands}
+                toggle={() => setShowBrands(!showBrands)}
+            >
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                    {brands.map(({ name, count }) => (
+                        <label key={name} className="flex items-center space-x-3 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={selectedBrands.includes(name)}
+                                onChange={() => handleBrandToggle(name)}
+                                className="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"
+                            />
+                            <span className="text-sm text-gray-700 flex-grow">{name}</span>
+                            <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{count}</span>
+                        </label>
+                    ))}
+                </div>
             </FilterSection>
         </div>
     );
@@ -158,10 +186,10 @@ const FilterSection = ({ title, isOpen, toggle, children }) => {
         <div className="py-4">
             <button
                 onClick={toggle}
-                className="flex items-center justify-between w-full text-left font-medium mb-2"
+                className="flex items-center justify-between w-full text-left font-semibold text-gray-700 mb-2"
             >
                 <span>{title}</span>
-                {isOpen ? <FaChevronUp size={14} /> : <FaChevronDown size={14} />}
+                {isOpen ? <FaChevronUp className="text-gray-500" size={14} /> : <FaChevronDown className="text-gray-500" size={14} />}
             </button>
             {isOpen && <div className="mt-2">{children}</div>}
         </div>

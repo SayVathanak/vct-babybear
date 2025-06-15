@@ -163,7 +163,7 @@ const Cart = () => {
                             <span className="text-xs sm:text-sm md:text-base uppercase tracking-wider mr-3 sm:mr-4 text-gray-600">
                               Quantity
                             </span>
-                            <div className="flex items-center border px-2 rounded-lg overflow-hidden">
+                            <div className="flex items-center px-2 rounded-lg overflow-hidden">
                               <button
                                 className="w-8 h-8 flex items-center justify-center text-sm transition-colors"
                                 onClick={() => decreaseQuantity(product._id, cartItems[itemId])}

@@ -1,19 +1,10 @@
 import mongoose from "mongoose";
 
 const orderSchema = new mongoose.Schema({
-    orderId: { type: String, unique: true },
+    orderId: { type: String, unique: true }, // Add this line
     userId: { type: String, required: true, ref: 'user' },
     items: [{
-        // Store complete product information at time of order
-        product: {
-            _id: { type: String, required: true }, // Original product ID for reference
-            name: { type: String, required: true }, // Product name at time of order
-            price: { type: Number, required: true }, // Price at time of order
-            image: { type: String }, // Product image URL
-            category: { type: String }, // Product category
-            description: { type: String }, // Product description
-            // Add any other fields you need for analytics/display
-        },
+        product: { type: String, required: true, ref: 'product' },
         quantity: { type: Number, required: true }
     }],
     subtotal: { type: Number, required: true },
@@ -26,29 +17,29 @@ const orderSchema = new mongoose.Schema({
         discountType: { type: String },
         discountValue: { type: Number }
     },
-    amount: { type: Number, required: true },
+    amount: { type: Number, required: true }, // Total amount after all calculations
     address: { type: String, ref: 'address', required: true },
-    status: { type: String, required: true, default: 'Order Placed' },
+    status: { type: String, required: true, default: 'Order Placed' }, // Overall order status
     date: { type: Number, required: true },
 
-    // Payment fields
+    // New fields for ABA Payment
     paymentMethod: {
         type: String,
         enum: ['COD', 'ABA'],
         default: 'COD'
     },
-    paymentTransactionImage: {
+    paymentTransactionImage: { // Stores filename or URL of the uploaded transaction image
         type: String,
         default: null
     },
-    paymentStatus: {
+    paymentStatus: { // Tracks the financial status of the payment
         type: String,
-        enum: ['pending', 'paid', 'failed', 'refunded', 'pending_confirmation'],
+        enum: ['pending', 'paid', 'failed', 'refunded', 'pending_confirmation'], // Added pending_confirmation
         default: 'pending'
     },
-    paymentConfirmationStatus: {
+    paymentConfirmationStatus: { // Specifically for seller's review of ABA
         type: String,
-        enum: ['na', 'pending_review', 'confirmed', 'rejected'],
+        enum: ['na', 'pending_review', 'confirmed', 'rejected'], // 'na' for COD or when not applicable
         default: 'na'
     }
 });

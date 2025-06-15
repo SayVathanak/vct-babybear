@@ -58,7 +58,7 @@ const NavigationBar = ({ pathname, onToggleSearch }) => {
     ];
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg md:hidden pb-4">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg md:hidden">
             <div className="grid grid-cols-5 h-16">
                 {navItems.map((item) => {
                     const Icon = item.icon;
@@ -100,7 +100,7 @@ const NavigationBar = ({ pathname, onToggleSearch }) => {
                     );
                 })}
             </div>
-            <div className="h-2 bg-white"></div>
+            <div className="h-4 bg-white"></div>
         </nav>
     );
 };

@@ -1,10 +1,9 @@
-// components/Navbar/Navbar.jsx - MOBILE KEYBOARD & SEARCH FIX
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { useAppContext } from "@/context/AppContext";
 import { usePathname, useRouter } from "next/navigation";
 import { FiMenu } from "react-icons/fi";
-import { CiMenuFries, CiMenuBurger } from "react-icons/ci";
+import { CiMenuFries } from "react-icons/ci";
 import { GoArrowLeft } from "react-icons/go";
 import { AnimatePresence } from "framer-motion";
 
@@ -17,66 +16,33 @@ import NavActions from "./NavActions";
 
 const Navbar = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [showCartPanel, setShowCartPanel] = useState(false);
-    const { showCartPopup, setShowCartPopup, searchOpen, setSearchOpen } = useAppContext();
+    
+    // MODIFICATION: State for CartPanel is now managed in AppContext.
+    // This allows other components (like ProductCard) to open the panel.
+    const { 
+        showCartPopup, 
+        setShowCartPopup, 
+        searchOpen, 
+        setSearchOpen,
+        showCartPanel,     // Get state from context
+        setShowCartPanel   // Get setter from context
+    } = useAppContext();
 
     const searchInputRef = useRef(null);
     const router = useRouter();
-
     const pathname = usePathname();
-    const isAllProductsPage = pathname === "/all-products" || pathname.startsWith("/all-products?");
     const isHomePage = pathname === "/";
 
     const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
+    const handleGoBack = () => router.back();
 
-    // Handle back navigation
-    const handleGoBack = () => {
-        router.back();
-    };
-
-    // FIXED: Better search toggle with proper mobile keyboard handling
     const toggleSearch = () => {
-        setSearchOpen(prevSearchOpen => {
-            const newSearchOpen = !prevSearchOpen;
-            
-            // If opening search, focus the input after state update
-            if (newSearchOpen) {
-                // Use multiple methods to ensure focus works on mobile
-                requestAnimationFrame(() => {
-                    if (searchInputRef?.current) {
-                        const input = searchInputRef.current;
-                        
-                        // Method 1: Standard focus
-                        input.focus();
-                        
-                        // Method 2: iOS Safari specific
-                        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-                            setTimeout(() => {
-                                input.click();
-                                input.focus();
-                            }, 50);
-                        }
-                        
-                        // Method 3: Android Chrome specific  
-                        if (/Android/.test(navigator.userAgent)) {
-                            setTimeout(() => {
-                                input.focus();
-                                input.click();
-                            }, 100);
-                        }
-                    }
-                });
-            }
-            
-            return newSearchOpen;
-        });
+        setSearchOpen(prev => !prev);
     };
 
-    // FIXED: Prevent body scroll when search is open on mobile
     useEffect(() => {
         if (searchOpen) {
             document.body.style.overflow = 'hidden';
-            // Prevent iOS Safari from bouncing
             document.body.style.position = 'fixed';
             document.body.style.width = '100%';
         } else {
@@ -94,48 +60,29 @@ const Navbar = () => {
 
     return (
         <>
-            <nav className="fixed top-0 left-0 right-0 z-[55] bg-white border-b border-gray-200 shadow-sm px-4 pt-3 pb-2 md:px-12 flex items-center justify-between">
-                {/* Left Side - Mobile Menu Toggle and Back Button */}
+            <nav className="flex fixed top-0 left-0 right-0 z-[55] bg-white border-gray-200 px-4 pt-3 pb-2 md:px-12 items-center justify-between">
                 <div className="flex items-center gap-4">
-                    {/* Mobile Menu Toggle */}
                     <button
                         onClick={toggleMobileMenu}
                         aria-label="Toggle menu"
-                        className="focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors touch-manipulation"
-                        style={{ touchAction: 'manipulation' }}
+                        className="focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors"
                     >
                        <div className="transform -scale-x-100">
                           <CiMenuFries size={24} />
                         </div>
                     </button>
-                    
-                    {/* Back Button - Only show on non-home pages */}
                     {!isHomePage && (
-                        <button
-                            onClick={handleGoBack}
-                            aria-label="Go back"
-                            className="focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors touch-manipulation"
-                            style={{ touchAction: 'manipulation' }}
-                        >
+                        <button onClick={handleGoBack} aria-label="Go back" className="focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors">
                             <GoArrowLeft size={24} />
                         </button>
                     )}
                 </div>
-
-                {/* Centered Logo */}
                 <Logo />
-
-                {/* Navigation Actions - Pass searchInputRef */}
                 <NavActions
-                    isAllProductsPage={isAllProductsPage}
-                    isHomePage={isHomePage}
-                    searchOpen={searchOpen}
                     onToggleSearch={toggleSearch}
-                    onShowCart={() => setShowCartPanel(true)}
+                    onShowCart={() => setShowCartPanel(true)} // This function now updates the context state
                     searchInputRef={searchInputRef}
                 />
-
-                {/* FIXED: Search Panel with proper AnimatePresence */}
                 <AnimatePresence>
                     {searchOpen && (
                         <SearchPanel
@@ -147,7 +94,6 @@ const Navbar = () => {
                 </AnimatePresence>
             </nav>
 
-            {/* FIXED: Add overlay when search is open on mobile */}
             {searchOpen && (
                 <div 
                     className="fixed inset-0 bg-black bg-opacity-25 z-[50] md:hidden"
@@ -155,19 +101,11 @@ const Navbar = () => {
                 />
             )}
 
-            {/* Mobile Menu */}
-            <MobileMenu
-                isOpen={mobileMenuOpen}
-                onClose={() => setMobileMenuOpen(false)}
-            />
+            <MobileMenu isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+            
+            {/* The CartPanel now uses state from the global context */}
+            <CartPanel isOpen={showCartPanel} onClose={() => setShowCartPanel(false)} />
 
-            {/* Cart Panel */}
-            <CartPanel
-                isOpen={showCartPanel}
-                onClose={() => setShowCartPanel(false)}
-            />
-
-            {/* Cart Notification */}
             <CartNotification
                 isVisible={showCartPopup}
                 onClose={() => setShowCartPopup(false)}

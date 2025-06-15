@@ -82,6 +82,8 @@ const MobileMenu = ({ isOpen, onClose }) => {
         { id: "Vitamins", name: "Nutrition & Supplements" },
         { id: "Diapers", name: "Diapers & Wipes" },
         { id: "NurseryItems", name: "Nursery & Sleep Essentials" },
+        { id: "BathBodyCare", name: "Bath & Body Care" },
+        { id: "Toys", name: "Play & Learn" },
     ];
 
     const handleSignOut = () => {

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import ProductCard from './ProductCard';
 
-const ProductGrid = ({ products, isLoading = false, title = "Products" }) => {
+const ProductGrid = ({ products, isLoading = false, title = "Trusted, safe, and quality products" }) => {
     // State to track viewport for better responsiveness
     const [skeletonCount, setSkeletonCount] = useState(10);
     

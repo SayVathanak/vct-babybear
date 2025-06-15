@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState, useMemo, useCallback, memo } from "react";
+import React, { useEffect, useState, useMemo, useCallback, memo, useRef } from "react";
 import Image from "next/image";
 import { useAppContext } from "@/context/AppContext";
 import Footer from "@/components/Footer";
@@ -105,6 +105,7 @@ const MyOrders = () => {
     const [expandedOrder, setExpandedOrder] = useState(null);
     const [sortBy, setSortBy] = useState("newest");
     const [retryCount, setRetryCount] = useState(0);
+    const initialLoadComplete = useRef(false);
 
     const [showProofModal, setShowProofModal] = useState(false);
     const [currentProofImageUrl, setCurrentProofImageUrl] = useState("");
@@ -186,11 +187,6 @@ const MyOrders = () => {
             if (data.success) {
                 const sortedOrders = data.orders.sort((a, b) => new Date(b.date) - new Date(a.date));
                 setOrders(sortedOrders);
-
-                if (sortedOrders.length > 0 && !expandedOrder) { // Keep user's logic to expand first order or based on existing expandedOrder state
-                    setExpandedOrder(currentExpanded => currentExpanded || sortedOrders[0]?._id);
-                }
-                
                 setRetryCount(0);
             } else {
                 throw new Error(data.message || 'Failed to fetch orders');
@@ -213,12 +209,20 @@ const MyOrders = () => {
         } finally {
             setLoading(false);
         }
-    }, [getToken, expandedOrder]); // Added expandedOrder to deps based on user's original code
+    }, [getToken]);
 
     useEffect(() => {
         if (user) fetchOrders();
         else setLoading(false);
     }, [user, fetchOrders]);
+
+    useEffect(() => {
+        // Expand the first order on the initial load, and only once.
+        if (orders.length > 0 && !initialLoadComplete.current) {
+            setExpandedOrder(orders[0]?._id);
+            initialLoadComplete.current = true;
+        }
+    }, [orders]);
 
     const filteredOrders = useMemo(() => {
         if (!orders.length) return [];

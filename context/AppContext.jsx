@@ -1,10 +1,9 @@
 // context/AppContext.jsx
 'use client'
-import { productsDummyData, userDummyData } from "@/assets/assets";
 import { useAuth, useUser } from "@clerk/nextjs";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
 
 export const AppContext = createContext();
@@ -26,6 +25,22 @@ export const AppContextProvider = (props) => {
     const [cartItems, setCartItems] = useState({});
     const [isAddingToCart, setIsAddingToCart] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
+    const [showCartPanel, setShowCartPanel] = useState(false);
+
+    // This effect now implements the logic based on the cart item count.
+    useEffect(() => {
+        // Calculate the total number of items in the cart.
+        const totalItems = Object.values(cartItems).reduce((sum, qty) => sum + qty, 0);
+
+        // Check if the panel has already been shown in this session.
+        const hasPanelBeenShown = sessionStorage.getItem('cartPanelShown') === 'true';
+
+        // Logic: If the total item count is exactly 1 AND the panel hasn't been shown yet this session...
+        if (totalItems === 1 && !hasPanelBeenShown) {
+            setShowCartPanel(true); // ...then show the panel.
+            sessionStorage.setItem('cartPanelShown', 'true'); // And set a flag so it doesn't show again.
+        }
+    }, [cartItems]); // This effect re-runs whenever the cart items change.
 
     const fetchProductData = async () => {
         try {
@@ -42,7 +57,7 @@ export const AppContextProvider = (props) => {
 
     const fetchUserData = async () => {
         try {
-            if (user.publicMetadata.role === 'seller') {
+            if (user?.publicMetadata?.role === 'seller') {
                 setIsSeller(true);
             }
 
@@ -60,6 +75,7 @@ export const AppContextProvider = (props) => {
         }
     }
 
+    // The addToCart function is now simplified. It only handles adding to the cart.
     const addToCart = async (productId, quantity = 1, replaceQuantity = false) => {
         setIsAddingToCart(true);
 
@@ -67,13 +83,12 @@ export const AppContextProvider = (props) => {
             let cartData = structuredClone(cartItems);
 
             if (replaceQuantity || !cartData[productId]) {
-                // Replace quantity or set new if item doesn't exist
                 cartData[productId] = quantity;
             } else {
-                // Add to existing quantity
                 cartData[productId] += quantity;
             }
-
+            
+            // This state update will trigger the useEffect above.
             setCartItems(cartData);
 
             if (user) {
@@ -91,7 +106,7 @@ export const AppContextProvider = (props) => {
 
     const updateCartQuantity = async (itemId, quantity) => {
         let cartData = structuredClone(cartItems);
-        if (quantity === 0) {
+        if (quantity <= 0) {
             delete cartData[itemId];
         } else {
             cartData[itemId] = quantity;
@@ -109,14 +124,11 @@ export const AppContextProvider = (props) => {
         }
     }
 
-    // Fix: Modified increaseQty to ensure it only increments by 1
     const increaseQty = (productId, quantity = 1, e) => {
         if (e) {
             e.stopPropagation();
             e.preventDefault();
         }
-
-        // Always increment by 1, ignoring the quantity parameter
         const currentQty = cartItems[productId] || 0;
         updateCartQuantity(productId, currentQty + 1);
     }
@@ -181,8 +193,10 @@ export const AppContextProvider = (props) => {
         isAddingToCart, setIsAddingToCart,
         increaseQty, decreaseQty,
         handlePayClick,
-        searchOpen, 
-        setSearchOpen
+        searchOpen,
+        setSearchOpen,
+        showCartPanel,
+        setShowCartPanel
     };
 
     return (
@@ -191,3 +205,4 @@ export const AppContextProvider = (props) => {
         </AppContext.Provider>
     );
 }
+    

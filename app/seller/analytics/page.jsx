@@ -83,18 +83,18 @@ const Analytics = () => {
 
     const productMap = new Map();
     ordersToProcess.forEach(order => {
-        order.items?.forEach(item => {
-            const productId = item.product?._id;
-            if (!productId) return;
-            const currentCount = productMap.get(productId) || {
-                name: item.product.name || 'Unknown Product',
-                count: 0,
-                revenue: 0
-            };
-            currentCount.count += item.quantity;
-            currentCount.revenue += (item.product.price || 0) * item.quantity;
-            productMap.set(productId, currentCount);
-        });
+      order.items?.forEach(item => {
+        const productId = item.product?._id;
+        if (!productId) return;
+        const currentCount = productMap.get(productId) || {
+          name: item.product.name,
+          count: 0,
+          revenue: 0
+        };
+        currentCount.count += item.quantity;
+        currentCount.revenue += (item.product.price || 0) * item.quantity;
+        productMap.set(productId, currentCount);
+      });
     });
 
     const topProducts = Array.from(productMap.values())

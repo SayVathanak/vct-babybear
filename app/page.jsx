@@ -54,7 +54,7 @@ const Home = () => {
 
   return (
     <>
-      <Navbar />
+      {/* <Navbar /> */}
       <div className="px-4 md:px-12 lg:px-24 max-w-7xl mx-auto">
         <HeaderSlider />
 
