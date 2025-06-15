@@ -121,7 +121,7 @@ const HomeProducts = () => {
     { name: 'Diapers', icon: <CiBandage className="text-md md:text-xl" />, link: '/all-products?category=Diapers' },
     { name: 'Vitamins', icon: <CiApple className="text-md md:text-xl" />, link: '/all-products?category=Vitamins' },
     { name: 'Feeding', icon: <CiShoppingCart className="text-md md:text-xl" />, link: '/all-products?category=FeedingTools' },
-    { name: 'Bath & Care', icon: <CiHeart className="text-md md:text-xl" />, link: '/all-products?category=BathBodyCare' }
+    { name: 'Bath & Body Care', icon: <CiHeart className="text-md md:text-xl" />, link: '/all-products?category=BathBodyCare' }
   ];
 
   const getProductsByCategory = (categories) => {

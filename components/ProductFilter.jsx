@@ -114,13 +114,13 @@ const ProductFilter = ({
                         <li key={category}>
                             <button
                                 onClick={() => handleCategoryChange(category)}
-                                className={`w-full text-left px-3 py-2 rounded-md transition text-sm flex justify-between items-center ${
+                                className={`w-full text-left py-2 rounded-md transition text-sm flex justify-between items-center ${
                                     selectedCategory === category
-                                        ? 'font-semibold bg-sky-100 text-sky-700'
-                                        : 'text-gray-600 hover:bg-gray-100'
+                                        ? 'text-gray-900'
+                                        : 'text-gray-400'
                                 }`}
                             >
-                                <span>{categoryDisplayNames[category] || category}</span>
+                                <span> ⟢ {categoryDisplayNames[category] || category}</span>
                                 {selectedCategory === category && <span className="text-xs">✓</span>}
                             </button>
                         </li>
@@ -129,7 +129,7 @@ const ProductFilter = ({
             </FilterSection>
 
             {/* Price Range */}
-            <FilterSection
+            {/* <FilterSection
                 title="Price Range"
                 isOpen={showPrice}
                 toggle={() => setShowPrice(!showPrice)}
@@ -154,17 +154,17 @@ const ProductFilter = ({
                         </span>
                     </div>
                 </div>
-            </FilterSection>
+            </FilterSection> */}
 
             {/* Brands */}
-            <FilterSection
+            {/* <FilterSection
                 title="Brands"
                 isOpen={showBrands}
                 toggle={() => setShowBrands(!showBrands)}
             >
-                <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                <div className="space-y-2 max-h-60 overflow-y-auto">
                     {brands.map(({ name, count }) => (
-                        <label key={name} className="flex items-center space-x-3 cursor-pointer">
+                        <label key={name} className="flex items-center cursor-pointer">
                             <input
                                 type="checkbox"
                                 checked={selectedBrands.includes(name)}
@@ -176,7 +176,7 @@ const ProductFilter = ({
                         </label>
                     ))}
                 </div>
-            </FilterSection>
+            </FilterSection> */}
         </div>
     );
 };
@@ -186,7 +186,7 @@ const FilterSection = ({ title, isOpen, toggle, children }) => {
         <div className="py-4">
             <button
                 onClick={toggle}
-                className="flex items-center justify-between w-full text-left font-semibold text-gray-700 mb-2"
+                className="flex items-center justify-between w-full text-left font-medium text-gray-700 mb-2"
             >
                 <span>{title}</span>
                 {isOpen ? <FaChevronUp className="text-gray-500" size={14} /> : <FaChevronDown className="text-gray-500" size={14} />}
