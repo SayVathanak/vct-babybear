@@ -20,7 +20,7 @@ const Navbar = () => {
         />
         <button 
           onClick={() => router.push('/seller')} 
-          className='flex items-center justify-center p-2 rounded-full hover:bg-gray-100 transition-colors text-md md:text-lg'
+          className='flex items-center justify-center p-2 rounded-full hover:text-gray-500 transition-colors text-md md:text-lg'
           aria-label="Go back to seller dashboard"
         >
           <IoChevronBack size={24} className='text-gray-700' />

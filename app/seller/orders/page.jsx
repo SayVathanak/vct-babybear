@@ -17,6 +17,8 @@ import {
 const IMAGE_BASE_URL = null; // Example: 'https://your-image-server.com/proofs/'; Set to null if images are full URLs
 
 // Memoized SellerOrderItem component
+// In the SellerOrderItem component, update the rendering to handle missing product data:
+
 const SellerOrderItem = memo(({ item, currency }) => (
     <div className="flex items-center justify-between p-3 rounded-md bg-white shadow-sm border border-gray-100">
         <div className="flex items-center flex-1 min-w-0">
@@ -41,6 +43,7 @@ const SellerOrderItem = memo(({ item, currency }) => (
         </p>
     </div>
 ));
+
 SellerOrderItem.displayName = 'SellerOrderItem';
 
 // Error Boundary component to catch rendering errors in its children

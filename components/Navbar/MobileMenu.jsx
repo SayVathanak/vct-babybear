@@ -110,6 +110,23 @@ const MobileMenu = ({ isOpen, onClose }) => {
         setShowSignOutModal(false);
     };
 
+    // Handle navigation with proper timing
+    const handleNavigation = (url) => {
+        // Close menu first
+        onClose();
+        
+        // Small delay to ensure menu closes, then navigate
+        setTimeout(() => {
+            router.push(url);
+        }, 100);
+    };
+
+    // Handle category navigation
+    const handleCategoryClick = (categoryId) => {
+        const url = `/all-products?category=${categoryId}`;
+        handleNavigation(url);
+    };
+
     return (
         <>
             <AnimatePresence>
@@ -136,10 +153,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
                                     {assets.logo ? (
                                         <Image
                                             className="cursor-pointer w-24"
-                                            onClick={() => {
-                                                router.push("/");
-                                                onClose();
-                                            }}
+                                            onClick={() => handleNavigation("/")}
                                             src={assets.logo}
                                             alt="logo"
                                             width={112}
@@ -148,10 +162,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
                                     ) : (
                                         <div
                                             className="cursor-pointer text-xl font-bold"
-                                            onClick={() => {
-                                                router.push("/");
-                                                onClose();
-                                            }}
+                                            onClick={() => handleNavigation("/")}
                                         >
                                             Baby Bear Store
                                         </div>
@@ -171,27 +182,24 @@ const MobileMenu = ({ isOpen, onClose }) => {
                                 {/* Main Navigation */}
                                 <div className="p-5 pb-2 border-b border-gray-100">
                                     <div className="flex flex-col space-y-2">
-                                        <Link
-                                            href="/"
-                                            onClick={onClose}
-                                            className="flex items-center gap-5 text-gray-700 hover:text-sky-600 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors"
+                                        <button
+                                            onClick={() => handleNavigation("/")}
+                                            className="flex items-center gap-5 text-gray-700 hover:text-sky-600 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors text-left"
                                         >
                                             <BsHouseDoor size={18} /> <span>Home</span>
-                                        </Link>
-                                        <Link
-                                            href="/all-products"
-                                            onClick={onClose}
-                                            className="flex items-center gap-5 text-gray-700 hover:text-sky-600 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors"
+                                        </button>
+                                        <button
+                                            onClick={() => handleNavigation("/all-products")}
+                                            className="flex items-center gap-5 text-gray-700 hover:text-sky-600 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors text-left"
                                         >
                                             <BsShop size={18} /> <span>Shop</span>
-                                        </Link>
-                                        <Link
-                                            href="/my-orders"
-                                            onClick={onClose}
-                                            className="flex items-center gap-5 text-gray-700 hover:text-sky-600 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors"
+                                        </button>
+                                        <button
+                                            onClick={() => handleNavigation("/my-orders")}
+                                            className="flex items-center gap-5 text-gray-700 hover:text-sky-600 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors text-left"
                                         >
                                             <BsBoxSeam size={18} /> <span>Orders</span>
-                                        </Link>
+                                        </button>
                                     </div>
                                 </div>
 
@@ -199,15 +207,14 @@ const MobileMenu = ({ isOpen, onClose }) => {
                                 <div className="p-5 pt-2">
                                     <div className="flex flex-col space-y-1">
                                         {categories.map((category) => (
-                                            <Link
-                                                href={`/all-products?category=${category.id}`}
+                                            <button
                                                 key={category.id}
-                                                onClick={onClose}
-                                                className="flex items-center justify-between text-gray-700 hover:text-sky-600 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors"
+                                                onClick={() => handleCategoryClick(category.id)}
+                                                className="flex items-center justify-between text-gray-700 hover:text-sky-600 py-2 px-2 rounded-md hover:bg-gray-50 transition-colors text-left w-full"
                                             >
                                                 <span>{category.name}</span>
                                                 <FiChevronRight size={16} className="text-gray-400" />
-                                            </Link>
+                                            </button>
                                         ))}
                                     </div>
                                 </div>
@@ -217,11 +224,8 @@ const MobileMenu = ({ isOpen, onClose }) => {
                             <div className="px-5 pb-10 md:pb-20 pt-5 mt-auto border-t border-gray-100 bg-gray-50">
                                 {isSeller && (
                                     <button
-                                        onClick={() => {
-                                            router.push("/seller");
-                                            onClose();
-                                        }}
-                                        className="flex items-center gap-3 text-gray-700 hover:text-sky-600 py-2 mb-3 w-full"
+                                        onClick={() => handleNavigation("/seller")}
+                                        className="flex items-center gap-3 text-gray-700 hover:text-sky-600 py-2 mb-3 w-full text-left"
                                     >
                                         <BoxIcon /> <span>Seller Dashboard</span>
                                     </button>

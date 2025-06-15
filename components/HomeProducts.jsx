@@ -20,19 +20,37 @@ const HomeProducts = () => {
   const [sortedProducts, setSortedProducts] = useState([]);
   const [sortOption, setSortOption] = useState("name");
   const [showFilters, setShowFilters] = useState(false);
-  
+
   // Refs for scroll containers
+  const feedingEssentialsRef = useRef(null);
+  const playLearnRef = useRef(null);
+  const bathCareRef = useRef(null);
+  const onTheGoRef = useRef(null);
+  const bundlesGiftSetsRef = useRef(null);
   const newArrivalsRef = useRef(null);
-  const recommendedRef = useRef(null);
+  const parentFavoritesRef = useRef(null);
 
   const categoryButtons = [
-    { name: 'Baby Milk', icon: <CiPillsBottle1 className="text-xl" />, link: '/all-products' },
-    { name: 'Baby Hygiene', icon: <CiMedicalCross className="text-xl" />, link: '/all-products' },
-    { name: 'Diapers', icon: <CiBandage className="text-xl" />, link: '/all-products' },
-    { name: 'Baby Food', icon: <CiApple className="text-xl" />, link: '/all-products' },
-    { name: 'Feeding Essentials', icon: <CiShoppingCart className="text-xl" />, link: '/all-products' },
-    { name: 'Bath & Care', icon: <CiHeart className="text-xl" />, link: '/all-products' }
+    { name: 'Baby Milk', icon: <CiPillsBottle1 className="text-xl" />, link: '/all-products?category=PowderedMilk' },
+    { name: 'Baby Hygiene', icon: <CiMedicalCross className="text-xl" />, link: '/all-products?category=Accessories' },
+    { name: 'Diapers', icon: <CiBandage className="text-xl" />, link: '/all-products?category=Diapers' },
+    { name: 'Baby Food', icon: <CiApple className="text-xl" />, link: '/all-products?category=Vitamins' },
+    { name: 'Feeding Essentials', icon: <CiShoppingCart className="text-xl" />, link: '/all-products?category=FeedingTools' },
+    { name: 'Bath & Care', icon: <CiHeart className="text-xl" />, link: '/all-products?category=NurseryItems' }
   ];
+
+  // Function to filter products by category
+  const getProductsByCategory = (categories) => {
+    return products.filter(product => 
+      categories.includes(product.category)
+    );
+  };
+
+  // Function to get products by multiple criteria
+  const getProductsByMultipleCategories = (categories, limit = 10) => {
+    const filteredProducts = getProductsByCategory(categories);
+    return filteredProducts.slice(0, limit);
+  };
 
   useEffect(() => {
     if (products && products.length > 0) {
@@ -70,10 +88,10 @@ const HomeProducts = () => {
     }
   };
 
-  const ProductScrollSection = ({ 
-    title, 
-    products, 
-    seeAllLink, 
+  const ProductScrollSection = ({
+    title,
+    products,
+    seeAllLink,
     containerRef,
     showFilters: showFiltersSection = false
   }) => (
@@ -101,7 +119,7 @@ const HomeProducts = () => {
       <div className="relative group">
         {/* Container with peek out effect */}
         <div className="overflow-hidden">
-          <div 
+          <div
             ref={containerRef}
             className="flex gap-3 pb-4 overflow-x-auto scrollbar-hide peek-scroll-container"
             style={{
@@ -123,16 +141,16 @@ const HomeProducts = () => {
               <div className="flex-none w-full flex flex-col items-center justify-center py-16">
                 <CiGrid41 className="text-6xl text-gray-300 mb-4" />
                 <p className="text-gray-500 text-lg">
-                  {title === "New arrivals" ? "Loading Products..." : "No recommendations available"}
+                  {title === "New Arrivals" ? "Loading Products..." : `No ${title.toLowerCase()} products available`}
                 </p>
               </div>
             )}
-            
+
             {/* Add extra space at the end to ensure last item is fully visible */}
             <div className="flex-shrink-0 w-4"></div>
           </div>
         </div>
-        
+
         {/* Optional: Visual indicator for more content */}
         {products.length > 2 && (
           <div className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-l from-white via-white/80 to-transparent w-16 h-full flex items-center justify-end pr-2 pointer-events-none">
@@ -176,7 +194,7 @@ const HomeProducts = () => {
               {categoryButtons.map((button, index) => (
                 <Link href={button.link} key={index}>
                   <button className="px-4 py-2 rounded-sm bg-sky-50 text-sky-300 transition-all flex items-center gap-2 whitespace-nowrap">
-                    <span className="p-1 rounded-sm">{button.icon}</span> 
+                    <span className="p-1 rounded-sm">{button.icon}</span>
                     {button.name}
                   </button>
                 </Link>
@@ -228,24 +246,75 @@ const HomeProducts = () => {
             </div>
           )}
 
-          {/* New Arrivals Section */}
+          {/* Parent Favorites Section - Popular categories */}
+          <div className="border-t border-gray-100 pt-4">
+            <ProductScrollSection
+              title="Parent Favorites"
+              products={getProductsByMultipleCategories(['PowderedMilk', 'LiquidMilk', 'Vitamins', 'Diapers'], 10)}
+              seeAllLink="/all-products"
+              containerRef={parentFavoritesRef}
+            />
+          </div>
+
+          {/* Feeding Essentials Section - Bottles, Feeding Tools, Sippy Cups */}
           <ProductScrollSection
-            title="New arrivals"
-            products={sortedProducts.slice(0, 10)}
-            seeAllLink="/all-products"
-            containerRef={newArrivalsRef}
+            title="Feeding Essentials"
+            products={getProductsByMultipleCategories(['FeedingTools', 'Bottles'], 10)}
+            seeAllLink="/all-products?category=FeedingTools"
+            containerRef={feedingEssentialsRef}
             showFilters={true}
           />
 
-          {/* Recommended Section */}
+          {/* Play & Learn Section - Baby Accessories and Toys */}
           <div className="border-t border-gray-100 pt-4">
             <ProductScrollSection
-              title="Recommended for you"
-              products={sortedProducts.slice(10, 15)}
-              seeAllLink="/recommendations"
-              containerRef={recommendedRef}
+              title="Play & Learn"
+              products={getProductsByMultipleCategories(['Toys', 'Accessories'], 10)}
+              seeAllLink="/all-products?category=Accessories"
+              containerRef={playLearnRef}
             />
           </div>
+
+          {/* Bath & Care Section - Nursery Items and Baby Care */}
+          <div className="border-t border-gray-100 pt-4">
+            <ProductScrollSection
+              title="Bath & Body Care"
+              products={getProductsByMultipleCategories(['BathBodyCare', 'NurseryItems', 'Diapers'], 10)}
+              seeAllLink="/all-products?category=BathBodyCare"
+              containerRef={bathCareRef}
+            />
+          </div>
+
+          {/* On-the-Go Section - Tumblers, Sippy Cups, Portable Items */}
+          <div className="border-t border-gray-100 pt-4">
+            <ProductScrollSection
+              title="On-the-Go"
+              products={getProductsByMultipleCategories(['Tumblers', 'Bottles'], 10)}
+              seeAllLink="/all-products?category=Tumblers"
+              containerRef={onTheGoRef}
+            />
+          </div>
+
+          {/* Bundles & Gift Sets Section - Mix of categories for gift sets */}
+          <div className="border-t border-gray-100 pt-4">
+            <ProductScrollSection
+              title="Bundles & Gift Sets"
+              products={getProductsByMultipleCategories(['FeedingTools', 'Accessories', 'NurseryItems'], 10)}
+              seeAllLink="/all-products"
+              containerRef={bundlesGiftSetsRef}
+            />
+          </div>
+
+          {/* New Arrivals Section - Recently added products (sorted by date) */}
+          <div className="border-t border-gray-100 pt-4">
+            <ProductScrollSection
+              title="New Arrivals"
+              products={sortedProducts.filter(product => product.date).sort((a, b) => b.date - a.date).slice(0, 10)}
+              seeAllLink="/all-products"
+              containerRef={newArrivalsRef}
+            />
+          </div>
+
         </div>
       </div>
 

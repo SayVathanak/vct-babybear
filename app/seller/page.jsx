@@ -913,8 +913,10 @@ const AddProduct = () => {
                                 <option value="FeedingTools">Feeding Sets & Utensils</option>
                                 <option value="Accessories">Baby Essentials & Accessories</option>
                                 <option value="Vitamins">Nutrition & Supplements</option>
+                                <option value="BathBodyCare">Bath & Body Care</option>
                                 <option value="Diapers">Diapers & Wipes</option>
                                 <option value="NurseryItems">Nursery & Sleep Essentials</option>
+                                <option value="Toys">Play & Learn</option>
                             </select>
                         </div>
                     </div>

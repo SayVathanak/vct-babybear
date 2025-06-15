@@ -13,9 +13,6 @@ const productSchema = new mongoose.Schema({
     isAvailable: { type: Boolean, default: true },
 });
 
-// Add this to your Product.js schema
-productSchema.index({ barcode: 1 });
-
 const Product = mongoose.models.product || mongoose.model('product', productSchema);
 
 export default Product;

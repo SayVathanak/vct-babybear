@@ -35,7 +35,9 @@ const ProductFilter = ({
         "Accessories": "Baby Essentials & Accessories",
         "Vitamins": "Nutrition & Supplements",
         "Diapers": "Diapers & Wipes",
-        "NurseryItems": "Nursery & Sleep Essentials"
+        "NurseryItems": "Nursery & Sleep Essentials",
+        "BathBodyCare": "Bath & Body Care",
+        "Toys": "Play & Learn",
     };
 
     const sortOptions = [
@@ -47,12 +49,26 @@ const ProductFilter = ({
         { value: "popular", label: "Popularity" },
     ];
 
+    // Inside ProductFilter component
+    const handleCategoryChange = (category) => {
+        setSelectedCategory(category);
+
+        // Update URL with the new category parameter
+        const url = new URL(window.location);
+        if (category === "All") {
+            url.searchParams.delete('category');
+        } else {
+            url.searchParams.set('category', category);
+        }
+        window.history.pushState({}, '', url);
+    };
+
     const handlePriceChange = (e, boundary) => {
         const value = e.target.value ? Number(e.target.value) : (boundary === 'min' ? 0 : maxPossiblePrice);
-        
+
         // Update local state first
         let newLocalRange;
-        
+
         // Ensure min doesn't exceed max and max doesn't go below min
         if (boundary === 'min' && value > localPriceRange.max) {
             newLocalRange = {
@@ -70,7 +86,7 @@ const ProductFilter = ({
                 [boundary]: value
             };
         }
-        
+
         setLocalPriceRange(newLocalRange);
     };
 
@@ -121,116 +137,17 @@ const ProductFilter = ({
                     {categories.map(category => (
                         <li key={category}>
                             <button
-                                onClick={() => setSelectedCategory(category)}
-                                className={`w-full text-left py-2 px-1 rounded-md transition hover:text-sky-200 ${
-                                    selectedCategory === category
-                                    ? 'text-sky-300 font-medium'
-                                    : 'text-gray-700'
-                                }`}
+                                onClick={() => handleCategoryChange(category)}
+                                className={`w-full text-left py-2 rounded-md transition ${selectedCategory === category
+                                        ? 'text-gray-700'
+                                        : 'text-gray-400 hover:text-gray-600'
+                                    }`}
                             >
-                                {categoryDisplayNames[category] || category}
+                                ⤷ {categoryDisplayNames[category] || category}
                             </button>
                         </li>
                     ))}
                 </ul>
-            </FilterSection>
-
-            {/* Brands */}
-            <FilterSection
-                title="Brands"
-                isOpen={showBrands}
-                toggle={() => setShowBrands(!showBrands)}
-            >
-                <ul className="space-y-2 max-h-60 overflow-y-auto">
-                    {brands.map(brand => (
-                        <li key={brand.name} className="flex items-center">
-                            <input
-                                type="checkbox"
-                                id={`brand-${brand.name}`}
-                                checked={selectedBrands.includes(brand.name)}
-                                onChange={() => handleBrandToggle(brand.name)}
-                                className="h-4 w-4 text-blue-500 focus:ring-blue-400 border-gray-300 rounded"
-                            />
-                            <label htmlFor={`brand-${brand.name}`} className="ml-2 text-sm text-gray-700">
-                                {brand.name} ({brand.count})
-                            </label>
-                        </li>
-                    ))}
-                </ul>
-            </FilterSection>
-
-            {/* Price Range */}
-            <FilterSection
-                title="Price Range"
-                isOpen={showPrice}
-                toggle={() => setShowPrice(!showPrice)}
-            >
-                <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <label htmlFor="min-price" className="block text-sm text-gray-600 mb-1">
-                                Min Price
-                            </label>
-                            <input
-                                type="number"
-                                id="min-price"
-                                min="0"
-                                max={maxPossiblePrice}
-                                value={localPriceRange.min}
-                                onChange={(e) => handlePriceChange(e, 'min')}
-                                onBlur={handlePriceInputBlur}
-                                className="w-full p-2 border border-gray-300 rounded-md"
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="max-price" className="block text-sm text-gray-600 mb-1">
-                                Max Price
-                            </label>
-                            <input
-                                type="number"
-                                id="max-price"
-                                min="0"
-                                max={maxPossiblePrice}
-                                value={localPriceRange.max}
-                                onChange={(e) => handlePriceChange(e, 'max')}
-                                onBlur={handlePriceInputBlur}
-                                className="w-full p-2 border border-gray-300 rounded-md"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="pt-2 space-y-2">
-                        <input
-                            type="range"
-                            min="0"
-                            max={maxPossiblePrice}
-                            value={localPriceRange.min}
-                            onChange={(e) => handlePriceChange(e, 'min')}
-                            onMouseUp={applyPriceRange}
-                            onTouchEnd={applyPriceRange}
-                            className="w-full accent-blue-500"
-                        />
-                        <input
-                            type="range"
-                            min="0"
-                            max={maxPossiblePrice}
-                            value={localPriceRange.max}
-                            onChange={(e) => handlePriceChange(e, 'max')}
-                            onMouseUp={applyPriceRange}
-                            onTouchEnd={applyPriceRange}
-                            className="w-full accent-blue-500"
-                        />
-                    </div>
-                    
-                    <div className="flex justify-end">
-                        <button 
-                            onClick={applyPriceRange}
-                            className="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
-                        >
-                            Apply
-                        </button>
-                    </div>
-                </div>
             </FilterSection>
         </div>
     );
