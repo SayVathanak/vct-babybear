@@ -6,7 +6,6 @@ import Image from "next/image";
 import Navbar from "@/components/Navbar/Navbar";
 import { useAppContext } from "@/context/AppContext";
 import { FaChevronLeft, FaTimes } from "react-icons/fa";
-import { Minus, Plus } from 'lucide-react';
 
 const Cart = () => {
   const { products, router, cartItems, updateCartQuantity, getCartCount } = useAppContext();
@@ -160,33 +159,38 @@ const Cart = () => {
 
                         <div className="flex flex-col sm:flex-row sm:items-center mt-4 sm:mt-6 sm:space-x-8 md:space-x-12">
                           {/* Improved Quantity Section */}
-                          <div className="flex items-center bg-gray-50 rounded-lg border border-gray-200 p-1">
-                            <button
-                              className="w-10 h-10 flex items-center justify-center rounded-md hover:bg-white hover:shadow-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed text-gray-600 hover:text-gray-900"
-                              onClick={() => decreaseQuantity(product._id, cartItems[itemId])}
-                              disabled={cartItems[itemId] <= 1}
-                              aria-label="Decrease quantity"
-                            >
-                              <Minus size={16} strokeWidth={2.5} />
-                            </button>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              value={inputQuantities[itemId] || ""}
-                              onChange={(e) => handleQuantityChange(product._id, e.target.value)}
-                              onBlur={() => handleQuantityBlur(product._id)}
-                              onKeyPress={(e) => handleKeyPress(e, product._id)}
-                              className="w-16 h-10 text-center bg-transparent border-none focus:outline-none focus:bg-white focus:shadow-sm rounded-md transition-all duration-200 font-medium text-gray-900"
-                              aria-label="Quantity"
-                            />
-                            <button
-                              className="w-10 h-10 flex items-center justify-center rounded-md hover:bg-white hover:shadow-sm transition-all duration-200 text-gray-600 hover:text-gray-900"
-                              onClick={() => increaseQuantity(product._id, cartItems[itemId])}
-                              aria-label="Increase quantity"
-                            >
-                              <Plus size={16} strokeWidth={2.5} />
-                            </button>
+                          <div className="flex items-center mb-2 sm:mb-0">
+                            <span className="text-xs sm:text-sm md:text-base uppercase tracking-wider mr-3 sm:mr-4 text-gray-600">
+                              Quantity
+                            </span>
+                            <div className="flex items-center border px-2 rounded-lg overflow-hidden">
+                              <button
+                                className="w-8 h-8 flex items-center justify-center text-sm transition-colors"
+                                onClick={() => decreaseQuantity(product._id, cartItems[itemId])}
+                                disabled={cartItems[itemId] <= 1}
+                                aria-label="Decrease quantity"
+                              >
+                                -
+                              </button>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                value={inputQuantities[itemId] || ""}
+                                onChange={(e) => handleQuantityChange(product._id, e.target.value)}
+                                onBlur={() => handleQuantityBlur(product._id)}
+                                onKeyPress={(e) => handleKeyPress(e, product._id)}
+                                className="w-12 h-8 text-center focus:outline-none"
+                                aria-label="Quantity"
+                              />
+                              <button
+                                className="w-8 h-8 flex items-center justify-center text-sm transition-colors"
+                                onClick={() => increaseQuantity(product._id, cartItems[itemId])}
+                                aria-label="Increase quantity"
+                              >
+                                +
+                              </button>
+                            </div>
                           </div>
 
                           {/* Subtotal */}
