@@ -67,7 +67,7 @@ const ProductScrollSection = ({
 
   return (
     <div className="py-4">
-      <div className="flex items-center justify-between mb-4 px-4 sm:px-0">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg md:text-xl font-medium flex items-center gap-2">
           {title}
         </h2>
@@ -81,7 +81,7 @@ const ProductScrollSection = ({
           {/* MODIFICATION: Added padding for peek-out effect and adjusted gap */}
           <div
             ref={containerRef}
-            className="flex gap-1.5 pb-4 px-4 sm:px-0"
+            className="flex gap-1.5 pb-4"
             style={{ scrollSnapType: 'x mandatory' }}
           >
             {products.length > 0 ? (
@@ -180,7 +180,7 @@ const HomeProducts = () => {
         {/* MODIFICATION: Removed max-w-7xl and mx-auto to allow full-width scroll on mobile */}
         <div className="w-full">
           <div className="w-full overflow-x-auto scrollbar-hide">
-            <div className="flex space-x-2 py-4 px-4 sm:px-6 lg:px-8 min-w-max">
+            <div className="flex space-x-2 py-4 sm:px-6 lg:px-8 min-w-max">
               {categoryButtons.map((button, index) => (
                 <Link href={button.link} key={index}>
                   <div className="px-4 py-2 border rounded-full bg-white transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer">
