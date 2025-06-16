@@ -26,6 +26,10 @@ export const AppContextProvider = (props) => {
     const [isAddingToCart, setIsAddingToCart] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const [showCartPanel, setShowCartPanel] = useState(false);
+    
+    // Add order processing state to prevent duplicate orders
+    const [isProcessingOrder, setIsProcessingOrder] = useState(false);
+    const orderProcessingRef = useRef(false);
 
     // This effect now implements the logic based on the cart item count.
     useEffect(() => {
@@ -75,11 +79,13 @@ export const AppContextProvider = (props) => {
         }
     }
 
-    // The addToCart function is now simplified. It only handles adding to the cart.
+    // Improved addToCart function without setTimeout
     const addToCart = async (productId, quantity = 1, replaceQuantity = false) => {
+        if (isAddingToCart) return; // Prevent multiple simultaneous additions
+        
         setIsAddingToCart(true);
 
-        setTimeout(async () => {
+        try {
             let cartData = structuredClone(cartItems);
 
             if (replaceQuantity || !cartData[productId]) {
@@ -88,20 +94,19 @@ export const AppContextProvider = (props) => {
                 cartData[productId] += quantity;
             }
             
-            // This state update will trigger the useEffect above.
+            // Update local state immediately
             setCartItems(cartData);
 
+            // Sync with server if user is logged in
             if (user) {
-                try {
-                    const token = await getToken();
-                    await axios.post('/api/cart/update', { cartData }, { headers: { Authorization: `Bearer ${token}` } });
-                } catch (error) {
-                    toast.error(error.message);
-                }
+                const token = await getToken();
+                await axios.post('/api/cart/update', { cartData }, { headers: { Authorization: `Bearer ${token}` } });
             }
-
+        } catch (error) {
+            toast.error(error.message);
+        } finally {
             setIsAddingToCart(false);
-        }, 300);
+        }
     }
 
     const updateCartQuantity = async (itemId, quantity) => {
@@ -147,6 +152,56 @@ export const AppContextProvider = (props) => {
         } else {
             toast.error("Please login to continue purchasing");
             openSignIn();
+        }
+    }
+
+    // New function to handle order placement with duplicate prevention
+    const placeOrder = async (orderData) => {
+        // Prevent duplicate order processing
+        if (isProcessingOrder || orderProcessingRef.current) {
+            toast.error("Order is already being processed. Please wait.");
+            return { success: false, message: "Order already in progress" };
+        }
+
+        setIsProcessingOrder(true);
+        orderProcessingRef.current = true;
+
+        try {
+            const token = await getToken();
+            const response = await axios.post('/api/order/create', orderData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (response.data.success) {
+                // Clear cart immediately after successful order
+                setCartItems({});
+                toast.success("Order placed successfully!");
+                return response.data;
+            } else {
+                throw new Error(response.data.message || "Failed to place order");
+            }
+        } catch (error) {
+            console.error("Order placement error:", error);
+            toast.error(error.response?.data?.message || error.message || "Failed to place order");
+            return { success: false, message: error.message };
+        } finally {
+            setIsProcessingOrder(false);
+            orderProcessingRef.current = false;
+        }
+    }
+
+    // Clear cart function
+    const clearCart = async () => {
+        setCartItems({});
+        
+        if (user) {
+            try {
+                const token = await getToken();
+                await axios.post('/api/cart/update', { cartData: {} }, { headers: { Authorization: `Bearer ${token}` } });
+            } catch (error) {
+                console.error("Error clearing cart:", error);
+                // Don't show error toast for cart clearing as it's often called after successful operations
+            }
         }
     }
 
@@ -196,7 +251,11 @@ export const AppContextProvider = (props) => {
         searchOpen,
         setSearchOpen,
         showCartPanel,
-        setShowCartPanel
+        setShowCartPanel,
+        // New functions
+        placeOrder,
+        clearCart,
+        isProcessingOrder
     };
 
     return (
@@ -205,4 +264,3 @@ export const AppContextProvider = (props) => {
         </AppContext.Provider>
     );
 }
-    

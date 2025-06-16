@@ -8,7 +8,7 @@ const productSchema = new mongoose.Schema({
     offerPrice: { type: Number, required: true },
     image: { type: Array, required: true },
     category: { type: String, required: true },
-    barcode: { type: String, unique: true, sparse: true }, // Added barcode field
+    barcode: { type: String, unique: true, sparse: true },
     date: { type: Number, required: true },
     isAvailable: { type: Boolean, default: true },
 });
