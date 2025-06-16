@@ -696,19 +696,19 @@ const OrderSummary = () => {
             {uploadingProof && (
               <div className="flex items-center text-sm text-blue-600 mt-2">
                 <FaSpinner className="animate-spin mr-2" />
-                <span>Uploading Transaction...</span>
+                <span>Uploading proof...</span>
               </div>
             )}
 
             {transactionProofUrl && !uploadingProof && (
               <div className="flex items-center text-sm text-green-600 mt-2">
                 <FaCheck className="mr-2" />
-                <span>Transaction uploaded successfully!</span>
+                <span>Proof uploaded successfully!</span>
               </div>
             )}
 
             <p className="text-xs text-gray-500 mt-1">
-              Max file size: 2MB. Allowed types: JPG, PNG.
+              Max file size: 2MB. Allowed types: JPG, PNG, GIF.
             </p>
           </div>
         )}
