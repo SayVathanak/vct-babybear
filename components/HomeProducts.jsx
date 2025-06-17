@@ -68,7 +68,7 @@ const ProductScrollSection = ({
   return (
     <div className="py-4">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg md:text-xl font-medium flex items-center gap-2">
+        <h2 className="text-lg md:text-xl text-sky-300/70 font-medium flex items-center gap-2">
           {title}
         </h2>
         <Link href={seeAllLink} className="font-prata text-sm text-sky-300 hover:underline">
@@ -81,7 +81,7 @@ const ProductScrollSection = ({
           {/* MODIFICATION: Added padding for peek-out effect and adjusted gap */}
           <div
             ref={containerRef}
-            className="flex gap-1.5 pb-4"
+            className="flex gap-1.5"
             style={{ scrollSnapType: 'x mandatory' }}
           >
             {products.length > 0 ? (
@@ -150,12 +150,13 @@ const HomeProducts = () => {
   }, [products, sortOption]);
 
   const productSections = [
-    { id: 'parent-favorites', title: "Parent Favorites", categories: ['PowderedMilk', 'LiquidMilk', 'Vitamins', 'Diapers'], seeAllLink: "/all-products" },
+    // { id: 'baby-formula', title: "Baby Formula", products: sortedProducts.slice(0, 10), seeAllLink: "/all-products" },
+    { id: 'baby-formula', title: "Baby Formula", categories: ['PowderedMilk'], seeAllLink: "/all-products?category=PowderedMilk" },
     { id: 'feeding-essentials', title: "Feeding Essentials", categories: ['FeedingTools', 'Bottles'], seeAllLink: "/all-products?category=FeedingTools" },
     { id: 'play-learn', title: "Play & Learn", categories: ['Toys', 'Accessories'], seeAllLink: "/all-products?category=Toys" },
     { id: 'bath-care', title: "Bath & Body Care", categories: ['BathBodyCare', 'NurseryItems', 'Diapers'], seeAllLink: "/all-products?category=BathBodyCare" },
     { id: 'on-the-go', title: "On-the-Go", categories: ['Tumblers', 'Bottles'], seeAllLink: "/all-products?category=Tumblers" },
-    { id: 'new-arrivals', title: "New Arrivals", products: sortedProducts.slice(0, 10), seeAllLink: "/all-products" }
+    { id: 'parent-favorites', title: "Parent Favorites", categories: ['PowderedMilk', 'LiquidMilk', 'Vitamins', 'Diapers'], seeAllLink: "/all-products" },
   ];
 
   return (
@@ -180,12 +181,12 @@ const HomeProducts = () => {
         {/* MODIFICATION: Removed max-w-7xl and mx-auto to allow full-width scroll on mobile */}
         <div className="w-full">
           <div className="w-full overflow-x-auto scrollbar-hide">
-            <div className="flex space-x-2 py-4 sm:px-6 lg:px-8 min-w-max">
+            <div className="flex space-x-2 py-2 min-w-max">
               {categoryButtons.map((button, index) => (
                 <Link href={button.link} key={index}>
-                  <div className="px-4 py-2 border rounded-full bg-white transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer">
-                    <span className="p-0.5 md:p-1 rounded-md bg-white">{button.icon}</span>
-                    <span className="font-medium text-xs md:text-sm">{button.name}</span>
+                  <div className="px-4 py-1 border border-sky-200 rounded-md transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer">
+                    <span className="p-0.5 md:p-1 text-sky-300/70 rounded-md">{button.icon}</span>
+                    <span className="text-xs md:text-sm text-sky-200">{button.name}</span>
                   </div>
                 </Link>
               ))}

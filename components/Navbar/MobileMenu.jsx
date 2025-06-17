@@ -76,14 +76,14 @@ const MobileMenu = ({ isOpen, onClose }) => {
         { id: "PowderedMilk", name: "Formula & Powdered Milk" },
         { id: "LiquidMilk", name: "Ready-to-Feed Milk" },
         { id: "Bottles", name: "Bottles & Sippy Cups" },
-        { id: "Tumblers", name: "Toddler Tumblers & Cups" },
         { id: "FeedingTools", name: "Feeding Sets & Utensils" },
-        { id: "Accessories", name: "Baby Essentials & Accessories" },
-        { id: "Vitamins", name: "Nutrition & Supplements" },
-        { id: "Diapers", name: "Diapers & Wipes" },
-        { id: "NurseryItems", name: "Nursery & Sleep Essentials" },
         { id: "BathBodyCare", name: "Bath & Body Care" },
+        { id: "Vitamins", name: "Nutrition & Supplements" },
+        { id: "NurseryItems", name: "Nursery & Sleep Essentials" },
         { id: "Toys", name: "Play & Learn" },
+        { id: "Accessories", name: "Baby Essentials & Accessories" },
+        { id: "Diapers", name: "Diapers & Wipes" },
+        { id: "Tumblers", name: "Toddler Tumblers & Cups" },
     ];
 
     const handleSignOut = () => {

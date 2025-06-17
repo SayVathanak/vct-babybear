@@ -62,7 +62,7 @@ const ProductGallery = ({ images, productName, discount = 0, isAvailable = true 
                         <button
                             key={index}
                             onClick={() => handleThumbnailClick(image, index)}
-                            className={`rounded overflow-hidden border-2 transition ${selectedIndex === index
+                            className={`rounded overflow-hidden p-1 border-2 transition ${selectedIndex === index
                                     ? 'border-blue-500 shadow-md'
                                     : 'border-transparent'
                                 }`}

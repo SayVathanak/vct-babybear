@@ -31,8 +31,12 @@ export async function PUT(request) {
             return NextResponse.json({ success: false, message: "Order ID is required" }, { status: 400 });
         }
 
+        // --- MODIFICATION ---
+        // Find the order and populate both the items.product AND the address.
+        // This ensures the full address object is returned to the frontend.
         const order = await Order.findById(orderId)
-            .populate({ path: 'items.product', select: 'name price image' }) // Keep populate for item updates
+            .populate({ path: 'items.product', select: 'name price image' }) 
+            .populate('address') // <-- This is the added line
             .session(session);
 
         if (!order) {
@@ -59,24 +63,19 @@ export async function PUT(request) {
             if (paymentConfirmationAction === 'confirm') {
                 order.paymentConfirmationStatus = 'confirmed';
                 order.paymentStatus = 'paid';
-                // Optionally, update overall order status if it was pending payment
-                if (order.status === 'Order Placed' || order.status === 'pending_payment') { // Assuming 'pending_payment' could be a status
-                    order.status = 'processing'; // Or your desired status after payment confirmation
+                if (order.status === 'Order Placed' || order.status === 'pending_payment') {
+                    order.status = 'processing'; 
                 }
             } else if (paymentConfirmationAction === 'reject') {
                 order.paymentConfirmationStatus = 'rejected';
-                order.paymentStatus = 'failed'; // Or 'pending' if you want them to retry
-                order.status = 'payment rejected'; // A specific status to indicate this
+                order.paymentStatus = 'failed';
+                order.status = 'payment rejected'; 
             }
             
-            // Add history/log for payment confirmation action
-            // order.statusHistory.push({ status: `Payment ${paymentConfirmationAction}ed`, date: Date.now(), updatedBy: userId });
-
             await order.save({ session });
             await session.commitTransaction();
             session.endSession();
 
-            // Send Inngest event for payment confirmation
             await inngest.send({
                 name: 'order/payment-confirmation-updated',
                 data: {
@@ -93,7 +92,7 @@ export async function PUT(request) {
             return NextResponse.json({
                 success: true,
                 message: `Payment ${paymentConfirmationAction}ed successfully.`,
-                order // Send back the updated order
+                order // The 'order' object here now includes the populated address
             });
         }
 
@@ -114,14 +113,14 @@ export async function PUT(request) {
             return NextResponse.json({ success: false, message: "Invalid item status value" }, { status: 400 });
         }
 
-        const updatedItemsInfo = []; // For Inngest events
+        const updatedItemsInfo = [];
         let itemsActuallyUpdatedCount = 0;
 
         order.items.forEach(item => {
             if (itemIds.includes(item._id.toString())) {
-                if (item.status !== newItemStatus.toLowerCase()) { // Check if status is actually changing
+                if (item.status !== newItemStatus.toLowerCase()) {
                     const previousItemStatus = item.status;
-                    item.status = newItemStatus.toLowerCase(); // Assuming item schema has 'status' field
+                    item.status = newItemStatus.toLowerCase();
                     itemsActuallyUpdatedCount++;
                     updatedItemsInfo.push({
                         itemId: item._id.toString(),
@@ -140,51 +139,44 @@ export async function PUT(request) {
              return NextResponse.json({ success: false, message: "No items required a status update." }, { status: 200 });
         }
 
-
-        // Recalculate overall order status based on item statuses
         const statusCounts = {};
         let allItemsCancelled = true;
         let allItemsDelivered = true;
 
         order.items.forEach(item => {
-            const currentItemStatus = item.status || 'pending'; // Default to pending if no status
+            const currentItemStatus = item.status || 'pending';
             statusCounts[currentItemStatus] = (statusCounts[currentItemStatus] || 0) + 1;
             if (currentItemStatus !== 'cancelled') allItemsCancelled = false;
             if (currentItemStatus !== 'delivered') allItemsDelivered = false;
         });
 
         const previousOrderStatus = order.status;
-        let newOverallStatus = order.status; // Default to current
+        let newOverallStatus = order.status;
 
         if (allItemsCancelled) {
             newOverallStatus = 'cancelled';
         } else if (allItemsDelivered) {
             newOverallStatus = 'delivered';
-            if(order.paymentMethod === 'COD' && order.paymentStatus !== 'paid') { // For COD, mark as paid on delivery
+            if(order.paymentMethod === 'COD' && order.paymentStatus !== 'paid') {
                 order.paymentStatus = 'paid';
-                order.paymentConfirmationStatus = 'confirmed'; // or 'na' if COD doesn't need this
+                order.paymentConfirmationStatus = 'confirmed';
             }
         } else if (statusCounts['out for delivery'] > 0) {
             newOverallStatus = 'out for delivery';
         } else if (statusCounts['processing'] > 0) {
             newOverallStatus = 'processing';
         } else if (statusCounts['pending'] === order.items.length) {
-             newOverallStatus = 'pending'; // Or 'Order Placed' if that's preferred for all pending
+             newOverallStatus = 'pending';
         }
-        // Add more sophisticated logic if needed, e.g., if some items are cancelled and others processed.
 
         if (newOverallStatus !== order.status) {
             order.status = newOverallStatus;
         }
         
-        // order.statusHistory.push({ status: `Items updated, overall status: ${order.status}`, date: Date.now(), updatedBy: userId });
-
-
         await order.save({ session });
         await session.commitTransaction();
         session.endSession();
 
-        // Send Inngest events for each updated item
         for (const itemInfo of updatedItemsInfo) {
             await inngest.send({
                 name: 'order/item-status-updated',
@@ -197,7 +189,6 @@ export async function PUT(request) {
             });
         }
 
-        // Send Inngest event if overall order status changed
         if (newOverallStatus !== previousOrderStatus) {
             await inngest.send({
                 name: 'order/status-updated',
@@ -205,7 +196,7 @@ export async function PUT(request) {
                     orderId: order._id.toString(),
                     previousStatus: previousOrderStatus,
                     newStatus: newOverallStatus,
-                    paymentStatus: order.paymentStatus, // include payment status
+                    paymentStatus: order.paymentStatus,
                     updatedBy: userId,
                     updatedAt: Date.now()
                 }
@@ -215,7 +206,7 @@ export async function PUT(request) {
         return NextResponse.json({
             success: true,
             message: 'Order items status updated successfully',
-            order // Send back the updated order
+            order // This 'order' object now includes the populated address
         });
 
     } catch (error) {
