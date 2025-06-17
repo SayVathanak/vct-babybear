@@ -4,10 +4,10 @@ import toast from "react-hot-toast";
 const NewsLetter = () => {
   return (
     <div className="flex flex-col items-center justify-center text-center space-y-2 pt-8 pb-14">
-      <h1 className="text-xl text-sky-300">
-        Subscribe now & get 5% off
+      <h1 className="text-lg md:text-xl text-sky-300">
+        Subscribe now & get 10% off
       </h1>
-      <p className="md:text-base text-sky-300/70 pb-8">
+      <p className="text-sm md:text-base text-sky-300/70 pb-8">
         Subscribe for exclusive updates, offers, and the latest baby essentials from Baby Bear!
       </p>
       <div className="flex items-center justify-between max-w-2xl w-full h-12">

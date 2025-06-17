@@ -73,7 +73,7 @@ const ProductCard = ({ product }) => {
     };
 
     return (
-        <div className="flex flex-col bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300 w-full h-full min-h-[280px]">
+        <div className="flex flex-col bg-white overflow-hidden transition-all duration-300 w-full h-full min-h-[150]">
             {/* Image Container - Enhanced responsive heights */}
             <div
                 className={`cursor-pointer relative bg-white w-full flex items-center justify-center overflow-hidden ${!isAvailable ? 'opacity-70' : ''}`}
@@ -124,21 +124,15 @@ const ProductCard = ({ product }) => {
                 {/* Product Title - Dynamic truncation based on screen size */}
                 <div className="mb-2 sm:mb-3 flex items-start">
                     <h3
-                        className={`text-xs sm:text-sm md:text-base font-medium cursor-pointer w-full line-clamp-1 ${!isAvailable ? 'text-gray-400' : 'text-gray-800 hover:text-gray-600'} transition-colors`}
+                        className={`text-xs md:text-base font-medium cursor-pointer w-full line-clamp-1 ${!isAvailable ? 'text-gray-400' : 'text-gray-800 hover:text-gray-600'} transition-colors`}
                         onClick={handleCardClick}
                         title={product.name}
                     >
                         {/* Responsive truncation */}
                         <span className="block sm:hidden">
-                            {truncateTitle(product.name, 15)}
-                        </span>
-                        <span className="hidden sm:block md:hidden">
-                            {truncateTitle(product.name, 20)}
-                        </span>
-                        <span className="hidden md:block lg:hidden">
                             {truncateTitle(product.name, 25)}
                         </span>
-                        <span className="hidden lg:block">
+                        <span className="hidden md:block">
                             {truncateTitle(product.name, 30)}
                         </span>
                     </h3>
@@ -176,13 +170,13 @@ const ProductCard = ({ product }) => {
                             <button
                                 onClick={handleAddToCart}
                                 disabled={isAddingToCart}
-                                className={`p-1.5 sm:p-2 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${isAddingToCart
+                                className={`p-2 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${isAddingToCart
                                         ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                         : "bg-sky-300/70 text-white active:scale-95"
                                     }`}
                                 aria-label="Add to cart"
                             >
-                                <IoMdAdd className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+                                <IoMdAdd className="h-4 w-4 md:h-5 md:w-5" />
                             </button>
                         </div>
                     ) : (

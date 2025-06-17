@@ -1,6 +1,7 @@
 import React from "react";
 import { assets } from "@/assets/assets";
 import Image from "next/image";
+import { CiLocationArrow1 } from "react-icons/ci";
 
 const Footer = () => {
   return (
@@ -9,13 +10,12 @@ const Footer = () => {
         <div className="w-4/5">
           <Image className="w-28 md:w-32" src={assets.logo} alt="logo" />
           <p className="mt-6 text-sm">
-          Baby Bear is dedicated to providing high-quality, safe, and reliable products for your little one. 
-          Since 2020, we’ve been committed to supporting parents with essentials that promote healthy growth and happiness. 
-          Trust us to be there for every step of your baby's journey.
+            Baby Bear is dedicated to providing high-quality, safe, and reliable products for your little one.
+            Since 2020, we’ve been committed to supporting parents with essentials that promote healthy growth and happiness.
+            Trust us to be there for every step of your baby's journey.
           </p>
         </div>
-
-        <div className="w-1/2 flex items-center justify-start md:justify-center">
+        <div className="md:w-1/2 flex items-center justify-start md:justify-center">
           <div>
             <h2 className="font-medium text-gray-900 mb-5">Company</h2>
             <ul className="text-sm space-y-2">
@@ -40,7 +40,17 @@ const Footer = () => {
             <h2 className="font-medium text-gray-900 mb-5">Get in touch</h2>
             <div className="text-sm space-y-2">
               <p className="">078 223 444</p>
-              <p>contact@babybear.com</p>
+              <p>
+                Google Maps:
+                <a
+                  href="https://maps.app.goo.gl/mCgK7xcU3r61Z3S5A"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sky-300/70 ml-2"
+                >
+                  VCT Baby Bear
+                </a>
+              </p>
             </div>
           </div>
         </div>

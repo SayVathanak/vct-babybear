@@ -68,7 +68,7 @@ const ProductScrollSection = ({
   return (
     <div className="py-4">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg md:text-xl text-sky-300/70 font-medium flex items-center gap-2">
+        <h2 className="text-xl text-sky-300/70 flex items-center gap-2">
           {title}
         </h2>
         <Link href={seeAllLink} className="font-prata text-sm text-sky-300 hover:underline">
@@ -117,11 +117,11 @@ const HomeProducts = () => {
 
   const categoryButtons = [
     { name: 'Baby Milk', icon: <CiPillsBottle1 className="text-md md:text-xl" />, link: '/all-products?category=PowderedMilk' },
+    { name: 'Bath & Body Care', icon: <CiHeart className="text-md md:text-xl" />, link: '/all-products?category=BathBodyCare' },
+    { name: 'Vitamins', icon: <CiApple className="text-md md:text-xl" />, link: '/all-products?category=Vitamins' },
     { name: 'Hygiene', icon: <CiMedicalCross className="text-md md:text-xl" />, link: '/all-products?category=Accessories' },
     { name: 'Diapers', icon: <CiBandage className="text-md md:text-xl" />, link: '/all-products?category=Diapers' },
-    { name: 'Vitamins', icon: <CiApple className="text-md md:text-xl" />, link: '/all-products?category=Vitamins' },
     { name: 'Feeding', icon: <CiShoppingCart className="text-md md:text-xl" />, link: '/all-products?category=FeedingTools' },
-    { name: 'Bath & Body Care', icon: <CiHeart className="text-md md:text-xl" />, link: '/all-products?category=BathBodyCare' }
   ];
 
   const getProductsByCategory = (categories) => {
@@ -184,9 +184,9 @@ const HomeProducts = () => {
             <div className="flex space-x-2 py-2 min-w-max">
               {categoryButtons.map((button, index) => (
                 <Link href={button.link} key={index}>
-                  <div className="px-4 py-1 border border-sky-200 rounded-md transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer">
-                    <span className="p-0.5 md:p-1 text-sky-300/70 rounded-md">{button.icon}</span>
-                    <span className="text-xs md:text-sm text-sky-200">{button.name}</span>
+                  <div className="px-3 md:px-4 py-1 border-x border-sky-200 rounded-md transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer">
+                    <span className="p-0.5 md:p-1 text-sky-300 rounded-md">{button.icon}</span>
+                    <span className="text-xs md:text-sm text-sky-300/70">{button.name}</span>
                   </div>
                 </Link>
               ))}
