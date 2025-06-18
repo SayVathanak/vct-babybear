@@ -31,7 +31,7 @@ const Navbar = () => {
       {/* POS Button on the right */}
       <button 
         onClick={() => router.push('/seller/pos')} 
-        className='bg-black text-white px-5 py-2 sm:px-7 sm:py-2 rounded-full text-xs sm:text-sm'
+        className='bg-black text-white px-8 py-2 sm:px-7 sm:py-2 rounded-lg text-xs sm:text-sm font-medium'
       >
         POS
       </button>

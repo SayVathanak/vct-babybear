@@ -532,7 +532,7 @@ const POS = () => {
   }
 
   return (
-    <div className="flex flex-col md:flex-row bg-gray-50 md:h-screen md:overflow-hidden">
+    <div className="flex flex-col md:flex-row bg-white md:h-screen md:overflow-hidden">
       {/* Sale Confirmation Modal */}
       {showSaleConfirmation && <SaleConfirmationModal />}
 
@@ -602,14 +602,14 @@ const POS = () => {
       {/* Main Product Area */}
       <main className="w-full md:w-3/5 lg:w-2/3 flex flex-col pb-28 md:pb-0">
         <header className="p-4 md:p-6 border-b border-gray-200 bg-white">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-[2fr_1fr] gap-2">
             <div className="relative w-full">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                 <FaSearch />
               </span>
               <input
                 type="text"
-                placeholder="Search products…"
+                placeholder="Search products name & barcode…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full border border-gray-200 rounded-lg py-3 pl-12 pr-4 text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -629,7 +629,7 @@ const POS = () => {
               ) : (
                 <>
                   <CiBarcode size={24} />
-                  Scan Barcode
+                  Barcode
                 </>
               )}
             </button>
@@ -642,7 +642,7 @@ const POS = () => {
               <button
                 key={product._id}
                 onClick={() => addToCart(product._id)}
-                className="bg-white rounded-xl border border-gray-200 p-4 text-center transition-all duration-300 hover:shadow-lg hover:border-indigo-500 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex flex-col justify-between group"
+                className="bg-white shadow-sm p-4 text-center transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex flex-col justify-between group"
               >
                 <div className="relative w-full h-28">
                   <Image

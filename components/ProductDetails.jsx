@@ -9,8 +9,12 @@ import {
     CiBadgeDollar,
     CiCreditCard1,
     CiDeliveryTruck,
-    CiCircleCheck
+    CiCircleCheck,
+    CiCirclePlus,
+    CiCircleMinus,
 } from "react-icons/ci";
+import { GoPlus, GoDash } from "react-icons/go";
+import { FaPlus, FaMinus } from "react-icons/fa";
 
 const ProductDetail = ({ product, addToCart, user, openSignIn, cartItems }) => {
     const [showDescription, setShowDescription] = useState(false);
@@ -136,11 +140,39 @@ const ProductDetail = ({ product, addToCart, user, openSignIn, cartItems }) => {
                 </div>
 
                 <div>
-                    <div className="flex items-baseline">
-                        <span className="text-xl md:text-2xl text-gray-800">${product.offerPrice}</span>
+                    <div className="grid grid-cols-[1fr_1fr]">
+                        <span className="flex items-center text-xl md:text-2xl text-gray-800">${product.offerPrice}</span>
                         {product.price > product.offerPrice && (
                             <span className="ml-2 text-lg text-gray-400 line-through">${product.price}</span>
                         )}
+                        <div className="flex items-center">
+                            <span className="mr-3 text-gray-700">Quantity:</span>
+                            <div className="flex px-5 border border-gray-100 rounded-md">
+                                <button
+                                    onClick={decreaseQuantity}
+                                    disabled={quantity <= 1}
+                                    className={`pr-2 ${quantity <= 1 ? 'text-gray-400' : 'text-gray-700'}`}
+                                    aria-label="Decrease quantity"
+                                >
+                                    <GoDash />
+                                </button>
+                                <input
+                                    type="text"
+                                    value={inputValue}
+                                    onChange={handleInputChange}
+                                    onBlur={handleInputBlur}
+                                    className="w-12 text-center focus:outline-none"
+                                    aria-label="Quantity"
+                                />
+                                <button
+                                    onClick={increaseQuantity}
+                                    className="pl-2 text-gray-700"
+                                    aria-label="Increase quantity"
+                                >
+                                    <GoPlus />
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     {calculateDiscount() > 0 && (
                         <p className="text-green-600 text-sm mt-1">
@@ -151,36 +183,7 @@ const ProductDetail = ({ product, addToCart, user, openSignIn, cartItems }) => {
 
                 {/* Product Actions Section */}
                 <div className="space-y-6 pt-2">
-                    <div className="flex items-center">
-                        <span className="mr-3 text-gray-700">Quantity:</span>
-                        <div className="flex border border-gray-300 rounded">
-                            <button
-                                onClick={decreaseQuantity}
-                                disabled={quantity <= 1}
-                                className={`px-3 py-1 ${quantity <= 1 ? 'text-gray-400' : 'text-gray-700 hover:bg-gray-100'}`}
-                                aria-label="Decrease quantity"
-                            >
-                                -
-                            </button>
-                            <input
-                                type="text"
-                                value={inputValue}
-                                onChange={handleInputChange}
-                                onBlur={handleInputBlur}
-                                className="w-12 text-center border-x border-gray-300 py-1 focus:outline-none"
-                                aria-label="Quantity"
-                            />
-                            <button
-                                onClick={increaseQuantity}
-                                className="px-3 py-1 text-gray-700 hover:bg-gray-100"
-                                aria-label="Increase quantity"
-                            >
-                                +
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex flex-row gap-3">
                         <button
                             onClick={handleAddToCart}
                             disabled={!product.isAvailable}

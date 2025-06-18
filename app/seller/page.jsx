@@ -765,8 +765,8 @@ const AddProduct = () => {
         <>
             <form onSubmit={handleSubmit} className="max-w-4xl md:mx-auto p-4 sm:p-6">
                 <div className="grid grid-cols-2 items-start sm:items-center mb-6 gap-4">
-                    <h2 className="text-lg md:text-2xl sm:text-3xl font-semibold text-gray-800">
-                        Add New Product
+                    <h2 className="text-lg md:text-2xl sm:text-3xl font-medium text-gray-800">
+                        Add Product
                     </h2>
                     <div className="justify-end flex">
                         <button
@@ -775,7 +775,7 @@ const AddProduct = () => {
                             className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2 text-sm sm:text-base"
                         >
                             <FaTrash />
-                            Clear Form
+                            Clear
                         </button>
                     </div>
                 </div>
@@ -783,7 +783,7 @@ const AddProduct = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Left Column */}
-                    <div className="space-y-6">
+                    <div className="space-y-4">
 
                         {/* Image Upload */}
                         <div>
@@ -922,7 +922,7 @@ const AddProduct = () => {
                     </div>
 
                     {/* Right Column */}
-                    <div className="space-y-6">
+                    <div className="space-y-4">
 
                         {/* Description */}
                         <div>
