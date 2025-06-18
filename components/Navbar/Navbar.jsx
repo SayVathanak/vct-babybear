@@ -60,7 +60,7 @@ const Navbar = () => {
 
     return (
         <>
-            <nav className="flex fixed top-0 left-0 right-0 z-[55] bg-white border-gray-200 px-4 pt-3 pb-2 md:px-12 items-center justify-between">
+            <nav className="fixed top-0 left-0 right-0 z-[55] flex items-center justify-between bg-white border-gray-200 px-4 pt-3 pb-2 md:px-12">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={toggleMobileMenu}

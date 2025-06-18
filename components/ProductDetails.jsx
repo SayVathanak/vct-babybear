@@ -9,12 +9,9 @@ import {
     CiBadgeDollar,
     CiCreditCard1,
     CiDeliveryTruck,
-    CiCircleCheck,
-    CiCirclePlus,
-    CiCircleMinus,
+    CiCircleCheck
 } from "react-icons/ci";
-import { GoPlus, GoDash } from "react-icons/go";
-import { FaPlus, FaMinus } from "react-icons/fa";
+import { FiPlus, FiMinus } from "react-icons/fi";
 
 const ProductDetail = ({ product, addToCart, user, openSignIn, cartItems }) => {
     const [showDescription, setShowDescription] = useState(false);
@@ -139,46 +136,49 @@ const ProductDetail = ({ product, addToCart, user, openSignIn, cartItems }) => {
                     </div>
                 </div>
 
-                <div>
-                    <div className="grid grid-cols-[1fr_1fr]">
-                        <span className="flex items-center text-xl md:text-2xl text-gray-800">${product.offerPrice}</span>
-                        {product.price > product.offerPrice && (
-                            <span className="ml-2 text-lg text-gray-400 line-through">${product.price}</span>
+                <div className='grid grid-cols-[2fr_1fr]'>
+                    <div>
+                        <div className="flex items-baseline">
+                            <span className="text-xl md:text-2xl text-gray-800">${product.offerPrice}</span>
+                            {product.price > product.offerPrice && (
+                                <span className="ml-2 text-lg text-gray-400 line-through">${product.price}</span>
+                            )}
+                        </div>
+                        {calculateDiscount() > 0 && (
+                            <p className="text-green-600 text-sm mt-1">
+                                You save: ${(product.price - product.offerPrice).toFixed(2)} ({calculateDiscount()}%)
+                            </p>
                         )}
-                        <div className="flex items-center">
-                            <span className="mr-3 text-gray-700">Quantity:</span>
-                            <div className="flex px-5 border border-gray-100 rounded-md">
-                                <button
-                                    onClick={decreaseQuantity}
-                                    disabled={quantity <= 1}
-                                    className={`pr-2 ${quantity <= 1 ? 'text-gray-400' : 'text-gray-700'}`}
-                                    aria-label="Decrease quantity"
-                                >
-                                    <GoDash />
-                                </button>
-                                <input
-                                    type="text"
-                                    value={inputValue}
-                                    onChange={handleInputChange}
-                                    onBlur={handleInputBlur}
-                                    className="w-12 text-center focus:outline-none"
-                                    aria-label="Quantity"
-                                />
-                                <button
-                                    onClick={increaseQuantity}
-                                    className="pl-2 text-gray-700"
-                                    aria-label="Increase quantity"
-                                >
-                                    <GoPlus />
-                                </button>
-                            </div>
+                    </div>
+
+                    <div className="flex items-center">
+                        <span className="mr-3 text-gray-700">Quantity:</span>
+                        <div className="flex border border-gray-300 rounded-full">
+                            <button
+                                onClick={decreaseQuantity}
+                                disabled={quantity <= 1}
+                                className={`px-3 py-1 ${quantity <= 1 ? 'text-gray-400' : 'text-gray-700'}`}
+                                aria-label="Decrease quantity"
+                            >
+                            <FiMinus />
+                            </button>
+                            <input
+                                type="text"
+                                value={inputValue}
+                                onChange={handleInputChange}
+                                onBlur={handleInputBlur}
+                                className="w-12 text-center py-1 focus:outline-none"
+                                aria-label="Quantity"
+                            />
+                            <button
+                                onClick={increaseQuantity}
+                                className="px-3 py-1 text-gray-700"
+                                aria-label="Increase quantity"
+                            >
+                            <FiPlus />
+                            </button>
                         </div>
                     </div>
-                    {calculateDiscount() > 0 && (
-                        <p className="text-green-600 text-sm mt-1">
-                            You save: ${(product.price - product.offerPrice).toFixed(2)} ({calculateDiscount()}%)
-                        </p>
-                    )}
                 </div>
 
                 {/* Product Actions Section */}
