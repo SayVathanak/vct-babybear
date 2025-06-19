@@ -37,7 +37,7 @@ export const sendTelegramNotification = async (orderDetails) => {
       `*Date:* ${new Date().toLocaleString()}\n\n` +
       `*Delivery Address:*\n` +
       `${orderDetails.address.fullName}\n` +
-      `${orderDetails.address.phoneNumber}\n` +
+      `0${orderDetails.address.phoneNumber}\n` +
       `${orderDetails.address.area}\n` +
       `${orderDetails.address.state}${
         orderDetails.address.city ? ", " + orderDetails.address.city : ""
@@ -53,7 +53,10 @@ export const sendTelegramNotification = async (orderDetails) => {
           ? "Free"
           : `${orderDetails.currency}${orderDetails.deliveryFee.toFixed(2)}`
       }\n` +
-      `*Total Amount:* ${orderDetails.currency}${(orderDetails.total ?? orderDetails.amount).toFixed(2)}\n\n` +
+      `*Total Amount:* ${orderDetails.currency}${(orderDetails.total ?? orderDetails.amount).toFixed(2)}\n` +
+      // --- MODIFICATION START ---
+      `*Payment with:* ${orderDetails.paymentMethod}\n\n` +
+      // --- MODIFICATION END ---
       `*Thanks for shopping with us! 📦*`;
 
     await axios.post(telegramApiUrl, {
