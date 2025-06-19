@@ -21,10 +21,6 @@ import {
   FaQrcode
 } from "react-icons/fa";
 
-// --- Configuration ---
-// This URL must point to your running Python backend server.
-const API_BASE_URL = "http://127.0.0.1:5000";
-
 const OrderSummary = () => {
   const {
     currency,
@@ -242,7 +238,9 @@ const OrderSummary = () => {
 
   const checkQrPaymentStatus = useCallback(async (hash) => {
     try {
-      const { data } = await axios.post(`${API_BASE_URL}/api/check-payment`, { transaction_hash: hash });
+      // Corrected to call the new, valid API route
+      const { data } = await axios.post(`/api/bakong/check-payment`, { transaction_hash: hash });
+      // --- MODIFICATION END ---
       if (data.success && data.is_paid) {
         setQrPaymentStatus('PAID');
         toast.success("Payment confirmed!");
@@ -258,7 +256,9 @@ const OrderSummary = () => {
     setQrPaymentStatus('PENDING');
     try {
       const { total } = calculateOrderAmounts();
-      const { data } = await axios.post(`${API_BASE_URL}/api/generate-qr`, { amount: total, currency: 'USD' });
+      // --- MODIFICATION START ---
+      const { data } = await axios.post(`/api/khqr/generate-qr`, { amount: total, currency: 'USD' });
+      // --- MODIFICATION END ---
       if (data.success) {
         setKhqrData(data.qr_image_base64);
         setQrTransactionHash(data.transaction_hash);
@@ -315,11 +315,7 @@ const OrderSummary = () => {
       const cartItemsArray = Object.keys(cartItems).map(key => ({ product: key, quantity: cartItems[key] })).filter(item => item.quantity > 0);
       const authToken = await getToken();
       const { subtotal, discount, deliveryFee, total } = calculateOrderAmounts();
-
-      // --- FIX START ---
-      // The payload was sending `paymentTransactionImage` for KHQR payments, which is incorrect.
-      // The backend expects `paymentTransactionId` for KHQR and `paymentTransactionImage` only for ABA.
-      // This change ensures only the correct field is sent for each payment method.
+      
       const orderPayload = {
         address: selectedAddress._id,
         items: cartItemsArray,
@@ -332,9 +328,8 @@ const OrderSummary = () => {
         ...(selectedPaymentMethod === "KHQR" && { paymentTransactionId: qrTransactionHash }),
         ...(appliedPromo && { promoCodeId: appliedPromo._id, promoCode: { id: appliedPromo._id, code: appliedPromo.code, discountType: appliedPromo.discountType, discountValue: appliedPromo.discountValue, discountAmount: discount }})
       };
-      // --- FIX END ---
 
-      const { data: orderCreateData } = await axios.post('/api/order/create', orderPayload, { headers: { Authorization: `Bearer ${authToken}` } });
+      const { data: orderCreateData } = await axios.post('/api/o  rder/create', orderPayload, { headers: { Authorization: `Bearer ${authToken}` } });
 
       if (orderCreateData.success) {
         toast.success("Order placed successfully!");
