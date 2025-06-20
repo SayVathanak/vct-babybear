@@ -22,9 +22,8 @@ import {
 } from "react-icons/fa";
 
 // --- Configuration ---
-const API_BASE_URL = process.env.NODE_ENV === 'production'
-   ? '/api' // Vercel serverless functions 
-   : 'http://127.0.0.1:5000/api'; // Local Flask server
+// This URL must point to your running Python backend server.
+const API_BASE_URL = "http://127.0.0.1:5000";
 
 const OrderSummary = () => {
   const {
