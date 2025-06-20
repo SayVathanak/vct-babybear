@@ -286,20 +286,24 @@ const OrderSummary = () => {
   const startPolling = (md5) => {
     pollingIntervalRef.current = setInterval(async () => {
       try {
-        const { data } = await axios.get(`/api/payment/bakong/check-status?md5=${md5}`);
+        // Updated API endpoint - using GET with query parameter
+        const { data } = await axios.get(`/api/bakong?md5=${md5}`);
         if (data.success && data.status === 'PAID') {
           stopPolling();
           toast.success("Payment received! Placing your order...");
           setIsBakongModalOpen(false);
           await createOrder(true, md5);
         }
-      } catch (error) { console.error("Polling error:", error); }
+      } catch (error) { 
+        console.error("Polling error:", error);
+      }
     }, 4000);
+    
     pollingTimeoutRef.current = setTimeout(() => {
       stopPolling();
       toast.error("Payment confirmation timed out. Please try again.");
       setIsBakongModalOpen(false);
-    }, 180000);
+    }, 180000); // 3 minutes timeout
   };
   
   const handlePayWithBakong = async () => {
@@ -311,11 +315,16 @@ const OrderSummary = () => {
     try {
       const { total } = calculateOrderAmounts();
       const authToken = await getToken();
-      const { data } = await axios.post('/api/payment/bakong/generate-qr', {
+      
+      // Updated API endpoint and payload structure
+      const { data } = await axios.post('/api/bakong', {
         amount: total,
         currency: currency === '$' ? 'USD' : 'KHR',
         billNumber: `ORD-${Date.now()}`
-      }, { headers: { Authorization: `Bearer ${authToken}` } });
+      }, { 
+        headers: { Authorization: `Bearer ${authToken}` } 
+      });
+      
       if (data.success) {
         setBakongQRData(data.qr);
         setBakongMD5(data.md5);
@@ -327,6 +336,7 @@ const OrderSummary = () => {
         toast.error(data.message || "Failed to generate Bakong QR code.");
       }
     } catch (error) {
+      console.error("Bakong payment error:", error);
       toast.error(error.response?.data?.message || "Error setting up payment.");
     } finally {
       setIsGeneratingQR(false);
@@ -344,12 +354,31 @@ const OrderSummary = () => {
         const authToken = await getToken();
         const { subtotal, discount, deliveryFee, total } = calculateOrderAmounts();
         const orderPayload = {
-            address: selectedAddress._id, items: cartItemsArray, subtotal, deliveryFee, discount, amount: total, paymentMethod: selectedPaymentMethod,
+            address: selectedAddress._id, 
+            items: cartItemsArray, 
+            subtotal, 
+            deliveryFee, 
+            discount, 
+            amount: total, 
+            paymentMethod: selectedPaymentMethod,
             paymentTransactionId: selectedPaymentMethod === "BAKONG" ? transactionId : null,
             paymentTransactionImage: selectedPaymentMethod === "ABA" ? transactionProofUrl : null,
-            ...(appliedPromo && { promoCodeId: appliedPromo._id, promoCode: { id: appliedPromo._id, code: appliedPromo.code, discountType: appliedPromo.discountType, discountValue: appliedPromo.discountValue, discountAmount: discount } })
+            ...(appliedPromo && { 
+              promoCodeId: appliedPromo._id, 
+              promoCode: { 
+                id: appliedPromo._id, 
+                code: appliedPromo.code, 
+                discountType: appliedPromo.discountType, 
+                discountValue: appliedPromo.discountValue, 
+                discountAmount: discount 
+              } 
+            })
         };
-        const { data: orderCreateData } = await axios.post('/api/order/create', orderPayload, { headers: { Authorization: `Bearer ${authToken}` } });
+        
+        const { data: orderCreateData } = await axios.post('/api/order/create', orderPayload, { 
+          headers: { Authorization: `Bearer ${authToken}` } 
+        });
+        
         if (orderCreateData.success) {
             // Notification logic can be re-added here if needed
             toast.success(orderCreateData.message || "Order placed successfully!");
@@ -363,6 +392,7 @@ const OrderSummary = () => {
             toast.error(orderCreateData.message || "Failed to place order");
         }
     } catch (error) {
+        console.error("Order creation error:", error);
         toast.error(error.response?.data?.message || "An error occurred");
     } finally {
         setLoading(false);
@@ -374,7 +404,16 @@ const OrderSummary = () => {
     if (method !== "ABA") resetTransactionProof();
   };
 
-  useEffect(() => { if (user) fetchUserAddresses() }, [user]);
+  useEffect(() => { 
+    if (user) fetchUserAddresses() 
+  }, [user]);
+
+  // Cleanup polling on component unmount
+  useEffect(() => {
+    return () => {
+      stopPolling();
+    };
+  }, []);
 
   const { subtotal, discount: calculatedDiscountValue, deliveryFee: fee, total: totalAmount } = calculateOrderAmounts();
 
@@ -530,40 +569,118 @@ const OrderSummary = () => {
           )}
         </div>
         <div className="space-y-3 border-t border-b border-gray-200 py-5 mb-6">
-          <div className="flex justify-between text-gray-600">
-            <p>Subtotal ({getCartCount()} items)</p>
-            <p className="font-medium">{currency}{subtotal.toFixed(2)}</p>
-          </div>
-          {appliedPromo && calculatedDiscountValue > 0 && (
-            <div className="flex justify-between text-gray-600">
-              <p className="flex items-center"><FaTag className="text-green-600 mr-1 text-xs" />Discount</p>
-              <p className="font-medium text-green-600">-{currency}{calculatedDiscountValue.toFixed(2)}</p>
-            </div>
-          )}
-          <div className="flex justify-between text-gray-600">
-            <p>Delivery Fee</p>
-            {isFreeDelivery ? (
-              <p className="font-medium"><span className="line-through text-gray-400 mr-2">{currency}1.50</span><span className="text-green-600">Free</span></p>
-            ) : ( <p className="font-medium">{currency}{fee.toFixed(2)}</p> )}
-          </div>
-          <div className="flex justify-between text-lg text-gray-800 border-t border-gray-200 pt-3 mt-3">
-            <p>Total</p>
-            <p>{currency}{totalAmount.toFixed(2)}</p>
-          </div>
-        </div>
-        <button onClick={selectedPaymentMethod === 'BAKONG' ? handlePayWithBakong : createOrder} disabled={loading || uploadingProof || isGeneratingQR || isWaitingForPayment || (selectedPaymentMethod === "ABA" && !transactionProofUrl)} className={`w-full py-3 rounded-md flex items-center justify-center font-medium ${loading || uploadingProof || isGeneratingQR || isWaitingForPayment || (selectedPaymentMethod === "ABA" && !transactionProofUrl) ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-black text-white hover:bg-gray-800"}`}>
-          {loading ? <><FaSpinner className="animate-spin mr-3" /> Processing...</> :
-            isGeneratingQR ? <><FaSpinner className="animate-spin mr-3" /> Generating QR...</> :
-            isWaitingForPayment ? <><FaSpinner className="animate-spin mr-3" /> Awaiting Payment...</> :
-            selectedPaymentMethod === "BAKONG" ? "Pay with Bakong" : "Place Order"
-          }
-        </button>
-        <div className="mt-4 text-center">
-          <p className="text-xs text-gray-500 flex items-center justify-center"><FaLock className="mr-1" />Secure checkout</p>
-        </div>
+      <div className="flex justify-between text-gray-600">
+        <p>Subtotal ({getCartCount()} items)</p>
+        <p className="font-medium">{currency}{subtotal.toFixed(2)}</p>
       </div>
-    </>
-  );
+      <div className="flex justify-between text-gray-600">
+        <p className="flex items-center">
+          Delivery Fee
+          {isFreeDelivery && (
+            <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+              FREE
+            </span>
+          )}
+        </p>
+        <p className={`font-medium ${isFreeDelivery ? 'line-through text-gray-400' : ''}`}>
+          {currency}{fee.toFixed(2)}
+        </p>
+      </div>
+      {calculatedDiscountValue > 0 && (
+        <div className="flex justify-between text-green-600">
+          <p>Discount ({appliedPromo.code})</p>
+          <p className="font-medium">-{currency}{calculatedDiscountValue.toFixed(2)}</p>
+        </div>
+      )}
+      <div className="flex justify-between text-lg font-semibold text-gray-800 pt-2 border-t border-gray-200">
+        <p>Total</p>
+        <p>{currency}{totalAmount.toFixed(2)}</p>
+      </div>
+    </div>
+
+    {/* Order Actions */}
+    <div className="space-y-3">
+      {selectedPaymentMethod === "BAKONG" ? (
+        <button
+          onClick={handlePayWithBakong}
+          disabled={loading || isGeneratingQR || !selectedAddress || getCartCount() <= 0}
+          className="w-full bg-blue-600 text-white font-bold py-4 px-6 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
+          type="button"
+        >
+          {isGeneratingQR ? (
+            <>
+              <FaSpinner className="animate-spin" />
+              <span>Generating QR...</span>
+            </>
+          ) : (
+            <>
+              <FaQrcode />
+              <span>Pay with KHQR</span>
+            </>
+          )}
+        </button>
+      ) : (
+        <button
+          onClick={() => createOrder()}
+          disabled={loading || !selectedAddress || getCartCount() <= 0 || (selectedPaymentMethod === "ABA" && !transactionProofUrl)}
+          className="w-full bg-black text-white font-bold py-4 px-6 rounded-lg hover:bg-gray-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
+          type="button"
+        >
+          {loading ? (
+            <>
+              <FaSpinner className="animate-spin" />
+              <span>Placing Order...</span>
+            </>
+          ) : (
+            <>
+              {selectedPaymentMethod === "COD" ? (
+                <>
+                  <FaMoneyBillWave />
+                  <span>Place Order (COD)</span>
+                </>
+              ) : (
+                <>
+                  <FaCreditCard />
+                  <span>Place Order (ABA)</span>
+                </>
+              )}
+            </>
+          )}
+        </button>
+      )}
+      
+      {/* Order Requirements Notice */}
+      {(!selectedAddress || getCartCount() <= 0 || (selectedPaymentMethod === "ABA" && !transactionProofUrl)) && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+          <div className="flex items-start">
+            <FaLock className="text-yellow-600 mt-1 mr-2 flex-shrink-0" />
+            <div className="text-sm text-yellow-800">
+              <p className="font-medium mb-1">Complete these steps to place your order:</p>
+              <ul className="space-y-1 text-xs">
+                {!selectedAddress && <li>• Select a delivery address</li>}
+                {getCartCount() <= 0 && <li>• Add items to your cart</li>}
+                {selectedPaymentMethod === "ABA" && !transactionProofUrl && <li>• Upload transaction proof for ABA payment</li>}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Free Delivery Notice */}
+      {!isFreeDelivery && getCartCount() > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="flex items-center">
+            <MdDeliveryDining className="text-blue-600 mr-2" />
+            <p className="text-sm text-blue-800">
+              Add <span className="font-medium">{2 - getCartCount()}</span> more item{2 - getCartCount() > 1 ? 's' : ''} for free delivery!
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+</>
+);
 };
 
 export default OrderSummary;
