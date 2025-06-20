@@ -5,12 +5,12 @@ import path from 'path';
 function runPythonScript(args) {
   return new Promise((resolve, reject) => {
     const scriptPath = path.join(process.cwd(), 'bakong_handler.py');
+    
+    // --- THIS IS THE FIX ---
+    // The 'env' option has been removed because the secrets are currently
+    // hardcoded in the Python script.
     const python = spawn('python', [scriptPath, ...args]);
-    // const python = spawn('python', [scriptPath, ...args], {
-    //     env: {
-    //         ...process.env,
-    //     }
-    // });
+
     let result = '';
     let error = '';
     python.stdout.on('data', (data) => result += data.toString());
@@ -42,6 +42,7 @@ export async function POST(req) {
       return NextResponse.json({ success: false, message: result.message || 'Error generating QR code.' }, { status: 500 });
     }
   } catch (error) {
+    // This will now catch the "Python Error: ..." and show a more useful message
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
