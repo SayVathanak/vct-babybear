@@ -1,27 +1,25 @@
 import sys
 import json
-import os # <-- Import the 'os' module
 from bakong_khqr import KHQR
 
-# --- Load configuration from environment variables ---
-# This makes the script secure and configurable without changing the code.
-BAKONG_DEV_TOKEN = os.getenv("BAKONG_DEV_TOKEN")
-BANK_ACCOUNT = os.getenv("BAKONG_BANK_ACCOUNT")
-MERCHANT_NAME = os.getenv("BAKONG_MERCHANT_NAME")
-MERCHANT_CITY = os.getenv("BAKONG_MERCHANT_CITY")
-PHONE_NUMBER = os.getenv("BAKONG_PHONE_NUMBER")
-TERMINAL_LABEL = os.getenv("BAKONG_TERMINAL_LABEL")
-APP_CALLBACK_URL = os.getenv("BAKONG_APP_CALLBACK_URL")
-APP_ICON_URL = os.getenv("BAKONG_APP_ICON_URL")
-APP_NAME = os.getenv("BAKONG_APP_NAME")
-# ----------------------------------------------------
+# --- IMPORTANT ---
+# Load these values from environment variables in a real application
+BAKONG_DEV_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoiZmU2MzNjNDdlOGZlNDQ0YSJ9LCJpYXQiOjE3NTAzMDM4MzYsImV4cCI6MTc1ODA3OTgzNn0.qfto6ysuh0bUwIHeDsX3nMACGTwGU3gfcxmPZ6n2z3c"
+BANK_ACCOUNT = "say_vathanak@aclb"
+MERCHANT_NAME = "Baby Bear"
+MERCHANT_CITY = "Phnom Penh"
+PHONE_NUMBER = "85592886006"
+TERMINAL_LABEL = "BabyBear-Checkout"
+
+# --- DEEPLINK CONFIGURATION ---
+# !!! IMPORTANT: Replace with your actual domain and paths !!!
+APP_CALLBACK_URL = "https://vct-babybear.vercel.app/my-orders" # URL to redirect to after payment
+APP_ICON_URL = "https://vct-babybear.vercel.app/icons/icon-192x192.png" # Your store's logo
+APP_NAME = "Baby Bear"
+# -----------------
 
 def generate_qr():
     try:
-        # Check if essential configuration is loaded
-        if not all([BAKONG_DEV_TOKEN, BANK_ACCOUNT, MERCHANT_NAME]):
-            raise ValueError("Bakong configuration is missing from environment variables.")
-
         input_data = json.loads(sys.argv[1])
         amount = float(input_data.get("amount"))
         currency = input_data.get("currency", "USD")
@@ -38,7 +36,7 @@ def generate_qr():
             merchant_city=MERCHANT_CITY,
             amount=amount,
             currency=currency,
-            store_label=APP_NAME,
+            store_label='Baby Bear',
             bill_number=bill_number,
             phone_number=PHONE_NUMBER,
             terminal_label=TERMINAL_LABEL,
@@ -47,6 +45,7 @@ def generate_qr():
         
         md5_hash = khqr.generate_md5(qr_string)
 
+        # --- Generate the deeplink ---
         deeplink_url = khqr.generate_deeplink(
             qr_string,
             callback=APP_CALLBACK_URL,
@@ -54,6 +53,7 @@ def generate_qr():
             appName=APP_NAME
         )
 
+        # --- Return all three pieces of data in the JSON response ---
         print(json.dumps({
             "success": True, 
             "qr": qr_string, 
@@ -66,14 +66,10 @@ def generate_qr():
 
 def check_status():
     try:
-        if not BAKONG_DEV_TOKEN:
-            raise ValueError("Bakong developer token is missing from environment variables.")
-            
         md5_hash = sys.argv[1]
         khqr = KHQR(BAKONG_DEV_TOKEN)
         status = khqr.check_payment(md5_hash)
         print(json.dumps({"success": True, "status": status}))
-        
     except Exception as e:
         print(json.dumps({"success": False, "message": str(e)}))
 

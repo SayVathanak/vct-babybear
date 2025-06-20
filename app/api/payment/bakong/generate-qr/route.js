@@ -5,12 +5,12 @@ import path from 'path';
 function runPythonScript(args) {
   return new Promise((resolve, reject) => {
     const scriptPath = path.join(process.cwd(), 'bakong_handler.py');
-    // const python = spawn('python', [scriptPath, ...args]);
-    const python = spawn('python', [scriptPath, ...args], {
-        env: {
-            ...process.env,
-        }
-    });
+    const python = spawn('python', [scriptPath, ...args]);
+    // const python = spawn('python', [scriptPath, ...args], {
+    //     env: {
+    //         ...process.env,
+    //     }
+    // });
     let result = '';
     let error = '';
     python.stdout.on('data', (data) => result += data.toString());
