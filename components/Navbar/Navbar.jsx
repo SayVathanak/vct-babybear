@@ -60,14 +60,14 @@ const Navbar = () => {
 
     return (
         <>
-            <nav className="fixed top-0 left-0 right-0 z-[55] flex items-center justify-between bg-white border-gray-200 px-4 pt-3 pb-2 md:px-12">
+            <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-white px-4 pt-3 pb-2 md:px-12">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={toggleMobileMenu}
                         aria-label="Toggle menu"
                         className="focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-md p-1 transition-colors"
                     >
-                       <div className="transform -scale-x-100">
+                       <div className="-scale-x-100">
                           <CiMenuFries size={24} />
                         </div>
                     </button>
@@ -80,7 +80,7 @@ const Navbar = () => {
                 <Logo />
                 <NavActions
                     onToggleSearch={toggleSearch}
-                    onShowCart={() => setShowCartPanel(true)} // This function now updates the context state
+                    onShowCart={() => setShowCartPanel(true)}
                     searchInputRef={searchInputRef}
                 />
                 <AnimatePresence>
@@ -96,7 +96,7 @@ const Navbar = () => {
 
             {searchOpen && (
                 <div 
-                    className="fixed inset-0 bg-black bg-opacity-25 z-[50] md:hidden"
+                    className="fixed inset-0 bg-black bg-opacity-25 z-40 md:hidden"
                     onClick={() => setSearchOpen(false)}
                 />
             )}

@@ -1,4 +1,0 @@
-Flask
-bakong-khqr
-qrcode
-Pillow

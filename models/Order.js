@@ -21,18 +21,16 @@ const orderSchema = new mongoose.Schema({
     status: { type: String, required: true, default: 'Order Placed' }, // Overall order status
     date: { type: Number, required: true },
 
-    // --- MODIFICATION START ---
-    // Updated payment-related fields
     paymentMethod: {
         type: String,
-        enum: ['COD', 'ABA', 'KHQR'], // Added 'KHQR' to the list of allowed methods
+        enum: ['COD', 'ABA', 'BAKONG'], // <-- MODIFIED: Changed 'KHQR' to 'BAKONG' 
         default: 'COD'
     },
     paymentTransactionImage: { // Stores filename or URL for ABA transaction proof
         type: String,
         default: null
     },
-    paymentTransactionId: { // Stores the unique transaction hash for KHQR payments
+    paymentTransactionId: { // Stores the unique transaction hash for Bakong payments
         type: String,
         default: null
     },
@@ -41,12 +39,11 @@ const orderSchema = new mongoose.Schema({
         enum: ['pending', 'paid', 'failed', 'refunded', 'pending_confirmation'],
         default: 'pending'
     },
-    paymentConfirmationStatus: { // Specifically for seller's review of ABA or instant confirmation for KHQR
+    paymentConfirmationStatus: { // Specifically for seller's review of ABA or instant confirmation for Bakong
         type: String,
         enum: ['na', 'pending_review', 'confirmed', 'rejected'],
         default: 'na'
     }
-    // --- MODIFICATION END ---
 });
 
 const Order = mongoose.models.order || mongoose.model('order', orderSchema);

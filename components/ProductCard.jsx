@@ -7,6 +7,7 @@ import { IoMdAdd } from "react-icons/io";
 import { IoHeartOutline } from "react-icons/io5";
 import { MdOutlineError } from "react-icons/md";
 import toast from "react-hot-toast";
+import { GoCheck } from "react-icons/go";
 
 const ProductCard = ({ product }) => {
     const {
@@ -88,7 +89,7 @@ const ProductCard = ({ product }) => {
                 
                 {/* Wishlist Button - Better responsive sizing */}
                 <button
-                    className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 bg-white p-1 sm:p-1.5 md:p-2 rounded-full shadow-sm hover:shadow-md transition-all duration-200 z-10 hover:scale-105"
+                    className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 bg-white p-1 sm:p-1.5 md:p-2 rounded-full shadow-sm hover:shadow-md transition-all duration-200 z-10"
                     onClick={handleWishlist}
                     aria-label="Add to wishlist"
                 >
@@ -100,7 +101,7 @@ const ProductCard = ({ product }) => {
                     <Image
                         src={product.image?.[0] || "/fallback-image.jpg"}
                         alt={product.name || "Product Image"}
-                        className="object-contain max-w-full max-h-full transition-transform duration-200 hover:scale-105"
+                        className="object-contain max-w-full max-h-full transition-transform duration-200"
                         width={120}
                         height={120}
                         priority={false}
@@ -194,10 +195,10 @@ const ProductCard = ({ product }) => {
                             </div>
                             <button
                                 onClick={handleViewItem}
-                                className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[10px] sm:text-xs md:text-sm flex items-center justify-center transition-all duration-200 text-green-600 bg-green-50 hover:bg-green-100 active:scale-95 flex-shrink-0 font-medium"
+                                className="p-2 rounded-full flex items-center justify-center bg-green-400/80 text-white text-xs md:text-sm"
                                 aria-label="View item in cart"
                             >
-                                ✓ Added
+                                <GoCheck className="h-4 w-4 md:h-5 md:w-5" />
                             </button>
                         </div>
                     )}

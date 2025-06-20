@@ -5,7 +5,7 @@ import { Toaster } from "react-hot-toast";
 import { ClerkProvider } from "@clerk/nextjs";
 import CartPopup from "@/components/CartPopup";
 import TelegramPopup from "@/components/TelegramPopup"; 
-import TelegramChat from "@/components/TelegramChat"; 
+// import TelegramChat from "@/components/TelegramChat"; 
 import BottomNavbar from "@/components/BottomNavbar/BottomNavbar";
 import ConditionalLayout from "@/components/ConditionalLayout";
 
