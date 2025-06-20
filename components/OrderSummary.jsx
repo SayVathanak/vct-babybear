@@ -376,7 +376,7 @@ const OrderSummary = () => {
 
   useEffect(() => { if (user) fetchUserAddresses() }, [user]);
 
-  const { subtotal, discount: calculatedDiscountValue, fee, total: totalAmount } = calculateOrderAmounts();
+  const { subtotal, discount: calculatedDiscountValue, deliveryFee: fee, total: totalAmount } = calculateOrderAmounts();
 
   return (
     <>
