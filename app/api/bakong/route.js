@@ -7,7 +7,7 @@ import { exec } from 'child_process';
 const execAsync = promisify(exec);
 
 async function findPythonExecutable() {
-  const possiblePaths = ['python3', 'python', '/usr/bin/python3', '/usr/bin/python'];
+  const possiblePaths = ['python', '/usr/bin/python'];
   
   for (const pythonPath of possiblePaths) {
     try {

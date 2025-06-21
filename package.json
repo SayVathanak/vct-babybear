@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "check-python": "python3 --version || python --version"
+    "check-python": "python --version"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
