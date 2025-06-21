@@ -16,33 +16,35 @@ const orderSchema = new mongoose.Schema({
         discountType: { type: String },
         discountValue: { type: Number }
     },
-    amount: { type: Number, required: true }, // Total amount after all calculations
+    amount: { type: Number, required: true },
     address: { type: String, ref: 'address', required: true },
-    status: { type: String, required: true, default: 'Order Placed' }, // Overall order status
+    status: { type: String, required: true, default: 'Order Placed' },
     date: { type: Number, required: true },
 
+    // --- Payment Fields Update ---
     paymentMethod: {
         type: String,
-        enum: ['COD', 'ABA', 'BAKONG'], // <-- MODIFIED: Changed 'KHQR' to 'BAKONG' 
-        default: 'COD'
+        enum: ['COD', 'ABA', 'Bakong'], // Added 'Bakong'
+        required: true
     },
-    paymentTransactionImage: { // Stores filename or URL for ABA transaction proof
+    paymentTransactionImage: { // For ABA uploads
         type: String,
         default: null
     },
-    paymentTransactionId: { // Stores the unique transaction hash for Bakong payments
-        type: String,
-        default: null
-    },
-    paymentStatus: { // Tracks the financial status of the payment
+    paymentStatus: {
         type: String,
         enum: ['pending', 'paid', 'failed', 'refunded', 'pending_confirmation'],
         default: 'pending'
     },
-    paymentConfirmationStatus: { // Specifically for seller's review of ABA or instant confirmation for Bakong
+    paymentConfirmationStatus: {
         type: String,
         enum: ['na', 'pending_review', 'confirmed', 'rejected'],
         default: 'na'
+    },
+    // --- New Field for Bakong ---
+    bakongPaymentDetails: {
+        md5: { type: String }, // To store the MD5 hash from the FastAPI service
+        qrString: { type: String } // To store the QR string itself (optional, but good for reference)
     }
 });
 

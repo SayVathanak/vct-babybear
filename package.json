@@ -3,11 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npm run check-python && next dev --turbopack",
+    "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "check-python": "python3 --version"
+    "lint": "next lint"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
