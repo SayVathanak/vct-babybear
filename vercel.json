@@ -1,9 +1,4 @@
 {
-  "functions": {
-    "app/api/bakong/route.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "build": {
     "env": {
       "PYTHON_VERSION": "3.9"
