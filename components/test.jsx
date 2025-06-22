@@ -1,242 +1,752 @@
-import React, { useState, useEffect } from "react";
-import ProductCard from "./ProductCard";
+'use client';
+
 import { useAppContext } from "@/context/AppContext";
-import Link from "next/link";
+import axios from "axios";
+import React, { useEffect, useState, useRef } from "react";
+import toast from "react-hot-toast";
+import { sendTelegramNotification } from "@/utils/telegram-config";
 import {
-    CiShoppingCart,
-    CiPillsBottle1,
-    CiBandage,
-    CiApple,
-    CiMedicalCross,
-    CiHeart,
-    CiFilter,
-    CiShop,
-    CiGrid41,
-    CiStar
-} from "react-icons/ci";
+  FaChevronDown,
+  FaChevronUp,
+  FaTag,
+  FaMapMarkerAlt,
+  FaLock,
+  FaTimes,
+  FaCheck,
+  FaCreditCard,
+  FaMoneyBillWave,
+  FaUpload,
+  FaSpinner,
+  FaCopy,
+  FaQrcode // Icon for Bakong
+} from "react-icons/fa";
 
-const HomeProducts = () => {
-    const { products, router } = useAppContext();
-    const [sortedProducts, setSortedProducts] = useState([]);
-    const [sortOption, setSortOption] = useState("name");
-    const [showFilters, setShowFilters] = useState(false);
+// This library will render the QR code string into a visible image
+import QRCode from "qrcode";
 
-    const categoryButtons = [
-        { name: 'Baby Milk', icon: <CiPillsBottle1 className="text-xl" />, link: '/all-products', color: 'bg-blue-50 text-blue-600 border-blue-200' },
-        { name: 'Baby Hygiene', icon: <CiMedicalCross className="text-xl" />, link: '/all-products', color: 'bg-green-50 text-green-600 border-green-200' },
-        { name: 'Diapers', icon: <CiBandage className="text-xl" />, link: '/all-products', color: 'bg-purple-50 text-purple-600 border-purple-200' },
-        { name: 'Baby Food', icon: <CiApple className="text-xl" />, link: '/all-products', color: 'bg-orange-50 text-orange-600 border-orange-200' },
-        { name: 'Feeding Essentials', icon: <CiShoppingCart className="text-xl" />, link: '/all-products', color: 'bg-pink-50 text-pink-600 border-pink-200' },
-        { name: 'Bath & Care', icon: <CiHeart className="text-xl" />, link: '/all-products', color: 'bg-red-50 text-red-600 border-red-200' }
-    ];
+// A new modal component to display the Bakong QR Code with payment status
+const BakongQRModal = ({ show, onClose, qrString, isAwaitingPayment, isPlacingOrder }) => {
+  const canvasRef = useRef(null);
 
-    useEffect(() => {
-        if (products && products.length > 0) {
-            const sorted = [...products].sort((a, b) => {
-                if (sortOption === "name") {
-                    return a.name?.localeCompare(b.name || '') || 0;
-                } else if (sortOption === "price-low") {
-                    return (a.offerPrice || a.price || 0) - (b.offerPrice || b.price || 0);
-                } else if (sortOption === "price-high") {
-                    return (b.offerPrice || b.price || 0) - (a.offerPrice || a.price || 0);
-                } else if (sortOption === "newest") {
-                    return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-                }
-                return 0;
-            });
-            setSortedProducts(sorted);
-        }
-    }, [products, sortOption]);
+  useEffect(() => {
+    if (show && qrString && canvasRef.current) {
+      QRCode.toCanvas(canvasRef.current, qrString, { width: 256, margin: 2 }, (error) => {
+        if (error) console.error("Failed to generate QR code canvas:", error);
+      });
+    }
+  }, [show, qrString]);
 
-    return (
-        <div className="min-h-screen bg-gray-50">
-            <style jsx>{`
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .snap-x {
-          scroll-snap-type: x mandatory;
-        }
-        .snap-start {
-          scroll-snap-align: start;
-        }
-      `}</style>
-            {/* Hero Section with Scrolling Text */}
-            <div className="bg-gradient-to-r from-sky-400 to-blue-500 text-white">
-                <div className="w-full overflow-hidden py-4">
-                    <div className="marquee-container">
-                        <div className="animate-marquee">
-                            <p className="whitespace-nowrap pr-10 text-lg font-medium">
-                                Baby Bear - Premium Imported Milk and Baby Essentials from the USA. Pure, Nutritious, and Safe for Your Little One.
-                            </p>
-                            <p className="whitespace-nowrap pr-10 text-lg font-medium">
-                                Baby Bear - Premium Imported Milk and Baby Essentials from the USA. Pure, Nutritious, and Safe for Your Little One.
-                            </p>
-                            <p className="whitespace-nowrap pr-10 text-lg font-medium">
-                                Baby Bear - Premium Imported Milk and Baby Essentials from the USA. Pure, Nutritious, and Safe for Your Little One.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  const handleSaveImage = () => {
+    if (canvasRef.current) {
+      const link = document.createElement('a');
+      link.download = 'bakong-payment-qr.png';
+      link.href = canvasRef.current.toDataURL('image/png');
+      link.click();
+    }
+  };
 
-            {/* Main Content Container */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  if (!show) return null;
 
-                {/* Categories Section */}
-                <div className="py-8">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-gray-900">Categories</h2>
-                        <Link href="/categories" className="text-sky-600 hover:text-sky-700 text-sm font-medium">
-                            See all
-                        </Link>
-                    </div>
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 transition-opacity duration-300">
+      <div className="bg-white rounded-lg p-6 w-full max-w-sm text-center shadow-2xl transform transition-all duration-300 scale-100">
+        <h3 className="text-xl font-semibold mb-2 text-gray-800">Scan to Pay with Bakong</h3>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                        {categoryButtons.map((button, index) => (
-                            <Link href={button.link} key={index}>
-                                <div className={`${button.color} border rounded-xl p-4 hover:shadow-md transition-all duration-200 cursor-pointer group`}>
-                                    <div className="flex flex-col items-center text-center space-y-2">
-                                        <div className="p-2 rounded-lg bg-white/50 group-hover:bg-white/80 transition-colors">
-                                            {button.icon}
-                                        </div>
-                                        <span className="text-sm font-medium">{button.name}</span>
-                                    </div>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-
-                {/* New Arrivals Section */}
-                <div className="py-8">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                            <CiStar className="text-yellow-500" />
-                            New arrivals
-                        </h2>
-                        <div className="flex items-center gap-4">
-                            <Link href="/all-products" className="text-sky-600 hover:text-sky-700 text-sm font-medium">
-                                See all
-                            </Link>
-                            <button
-                                onClick={() => setShowFilters(!showFilters)}
-                                className="flex items-center gap-1 text-gray-600 hover:text-gray-800 text-sm"
-                            >
-                                <CiFilter className="text-lg" />
-                                Filter
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Filter Options */}
-                    {showFilters && (
-                        <div className="mb-6 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                            <div className="flex flex-wrap gap-2">
-                                <button
-                                    onClick={() => setSortOption("name")}
-                                    className={`px-3 py-1 rounded-full text-sm border transition-colors ${sortOption === "name"
-                                            ? "bg-sky-500 text-white border-sky-500"
-                                            : "bg-white text-gray-600 border-gray-300 hover:border-sky-300"
-                                        }`}
-                                >
-                                    Name
-                                </button>
-                                <button
-                                    onClick={() => setSortOption("price-low")}
-                                    className={`px-3 py-1 rounded-full text-sm border transition-colors ${sortOption === "price-low"
-                                            ? "bg-sky-500 text-white border-sky-500"
-                                            : "bg-white text-gray-600 border-gray-300 hover:border-sky-300"
-                                        }`}
-                                >
-                                    Price: Low to High
-                                </button>
-                                <button
-                                    onClick={() => setSortOption("price-high")}
-                                    className={`px-3 py-1 rounded-full text-sm border transition-colors ${sortOption === "price-high"
-                                            ? "bg-sky-500 text-white border-sky-500"
-                                            : "bg-white text-gray-600 border-gray-300 hover:border-sky-300"
-                                        }`}
-                                >
-                                    Price: High to Low
-                                </button>
-                                <button
-                                    onClick={() => setSortOption("newest")}
-                                    className={`px-3 py-1 rounded-full text-sm border transition-colors ${sortOption === "newest"
-                                            ? "bg-sky-500 text-white border-sky-500"
-                                            : "bg-white text-gray-600 border-gray-300 hover:border-sky-300"
-                                        }`}
-                                >
-                                    Newest
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Products Horizontal Scroll */}
-                    <div className="relative mb-8">
-                        <div className="flex overflow-x-auto scrollbar-hide gap-4 pb-4 snap-x snap-mandatory">
-                            {sortedProducts.length > 0 ? (
-                                sortedProducts.slice(0, 10).map((product, index) => (
-                                    <div key={product._id || index} className="flex-none w-48 sm:w-56 snap-start">
-                                        <ProductCard product={product} />
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="flex-none w-full flex flex-col items-center justify-center py-16">
-                                    <CiGrid41 className="text-6xl text-gray-300 mb-4" />
-                                    <p className="text-gray-500 text-lg">Loading Products...</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* View All Products Button */}
-                    {sortedProducts.length > 0 && (
-                        <div className="text-center">
-                            <button
-                                onClick={() => router.push("/all-products")}
-                                className="inline-flex items-center gap-2 px-8 py-3 bg-sky-500 hover:bg-sky-600 text-white font-medium rounded-full transition-colors duration-200 shadow-sm hover:shadow-md"
-                            >
-                                <CiShoppingCart className="text-lg" />
-                                View All Products
-                            </button>
-                        </div>
-                    )}
-                </div>
-
-                {/* Recommended Section */}
-                <div className="py-8 border-t border-gray-200">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-gray-900">Recommended for you</h2>
-                        <Link href="/recommendations" className="text-sky-600 hover:text-sky-700 text-sm font-medium">
-                            See all
-                        </Link>
-                    </div>
-
-                    <div className="relative">
-                        <div className="flex overflow-x-auto scrollbar-hide gap-4 pb-4 snap-x snap-mandatory">
-                            {sortedProducts.length > 0 ? (
-                                sortedProducts.slice(10, 15).map((product, index) => (
-                                    <div key={product._id || index} className="flex-none w-48 sm:w-56 snap-start">
-                                        <ProductCard product={product} />
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="flex-none w-full text-center py-8">
-                                    <p className="text-gray-500">No recommendations available</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div className="flex justify-center my-4 p-2 bg-gray-100 rounded-lg">
+          <canvas ref={canvasRef}></canvas>
         </div>
-    );
+
+        {/* --- DYNAMIC STATUS --- */}
+        <div className="min-h-[80px] flex flex-col justify-center items-center">
+          {isPlacingOrder ? (
+            <>
+              <FaCheck className="text-green-500 h-8 w-8 mb-2" />
+              <p className="text-green-600 text-sm font-medium">Payment Received!</p>
+              <p className="mt-1 text-xs text-gray-500">Finalizing your order...</p>
+            </>
+          ) : isAwaitingPayment ? (
+            <>
+              <FaSpinner className="animate-spin text-blue-500 h-8 w-8 mb-2" />
+              <p className="text-blue-600 text-sm font-medium">Waiting for payment...</p>
+              <p className="mt-1 text-xs text-gray-500">Do not close this window.</p>
+            </>
+          ) : (
+            <p className="text-sm text-gray-500 mb-4">Use your bank's mobile app to scan the code to complete the payment.</p>
+          )}
+        </div>
+
+
+        <div className="space-y-3 mt-4">
+          <button
+            onClick={handleSaveImage}
+            className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium disabled:bg-blue-300"
+            disabled={isPlacingOrder}
+          >
+            Save QR Image
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full bg-gray-200 text-gray-700 py-3 rounded-md hover:bg-gray-300 transition-colors text-sm font-medium disabled:bg-gray-400"
+            disabled={isPlacingOrder}
+          >
+            Cancel Payment
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
-export default HomeProducts;
+
+const OrderSummary = () => {
+  const {
+    currency,
+    router,
+    getCartCount,
+    getCartAmount,
+    getToken,
+    user,
+    cartItems,
+    setCartItems,
+    products
+  } = useAppContext();
+
+  // --- State Management ---
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [userAddresses, setUserAddresses] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const [promoCode, setPromoCode] = useState("");
+  const [promoExpanded, setPromoExpanded] = useState(false);
+  const [applyingPromo, setApplyingPromo] = useState(false);
+  const [appliedPromo, setAppliedPromo] = useState(null);
+  const [promoError, setPromoError] = useState("");
+
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("COD");
+  const [transactionProofFile, setTransactionProofFile] = useState(null);
+  const [transactionProofPreview, setTransactionProofPreview] = useState(null);
+  const [transactionProofUrl, setTransactionProofUrl] = useState(null);
+  const [uploadingProof, setUploadingProof] = useState(false);
+
+  // --- Updated Bakong State Management ---
+  const [showBakongModal, setShowBakongModal] = useState(false);
+  const [bakongQrString, setBakongQrString] = useState("");
+  const [bakongMd5, setBakongMd5] = useState("");
+  const [isGeneratingQR, setIsGeneratingQR] = useState(false);
+  const [isAwaitingPayment, setIsAwaitingPayment] = useState(false);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+
+  const fileInputRef = useRef(null);
+  const pollIntervalRef = useRef(null); // Ref to hold the interval ID for polling
+
+  // --- Lifecycle Effect for Cleanup ---
+  useEffect(() => {
+    // This function runs when the component is unmounted to prevent memory leaks
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
+
+  // Constants
+  const isFreeDelivery = getCartCount() > 1;
+  const deliveryFee = isFreeDelivery ? 0 : 1.5;
+
+  // --- Notification handler ---
+  const sendOrderNotifications = async (orderDetails) => {
+    try {
+      const telegramResult = await sendTelegramNotification(orderDetails);
+      if (!telegramResult.success) console.error("Failed to send Telegram notification:", telegramResult.error);
+    } catch (error) {
+      console.error("Error sending notifications:", error);
+    }
+  };
+
+  // --- Address Functions ---
+  const fetchUserAddresses = async () => {
+    try {
+      const token = await getToken();
+      const { data } = await axios.get('/api/user/get-address', { headers: { Authorization: `Bearer ${token}` } });
+      if (data.success) {
+        setUserAddresses(data.addresses);
+        if (data.addresses.length > 0) setSelectedAddress(data.addresses[0]);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message || "Failed to fetch addresses");
+    }
+  };
+
+  const handleAddressSelect = (address) => {
+    setSelectedAddress(address);
+    setIsDropdownOpen(false);
+  };
+
+  // --- All other functions ---
+  const handleCopyText = async (textToCopy, message) => {
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      toast.success(message || `Copied: ${textToCopy}`);
+    } catch (err) {
+      toast.error('Failed to copy.');
+    }
+  };
+
+  const calculateDiscount = (subtotal) => {
+    if (!appliedPromo) return 0;
+    let discount = 0;
+    if (appliedPromo.discountType === 'percentage') {
+      discount = (subtotal * appliedPromo.discountValue) / 100;
+      if (appliedPromo.maxDiscountAmount && discount > appliedPromo.maxDiscountAmount) {
+        discount = appliedPromo.maxDiscountAmount;
+      }
+    } else {
+      discount = Math.min(appliedPromo.discountValue, subtotal);
+    }
+    return Number(discount.toFixed(2));
+  };
+
+  const calculateOrderAmounts = () => {
+    const subtotal = Number(getCartAmount().toFixed(2));
+    const discount = calculateDiscount(subtotal);
+    const total = Number((subtotal + deliveryFee - discount).toFixed(2));
+    return { subtotal, discount, deliveryFee: Number(deliveryFee.toFixed(2)), total };
+  };
+
+  const applyPromoCode = async () => {
+    if (!promoCode.trim()) {
+      setPromoError("Please enter a promo code");
+      return;
+    }
+
+    try {
+      setApplyingPromo(true);
+      setPromoError("");
+
+      const token = await getToken();
+      const { data } = await axios.post('/api/promo/validate', {
+        code: promoCode,
+        cartAmount: getCartAmount()
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (data.success) {
+        setAppliedPromo(data.promoCode);
+        setPromoCode("");
+        setPromoExpanded(false);
+        toast.success(data.message || "Promo code applied successfully!");
+      } else {
+        setPromoError(data.message || "Invalid promo code");
+        toast.error(data.message || "Invalid promo code");
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message || "Failed to apply promo code";
+      setPromoError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setApplyingPromo(false);
+    }
+  };
+
+  // Remove promo code
+  const removePromoCode = () => {
+    setAppliedPromo(null);
+    setPromoError("");
+    toast.success("Promo code removed");
+  };
+
+  // --- Payment Polling Function ---
+  const pollPaymentStatus = (md5) => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+    }
+
+    pollIntervalRef.current = setInterval(async () => {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://127.0.0.1:8000";
+        const fastApiUrl = `${baseUrl}/api/v1/check-payment-status`;
+        const { data } = await axios.post(fastApiUrl, { md5_hash: md5 });
+
+        if (data.is_paid) {
+          clearInterval(pollIntervalRef.current);
+          setIsAwaitingPayment(false);
+          setIsPlacingOrder(true);
+          toast.success("Payment received! Placing your order...");
+          await createOrder(true); // Call createOrder automatically
+        }
+      } catch (error) {
+        console.error("Payment poll failed:", error);
+      }
+    }, 5000); // Check every 5 seconds
+  };
+
+  // Bakong QR Generation Handler
+  const handleGenerateBakongQR = async () => {
+    if (!selectedAddress) {
+      toast.error("Please select a delivery address first.");
+      return;
+    }
+    setIsGeneratingQR(true);
+    try {
+      const { total } = calculateOrderAmounts();
+      const billNumber = `ORD-${Date.now()}`;
+      const baseUrl = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://127.0.0.1:8000";
+      const fastApiUrl = `${baseUrl}/api/v1/generate-qr`;
+
+      const { data } = await axios.post(fastApiUrl, { amount: total, bill_number: billNumber });
+
+      if (data.qr_string && data.md5_hash) {
+        setBakongQrString(data.qr_string);
+        setBakongMd5(data.md5_hash);
+        setShowBakongModal(true);
+        setIsAwaitingPayment(true);
+        pollPaymentStatus(data.md5_hash); // Start checking for payment
+      } else {
+        throw new Error("Invalid response from QR service.");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Could not generate Bakong QR.");
+      resetBakongState();
+    } finally {
+      setIsGeneratingQR(false);
+    }
+  };
+
+  // Create order function
+  const createOrder = async (isBakongAutoTrigger = false) => {
+    if (!isBakongAutoTrigger && !validateOrderForm()) return;
+
+    setLoading(true);
+
+    try {
+      let cartItemsArray = Object.keys(cartItems).map((key) => ({ product: key, quantity: cartItems[key] })).filter(item => item.quantity > 0);
+      const authToken = await getToken();
+      const { subtotal, discount, deliveryFee, total } = calculateOrderAmounts();
+
+      const orderPayload = {
+        address: selectedAddress._id,
+        items: cartItemsArray,
+        subtotal, deliveryFee, discount, amount: total,
+        paymentMethod: selectedPaymentMethod,
+        ...(selectedPaymentMethod === "ABA" && { paymentTransactionImage: transactionProofUrl }),
+        ...(selectedPaymentMethod === "Bakong" && { bakongPaymentDetails: { md5: bakongMd5, qrString: bakongQrString } }),
+        ...(appliedPromo && {
+          promoCodeId: appliedPromo._id,
+          promoCode: {
+            id: appliedPromo._id,
+            code: appliedPromo.code,
+            discountType: appliedPromo.discountType,
+            discountValue: appliedPromo.discountValue,
+            discountAmount: discount
+          }
+        }),
+      };
+
+      const { data: orderCreateData } = await axios.post('/api/order/create', orderPayload, { headers: { Authorization: `Bearer ${authToken}` } });
+
+      if (orderCreateData.success) {
+
+        try {
+          const productsDetails = cartItemsArray.map(item => {
+            const product = products.find(p => p._id === item.product);
+            return {
+              productName: product ? product.name : `Product ID: ${item.product}`,
+              quantity: item.quantity,
+              price: product ? (product.offerPrice || product.price) : 0
+            };
+          });
+
+          await sendOrderNotifications({
+            orderId: orderCreateData.orderId || `ORD-${Date.now()}`,
+            address: selectedAddress,
+            items: productsDetails,
+            currency,
+            subtotal,
+            discount,
+            deliveryFee,
+            total,
+            promoCode: appliedPromo ? appliedPromo.code : null,
+            paymentMethod: selectedPaymentMethod
+          });
+        } catch (notificationError) {
+          console.error("Failed to send notifications:", notificationError);
+        }
+
+        toast.success("Order placed successfully!");
+        setCartItems({});
+        resetAllPaymentStates();
+        router.push('/order-placed');
+      } else {
+        toast.error(orderCreateData.message || "Failed to place order");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "An error occurred");
+    } finally {
+      setLoading(false);
+      setIsPlacingOrder(false);
+    }
+  };
+
+  const validateOrderForm = () => {
+    if (!selectedAddress || getCartCount() <= 0) {
+      if (!selectedAddress) toast.error('Please select a delivery address');
+      if (getCartCount() <= 0) toast.error('Your cart is empty');
+      return false;
+    }
+    if (selectedPaymentMethod === "ABA" && !transactionProofUrl) {
+      toast.error("Please upload transaction proof for ABA payment.");
+      return false;
+    }
+    return true;
+  };
+
+  // --- UTILITY FUNCTIONS ---
+  const resetBakongState = () => {
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    setShowBakongModal(false);
+    setBakongQrString("");
+    setBakongMd5("");
+    setIsAwaitingPayment(false);
+    setIsPlacingOrder(false);
+  };
+
+  const resetTransactionProof = () => {
+    setTransactionProofFile(null);
+    setTransactionProofPreview(null);
+    setTransactionProofUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const uploadTransactionProof = async (fileToUpload) => {
+    if (!fileToUpload) {
+      toast.error("No file selected for upload.");
+      return;
+    }
+
+    setUploadingProof(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('transactionProofImage', fileToUpload);
+
+      const token = await getToken();
+      const { data } = await axios.post('/api/upload/transaction-proof', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (data.success && data.imageUrl) {
+        setTransactionProofUrl(data.imageUrl);
+        toast.success("Transaction uploaded successfully!");
+      } else {
+        toast.error(data.message || "Failed to upload proof.");
+        resetTransactionProof();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message || "Error uploading proof.");
+      resetTransactionProof();
+    } finally {
+      setUploadingProof(false);
+    }
+  };
+
+  const handleTransactionProofChange = (event) => {
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("File size should be less than 2MB.");
+      resetTransactionProof();
+      return;
+    }
+
+    if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
+      toast.error("Only JPG, PNG, or GIF images are allowed.");
+      resetTransactionProof();
+      return;
+    }
+
+    setTransactionProofFile(file);
+    setTransactionProofUrl(null);
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setTransactionProofPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+
+    uploadTransactionProof(file);
+  };
+
+  const resetAllPaymentStates = () => {
+    resetTransactionProof();
+    resetBakongState();
+  };
+
+  const handlePaymentMethodChange = (method) => {
+    resetAllPaymentStates();
+    setSelectedPaymentMethod(method);
+  };
+
+  // Initial data fetch
+  useEffect(() => {
+    if (user) fetchUserAddresses();
+  }, [user]);
+
+  // --- RENDER LOGIC ---
+  const { subtotal, discount: calculatedDiscountValue, deliveryFee: fee, total: totalAmount } = calculateOrderAmounts();
+
+  return (
+    <>
+      <BakongQRModal
+        show={showBakongModal}
+        onClose={resetBakongState}
+        qrString={bakongQrString}
+        isAwaitingPayment={isAwaitingPayment}
+        isPlacingOrder={isPlacingOrder}
+      />
+      <div className="w-full md:w-96 border border-gray-200 bg-gray-50 shadow-sm p-6 sticky top-24 h-fit">
+        <h2 className="text-xl text-gray-800 mb-6 uppercase font-medium">Order Summary</h2>
+
+        {/* Address Section */}
+        <div className="mb-6">
+          <div className="flex items-center mb-3"><FaMapMarkerAlt className="text-gray-500 mr-2" /><h3 className="text-sm font-medium uppercase text-gray-700">Delivery Address</h3></div>
+          <div className="relative w-full text-sm">
+            <button className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 transition-colors rounded-md" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+              <span className="text-gray-700 truncate flex-1 text-left font-kantumruy">{selectedAddress ? `${selectedAddress.fullName}, ${selectedAddress.area}, ${selectedAddress.state}` : "Select delivery address"}</span>
+              {isDropdownOpen ? <FaChevronUp className="ml-2 text-gray-500" /> : <FaChevronDown className="ml-2 text-gray-500" />}
+            </button>
+            {isDropdownOpen && (
+              <ul className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 shadow-lg rounded-md max-h-60 overflow-y-auto z-10">
+                {userAddresses.length > 0 ? userAddresses.map((address, index) => (<li key={index} className="px-4 py-3 hover:bg-gray-50 cursor-pointer" onClick={() => handleAddressSelect(address)}><p className="font-medium text-gray-800">{address.fullName}</p><p className="text-gray-600 text-sm mt-1">{address.area}, {address.state}</p></li>)) : <li className="px-4 py-3 text-gray-500 italic">No addresses found</li>}
+                <li onClick={() => router.push("/add-address")} className="px-4 py-3 bg-gray-50 hover:bg-gray-100 cursor-pointer text-center text-blue-600 font-medium">+ Add New Address</li>
+              </ul>
+            )}
+          </div>
+        </div>
+
+        {/* Promo Code Section */}
+        <div className="mb-6">
+          {!appliedPromo ? (
+            <>
+              <button
+                className="flex items-center justify-between w-full"
+                onClick={() => setPromoExpanded(!promoExpanded)}
+                type="button"
+              >
+                <div className="flex items-center">
+                  <FaTag className="text-gray-500 mr-2" />
+                  <h3 className="text-sm font-medium uppercase text-gray-700">
+                    Apply Promo Code
+                  </h3>
+                </div>
+                {promoExpanded ? (
+                  <FaChevronUp className="text-gray-500" />
+                ) : (
+                  <FaChevronDown className="text-gray-500" />
+                )}
+              </button>
+
+              {promoExpanded && (
+                <div className="mt-3">
+                  <div className="flex">
+                    <input
+                      type="text"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                      placeholder="Enter promo code"
+                      className="flex-grow outline-none p-3 text-gray-700 border border-gray-200 rounded-l-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    />
+                    <button
+                      className="bg-black text-white px-4 py-3 rounded-r-md hover:bg-gray-800 transition-colors disabled:bg-gray-300"
+                      type="button"
+                      onClick={applyPromoCode}
+                      disabled={applyingPromo || !promoCode.trim()}
+                    >
+                      {applyingPromo ? (
+                        <FaSpinner className="animate-spin h-5 w-5 text-white" />
+                      ) : (
+                        "Apply"
+                      )}
+                    </button>
+                  </div>
+                  {promoError && (
+                    <p className="text-red-500 text-xs mt-2">{promoError}</p>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center justify-between bg-green-50 p-3 border border-green-200 rounded-md">
+              <div className="flex items-center">
+                <FaTag className="text-green-600 mr-2" />
+                <div>
+                  <p className="text-sm font-medium text-gray-800">
+                    {appliedPromo.code}
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    {appliedPromo.discountType === 'percentage'
+                      ? `${appliedPromo.discountValue}% off${appliedPromo.maxDiscountAmount
+                        ? ` (up to ${currency}${appliedPromo.maxDiscountAmount})`
+                        : ''
+                      }`
+                      : `${currency}${appliedPromo.discountValue} off`
+                    }
+                  </p>
+                </div>
+              </div>
+              <button
+                className="text-gray-500 hover:text-red-500"
+                onClick={removePromoCode}
+                type="button"
+                aria-label="Remove promo code"
+              >
+                <FaTimes />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Payment Method Section */}
+        <div className="mb-6">
+          <h3 className="text-sm font-medium uppercase text-gray-700 mb-3">Payment Method</h3>
+          <div className="space-y-3">
+            <label className={`flex items-center p-3 border rounded-md cursor-pointer ${selectedPaymentMethod === "COD" ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500" : "border-gray-200"}`}>
+              <input type="radio" name="paymentMethod" value="COD" checked={selectedPaymentMethod === "COD"} onChange={() => handlePaymentMethodChange("COD")} className="sr-only" />
+              <FaMoneyBillWave className={`mr-3 h-5 w-5 ${selectedPaymentMethod === "COD" ? "text-blue-600" : "text-gray-400"}`} />
+              <span>Cash on Delivery</span>
+            </label>
+            <label className={`flex items-center p-3 border rounded-md cursor-pointer ${selectedPaymentMethod === "ABA" ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500" : "border-gray-200"}`}>
+              <input type="radio" name="paymentMethod" value="ABA" checked={selectedPaymentMethod === "ABA"} onChange={() => handlePaymentMethodChange("ABA")} className="sr-only" />
+              <FaCreditCard className={`mr-3 h-5 w-5 ${selectedPaymentMethod === "ABA" ? "text-blue-600" : "text-gray-400"}`} />
+              <span>ABA Bank Transfer</span>
+            </label>
+            <label className={`flex items-center p-3 border rounded-md cursor-pointer ${selectedPaymentMethod === "Bakong" ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500" : "border-gray-200"}`}>
+              <input type="radio" name="paymentMethod" value="Bakong" checked={selectedPaymentMethod === "Bakong"} onChange={() => handlePaymentMethodChange("Bakong")} className="sr-only" />
+              <FaQrcode className={`mr-3 h-5 w-5 ${selectedPaymentMethod === "Bakong" ? "text-blue-600" : "text-gray-400"}`} />
+              <span>Bakong KHQR</span>
+            </label>
+          </div>
+          {selectedPaymentMethod === "ABA" && (
+            <div className="mt-4 p-4 border border-gray-200 rounded-md bg-white">
+              <p className="text-xs text-gray-600 mb-1">
+                Please transfer to the following ABA account and upload a screenshot of your transaction.
+              </p>
+
+              <div className="bg-gray-50 p-3 rounded mb-3 space-y-1">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-700">
+                    Account: <span className="font-semibold text-blue-600">001 223 344</span>
+                  </p>
+                  <button
+                    onClick={() => handleCopyText("001 223 344", "ABA Account Number Copied!")}
+                    className="p-1 text-blue-500 hover:text-blue-700 transition-colors" aria-label="Copy ABA Account Number" title="Copy ABA Account Number" type="button"
+                  >
+                    <FaCopy size={14} />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-700">
+                    Name: <span className="font-semibold text-blue-600">SAY SAKSOPHANNA</span>
+                  </p>
+                  <button
+                    onClick={() => handleCopyText("SAY SAKSOPHANNA", "Account Name Copied!")}
+                    className="p-1 text-blue-500 hover:text-blue-700 transition-colors" aria-label="Copy Account Name" title="Copy Account Name" type="button"
+                  >
+                    <FaCopy size={14} />
+                  </button>
+                </div>
+              </div>
+
+              <label htmlFor="transaction-proof-upload" className="block text-sm font-medium text-gray-700 mb-1">
+                Upload Transaction <span className="text-red-500">*</span>
+              </label>
+
+              <input
+                type="file" id="transaction-proof-upload" ref={fileInputRef} onChange={handleTransactionProofChange} accept="image/png, image/jpeg, image/gif"
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
+                disabled={uploadingProof}
+              />
+
+              {transactionProofPreview && (
+                <div className="mt-3">
+                  <p className="text-xs text-gray-500 mb-1">Preview:</p>
+                  <img src={transactionProofPreview} alt="Transaction proof preview" className="max-h-32 rounded-md border border-gray-200" />
+                </div>
+              )}
+
+              {uploadingProof && (
+                <div className="flex items-center text-sm text-blue-600 mt-2">
+                  <FaSpinner className="animate-spin mr-2" />
+                  <span>Uploading proof...</span>
+                </div>
+              )}
+
+              {transactionProofUrl && !uploadingProof && (
+                <div className="flex items-center text-sm text-green-600 mt-2">
+                  <FaCheck className="mr-2" />
+                  <span>Proof uploaded successfully!</span>
+                </div>
+              )}
+
+              <p className="text-xs text-gray-500 mt-1">
+                Max file size: 2MB. Allowed types: JPG, PNG, GIF.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Order Summary Details Section */}
+        <div className="space-y-3 border-t border-b py-5 mb-6">
+          <div className="flex justify-between text-gray-600"><p>Subtotal ({getCartCount()} items)</p><p className="font-medium">{currency}{subtotal.toFixed(2)}</p></div>
+          {appliedPromo && <div className="flex justify-between text-green-600"><p>Discount</p><p>-{currency}{calculatedDiscountValue.toFixed(2)}</p></div>}
+          <div className="flex justify-between text-gray-600"><p>Delivery Fee</p><p className="font-medium">{isFreeDelivery ? 'Free' : `${currency}${fee.toFixed(2)}`}</p></div>
+          <div className="flex justify-between text-lg font-medium border-t pt-3 mt-3"><p>Total</p><p>{currency}{totalAmount.toFixed(2)}</p></div>
+        </div>
+
+        {/* ACTION BUTTONS AREA */}
+        <div className="mt-6">
+          {selectedPaymentMethod === 'Bakong' ? (
+            <button
+              onClick={handleGenerateBakongQR}
+              disabled={isGeneratingQR || isAwaitingPayment || isPlacingOrder}
+              className="w-full py-3 rounded-md flex items-center justify-center transition-all duration-300 text-base font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-wait"
+            >
+              {isAwaitingPayment || isPlacingOrder ? (
+                <><FaSpinner className="animate-spin -ml-1 mr-3 h-5 w-5" /> Waiting for Payment...</>
+              ) : isGeneratingQR ? (
+                <><FaSpinner className="animate-spin -ml-1 mr-3 h-5 w-5" /> Generating QR...</>
+              ) : (
+                "Generate Bakong KHQR to Pay"
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={() => createOrder(false)}
+              disabled={loading || uploadingProof}
+              className={`w-full py-3 rounded-md flex items-center justify-center transition-all duration-300 text-base font-medium ${loading || uploadingProof ? "bg-gray-300 cursor-not-allowed" : "bg-black text-white hover:bg-gray-800"
+                }`}
+            >
+              {loading ? (<><FaSpinner className="animate-spin -ml-1 mr-3 h-5 w-5" /> Processing...</>) : ("Place Order")}
+            </button>
+          )}
+        </div>
+
+        <div className="mt-4 text-center">
+          <p className="text-xs text-gray-500 flex items-center justify-center"><FaLock className="mr-1" /> Secure checkout</p>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default OrderSummary;
