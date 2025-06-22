@@ -24,76 +24,50 @@ import {
 // This library will render the QR code string into a visible image
 import QRCode from "qrcode";
 
-// A new modal component to display the Bakong QR Code with payment status
-const BakongQRModal = ({ show, onClose, qrString, isAwaitingPayment, isPlacingOrder }) => {
-  const canvasRef = useRef(null);
+const BakongQRModal = ({ show, onClose, qrString, deeplink, isAwaitingPayment, isPlacingOrder }) => {
+    const canvasRef = useRef(null);
 
-  useEffect(() => {
-    if (show && qrString && canvasRef.current) {
-      QRCode.toCanvas(canvasRef.current, qrString, { width: 256, margin: 2 }, (error) => {
-        if (error) console.error("Failed to generate QR code canvas:", error);
-      });
-    }
-  }, [show, qrString]);
+    useEffect(() => {
+        if (show && qrString && canvasRef.current) {
+            QRCode.toCanvas(canvasRef.current, qrString, { width: 256, margin: 2 }, (error) => {
+                if (error) console.error("Failed to generate QR code canvas:", error);
+            });
+        }
+    }, [show, qrString]);
+    
+    const handleSaveImage = () => { if (canvasRef.current) { const link = document.createElement('a'); link.download = 'bakong-payment-qr.png'; link.href = canvasRef.current.toDataURL('image/png'); link.click(); } };
+    if (!show) return null;
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4">
+            <div className="bg-white rounded-lg p-6 w-full max-w-sm text-center shadow-2xl">
+                <h3 className="text-xl font-semibold mb-2 text-gray-800">Scan or Click to Pay</h3>
+                
+                <div className="flex justify-center my-4 p-2 bg-gray-100 rounded-lg">
+                    <canvas ref={canvasRef}></canvas>
+                </div>
 
-  const handleSaveImage = () => {
-    if (canvasRef.current) {
-      const link = document.createElement('a');
-      link.download = 'bakong-payment-qr.png';
-      link.href = canvasRef.current.toDataURL('image/png');
-      link.click();
-    }
-  };
+                <div className="min-h-[80px] flex flex-col justify-center items-center">
+                  {isPlacingOrder ? (<><FaCheck className="text-green-500 h-8 w-8 mb-2" /><p className="text-green-600">Payment Received!</p></>) : 
+                   isAwaitingPayment ? (<><FaSpinner className="animate-spin text-blue-500 h-8 w-8 mb-2" /><p className="text-blue-600">Waiting for payment...</p></>) : 
+                   (<p className="text-sm text-gray-500">Use your bank's app to complete the payment.</p>)}
+                </div>
 
-  if (!show) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 transition-opacity duration-300">
-      <div className="bg-white rounded-lg p-6 w-full max-w-sm text-center shadow-2xl transform transition-all duration-300 scale-100">
-        <h3 className="text-xl font-semibold mb-2 text-gray-800">Scan to Pay with Bakong</h3>
-
-        <div className="flex justify-center my-4 p-2 bg-gray-100 rounded-lg">
-          <canvas ref={canvasRef}></canvas>
+                <div className="space-y-3 mt-4">
+                    {/* --- NEW: Deeplink Button for Mobile Users --- */}
+                    <a
+                        href={deeplink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium flex items-center justify-center"
+                    >
+                        Pay with Bakong App
+                    </a>
+                    <button onClick={handleSaveImage} className="w-full bg-gray-500 text-white py-3 rounded-md hover:bg-gray-600">Save QR Image</button>
+                    <button onClick={onClose} className="w-full bg-gray-200 text-gray-700 py-3 rounded-md hover:bg-gray-300">Cancel Payment</button>
+                </div>
+            </div>
         </div>
-
-        <div className="min-h-[80px] flex flex-col justify-center items-center">
-          {isPlacingOrder ? (
-            <>
-              <FaCheck className="text-green-500 h-8 w-8 mb-2" />
-              <p className="text-green-600 text-sm font-medium">Payment Received!</p>
-              <p className="mt-1 text-xs text-gray-500">Finalizing your order...</p>
-            </>
-          ) : isAwaitingPayment ? (
-            <>
-              <FaSpinner className="animate-spin text-blue-500 h-8 w-8 mb-2" />
-              <p className="text-blue-600 text-sm font-medium">Waiting for payment...</p>
-              <p className="mt-1 text-xs text-gray-500">Do not close this window.</p>
-            </>
-          ) : (
-            <p className="text-sm text-gray-500 mb-4">Use your bank's mobile app to scan the code to complete the payment.</p>
-          )}
-        </div>
-
-
-        <div className="space-y-3 mt-4">
-          <button
-            onClick={handleSaveImage}
-            className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium disabled:bg-blue-300"
-            disabled={isPlacingOrder}
-          >
-            Save QR Image
-          </button>
-          <button
-            onClick={onClose}
-            className="w-full bg-gray-200 text-gray-700 py-3 rounded-md hover:bg-gray-300 transition-colors text-sm font-medium disabled:bg-gray-400"
-            disabled={isPlacingOrder}
-          >
-            Cancel Payment
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 
@@ -123,6 +97,7 @@ const OrderSummary = () => {
   // Bakong Payment State
   const [showBakongModal, setShowBakongModal] = useState(false);
   const [bakongQrString, setBakongQrString] = useState("");
+  const [bakongDeeplink, setBakongDeeplink] = useState(""); // New state for deeplink
   const [isGeneratingQR, setIsGeneratingQR] = useState(false);
   const [isAwaitingPayment, setIsAwaitingPayment] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -301,49 +276,35 @@ const OrderSummary = () => {
   };
 
   const handleGenerateBakongQR = async () => {
-    if (!selectedAddress) {
-      toast.error("Please select a delivery address first.");
-      return;
-    }
+    if (!selectedAddress) { toast.error("Please select a delivery address first."); return; }
     setIsGeneratingQR(true);
     try {
       const { total } = calculateOrderAmounts();
       const billNumber = `ORD-${Date.now()}`;
-      const baseUrl = process.env.NEXT_PUBLIC_FASTAPI_URL
-        ? `https://${process.env.NEXT_PUBLIC_FASTAPI_URL}`
-        : "http://127.0.0.1:8000";
+      const baseUrl = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://127.0.0.1:8000";
       const fastApiUrl = `${baseUrl}/api/v1/generate-qr`;
-      const { data } = await axios.post(fastApiUrl, {
-        amount: total,
-        bill_number: billNumber
-      });
-      if (data.qr_string && data.md5_hash) {
+      const { data } = await axios.post(fastApiUrl, { amount: total, bill_number: billNumber });
+      
+      // Now receives qr_string, md5_hash, AND deeplink
+      if (data.qr_string && data.md5_hash && data.deeplink) {
         setBakongQrString(data.qr_string);
-        bakongDetailsRef.current = {
-          md5: data.md5_hash,
-          qrString: data.qr_string
-        };
+        setBakongDeeplink(data.deeplink); // Save the deeplink
+        bakongDetailsRef.current = { md5: data.md5_hash, qrString: data.qr_string };
         setShowBakongModal(true);
         setIsAwaitingPayment(true);
         pollPaymentStatus();
-      } else {
-        throw new Error("Invalid response from QR service.");
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.detail || "Could not generate Bakong QR.");
-      resetBakongState();
-    } finally {
-      setIsGeneratingQR(false);
-    }
+      } else { throw new Error("Invalid response from QR service."); }
+    } catch (error) { toast.error(error.response?.data?.detail || "Could not generate Bakong QR."); resetBakongState(); } finally { setIsGeneratingQR(false); }
   };
 
-  const resetBakongState = () => {
-    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-    setShowBakongModal(false);
-    setBakongQrString("");
-    setIsAwaitingPayment(false);
-    setIsPlacingOrder(false);
-    bakongDetailsRef.current = null;
+  const resetBakongState = () => { 
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current); 
+      setShowBakongModal(false); 
+      setBakongQrString(""); 
+      setBakongDeeplink(""); // Reset deeplink state
+      setIsAwaitingPayment(false); 
+      setIsPlacingOrder(false); 
+      bakongDetailsRef.current = null;
   };
 
   const resetAllPaymentStates = () => {
@@ -406,7 +367,7 @@ const OrderSummary = () => {
 
   return (
     <>
-      <BakongQRModal show={showBakongModal} onClose={resetBakongState} qrString={bakongQrString} isAwaitingPayment={isAwaitingPayment} isPlacingOrder={isPlacingOrder} />
+      <BakongQRModal show={showBakongModal} onClose={resetBakongState} qrString={bakongQrString} deeplink={bakongDeeplink} isAwaitingPayment={isAwaitingPayment} isPlacingOrder={isPlacingOrder} />
       <div className="w-full md:w-96 border border-gray-200 bg-gray-50 shadow-sm p-6 sticky top-24 h-fit">
         <h2 className="text-xl text-gray-800 mb-6 uppercase font-medium">Order Summary</h2>
 
