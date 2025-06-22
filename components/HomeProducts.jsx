@@ -131,7 +131,7 @@ const ProductScrollSection = ({
   return (
     <motion.div 
       ref={sectionRef}
-      className="pt-4 md:pt-6 px-4 md:px-0"
+      className="pt-4 md:pt-6 md:px-0"
       variants={sectionVariants}
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
@@ -141,7 +141,7 @@ const ProductScrollSection = ({
       }}
     >
       <motion.div 
-        className="flex items-center justify-between mb-4 md:mb-6"
+        className="flex items-center justify-between mb-4 md:mb-6 px-4 md:px-0"
         variants={{
           visible: {
             transition: {
@@ -198,7 +198,7 @@ const ProductScrollSection = ({
         </motion.div>
       </motion.div>
 
-      <div className="relative group -mx-4 md:mx-0">
+      <div className="relative group">
         <div className="overflow-x-auto px-4 md:px-0">
           <motion.div
             ref={containerRef}
@@ -501,7 +501,7 @@ const HomeProducts = () => {
                 transition={{ delay: 0.3 }}
               >
                 {products ? 'No products found' : 'Loading products...'}
-              </motion.p>
+              </p>
             </motion.div>
           )}
         </div>
