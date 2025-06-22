@@ -26,86 +26,86 @@ import QRCode from "qrcode";
 
 // A new modal component to display the Bakong QR Code with payment status
 const BakongQRModal = ({ show, onClose, qrString, isAwaitingPayment, isPlacingOrder }) => {
-    const canvasRef = useRef(null);
+  const canvasRef = useRef(null);
 
-    useEffect(() => {
-        if (show && qrString && canvasRef.current) {
-            QRCode.toCanvas(canvasRef.current, qrString, { width: 256, margin: 2 }, (error) => {
-                if (error) console.error("Failed to generate QR code canvas:", error);
-            });
-        }
-    }, [show, qrString]);
-    
-    const handleSaveImage = () => {
-        if (canvasRef.current) {
-            const link = document.createElement('a');
-            link.download = 'bakong-payment-qr.png';
-            link.href = canvasRef.current.toDataURL('image/png');
-            link.click();
-        }
-    };
+  useEffect(() => {
+    if (show && qrString && canvasRef.current) {
+      QRCode.toCanvas(canvasRef.current, qrString, { width: 256, margin: 2 }, (error) => {
+        if (error) console.error("Failed to generate QR code canvas:", error);
+      });
+    }
+  }, [show, qrString]);
 
-    if (!show) return null;
+  const handleSaveImage = () => {
+    if (canvasRef.current) {
+      const link = document.createElement('a');
+      link.download = 'bakong-payment-qr.png';
+      link.href = canvasRef.current.toDataURL('image/png');
+      link.click();
+    }
+  };
 
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 transition-opacity duration-300">
-            <div className="bg-white rounded-lg p-6 w-full max-w-sm text-center shadow-2xl transform transition-all duration-300 scale-100">
-                <h3 className="text-xl font-semibold mb-2 text-gray-800">Scan to Pay with Bakong</h3>
-                
-                <div className="flex justify-center my-4 p-2 bg-gray-100 rounded-lg">
-                    <canvas ref={canvasRef}></canvas>
-                </div>
+  if (!show) return null;
 
-                <div className="min-h-[80px] flex flex-col justify-center items-center">
-                  {isPlacingOrder ? (
-                    <>
-                      <FaCheck className="text-green-500 h-8 w-8 mb-2" />
-                      <p className="text-green-600 text-sm font-medium">Payment Received!</p>
-                      <p className="mt-1 text-xs text-gray-500">Finalizing your order...</p>
-                    </>
-                  ) : isAwaitingPayment ? (
-                    <>
-                      <FaSpinner className="animate-spin text-blue-500 h-8 w-8 mb-2" />
-                      <p className="text-blue-600 text-sm font-medium">Waiting for payment...</p>
-                      <p className="mt-1 text-xs text-gray-500">Do not close this window.</p>
-                    </>
-                  ) : (
-                     <p className="text-sm text-gray-500 mb-4">Use your bank's mobile app to scan the code to complete the payment.</p>
-                  )}
-                </div>
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 transition-opacity duration-300">
+      <div className="bg-white rounded-lg p-6 w-full max-w-sm text-center shadow-2xl transform transition-all duration-300 scale-100">
+        <h3 className="text-xl font-semibold mb-2 text-gray-800">Scan to Pay with Bakong</h3>
 
-
-                <div className="space-y-3 mt-4">
-                     <button
-                        onClick={handleSaveImage}
-                        className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium disabled:bg-blue-300"
-                        disabled={isPlacingOrder}
-                    >
-                        Save QR Image
-                    </button>
-                    <button
-                        onClick={onClose}
-                        className="w-full bg-gray-200 text-gray-700 py-3 rounded-md hover:bg-gray-300 transition-colors text-sm font-medium disabled:bg-gray-400"
-                        disabled={isPlacingOrder}
-                    >
-                        Cancel Payment
-                    </button>
-                </div>
-            </div>
+        <div className="flex justify-center my-4 p-2 bg-gray-100 rounded-lg">
+          <canvas ref={canvasRef}></canvas>
         </div>
-    );
+
+        <div className="min-h-[80px] flex flex-col justify-center items-center">
+          {isPlacingOrder ? (
+            <>
+              <FaCheck className="text-green-500 h-8 w-8 mb-2" />
+              <p className="text-green-600 text-sm font-medium">Payment Received!</p>
+              <p className="mt-1 text-xs text-gray-500">Finalizing your order...</p>
+            </>
+          ) : isAwaitingPayment ? (
+            <>
+              <FaSpinner className="animate-spin text-blue-500 h-8 w-8 mb-2" />
+              <p className="text-blue-600 text-sm font-medium">Waiting for payment...</p>
+              <p className="mt-1 text-xs text-gray-500">Do not close this window.</p>
+            </>
+          ) : (
+            <p className="text-sm text-gray-500 mb-4">Use your bank's mobile app to scan the code to complete the payment.</p>
+          )}
+        </div>
+
+
+        <div className="space-y-3 mt-4">
+          <button
+            onClick={handleSaveImage}
+            className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium disabled:bg-blue-300"
+            disabled={isPlacingOrder}
+          >
+            Save QR Image
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full bg-gray-200 text-gray-700 py-3 rounded-md hover:bg-gray-300 transition-colors text-sm font-medium disabled:bg-gray-400"
+            disabled={isPlacingOrder}
+          >
+            Cancel Payment
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 
 const OrderSummary = () => {
   const { currency, router, getCartCount, getCartAmount, getToken, user, cartItems, setCartItems, products } = useAppContext();
-  
+
   // State Management
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [userAddresses, setUserAddresses] = useState([]);
   const [loading, setLoading] = useState(false);
-  
+
   const [promoCode, setPromoCode] = useState("");
   const [promoExpanded, setPromoExpanded] = useState(false);
   const [applyingPromo, setApplyingPromo] = useState(false);
@@ -113,13 +113,13 @@ const OrderSummary = () => {
   const [promoError, setPromoError] = useState("");
 
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("COD");
-  
+
   // ABA Payment State
   const [transactionProofFile, setTransactionProofFile] = useState(null);
   const [transactionProofPreview, setTransactionProofPreview] = useState(null);
   const [transactionProofUrl, setTransactionProofUrl] = useState(null);
   const [uploadingProof, setUploadingProof] = useState(false);
-  
+
   // Bakong Payment State
   const [showBakongModal, setShowBakongModal] = useState(false);
   const [bakongQrString, setBakongQrString] = useState("");
@@ -138,7 +138,7 @@ const OrderSummary = () => {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     };
   }, []);
-  
+
   // Fetch user addresses on component mount
   useEffect(() => {
     if (user) fetchUserAddresses();
@@ -188,14 +188,14 @@ const OrderSummary = () => {
     setSelectedAddress(address);
     setIsDropdownOpen(false);
   };
-  
+
   const handleCopyText = async (textToCopy, message) => {
     try {
       await navigator.clipboard.writeText(textToCopy);
       toast.success(message || `Copied: ${textToCopy}`);
     } catch (err) { toast.error('Failed to copy.'); }
   };
-  
+
   const applyPromoCode = async () => {
     if (!promoCode.trim()) { setPromoError("Please enter a promo code"); return; }
     setApplyingPromo(true);
@@ -282,7 +282,9 @@ const OrderSummary = () => {
       const md5 = bakongDetailsRef.current?.md5;
       if (!md5) return;
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://127.0.0.1:8000";
+        const baseUrl = process.env.NEXT_PUBLIC_FASTAPI_URL
+          ? `https://${process.env.NEXT_PUBLIC_FASTAPI_URL}`
+          : "http://127.0.0.1:8000";
         const fastApiUrl = `${baseUrl}/api/v1/check-payment-status`;
         const { data } = await axios.post(fastApiUrl, { md5_hash: md5 });
         if (data.is_paid) {
@@ -292,36 +294,56 @@ const OrderSummary = () => {
           toast.success("Payment received! Placing your order...");
           await createOrder(true);
         }
-      } catch (error) { console.error("Payment poll failed:", error); }
+      } catch (error) {
+        console.error("Payment poll failed:", error);
+      }
     }, 5000);
   };
-  
+
   const handleGenerateBakongQR = async () => {
-    if (!selectedAddress) { toast.error("Please select a delivery address first."); return; }
+    if (!selectedAddress) {
+      toast.error("Please select a delivery address first.");
+      return;
+    }
     setIsGeneratingQR(true);
     try {
       const { total } = calculateOrderAmounts();
       const billNumber = `ORD-${Date.now()}`;
-      const baseUrl = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://127.0.0.1:8000";
+      const baseUrl = process.env.NEXT_PUBLIC_FASTAPI_URL
+        ? `https://${process.env.NEXT_PUBLIC_FASTAPI_URL}`
+        : "http://127.0.0.1:8000";
       const fastApiUrl = `${baseUrl}/api/v1/generate-qr`;
-      const { data } = await axios.post(fastApiUrl, { amount: total, bill_number: billNumber });
+      const { data } = await axios.post(fastApiUrl, {
+        amount: total,
+        bill_number: billNumber
+      });
       if (data.qr_string && data.md5_hash) {
         setBakongQrString(data.qr_string);
-        bakongDetailsRef.current = { md5: data.md5_hash, qrString: data.qr_string };
+        bakongDetailsRef.current = {
+          md5: data.md5_hash,
+          qrString: data.qr_string
+        };
         setShowBakongModal(true);
         setIsAwaitingPayment(true);
         pollPaymentStatus();
-      } else { throw new Error("Invalid response from QR service."); }
-    } catch (error) { toast.error(error.response?.data?.detail || "Could not generate Bakong QR."); resetBakongState(); } finally { setIsGeneratingQR(false); }
+      } else {
+        throw new Error("Invalid response from QR service.");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Could not generate Bakong QR.");
+      resetBakongState();
+    } finally {
+      setIsGeneratingQR(false);
+    }
   };
 
-  const resetBakongState = () => { 
-      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current); 
-      setShowBakongModal(false); 
-      setBakongQrString(""); 
-      setIsAwaitingPayment(false); 
-      setIsPlacingOrder(false); 
-      bakongDetailsRef.current = null;
+  const resetBakongState = () => {
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    setShowBakongModal(false);
+    setBakongQrString("");
+    setIsAwaitingPayment(false);
+    setIsPlacingOrder(false);
+    bakongDetailsRef.current = null;
   };
 
   const resetAllPaymentStates = () => {
@@ -342,7 +364,7 @@ const OrderSummary = () => {
     if (selectedPaymentMethod === "ABA" && !transactionProofUrl) { toast.error("Please upload transaction proof for ABA payment."); return false; }
     return true;
   };
-  
+
   const createOrder = async (isBakongAutoTrigger = false) => {
     if (!isBakongAutoTrigger && !validateOrderForm()) return;
     setLoading(true);
@@ -384,123 +406,122 @@ const OrderSummary = () => {
 
   return (
     <>
-    <BakongQRModal show={showBakongModal} onClose={resetBakongState} qrString={bakongQrString} isAwaitingPayment={isAwaitingPayment} isPlacingOrder={isPlacingOrder} />
-    <div className="w-full md:w-96 border border-gray-200 bg-gray-50 shadow-sm p-6 sticky top-24 h-fit">
-      <h2 className="text-xl text-gray-800 mb-6 uppercase font-medium">Order Summary</h2>
-      
-      {/* Address Section */}
-      <div className="mb-6">
-        <div className="flex items-center mb-3"><FaMapMarkerAlt className="text-gray-500 mr-2" /><h3 className="text-sm font-medium uppercase text-gray-700">Delivery Address</h3></div>
-        <div className="relative w-full text-sm">
-          <button className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 transition-colors rounded-md" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-            <span className="text-gray-700 truncate flex-1 text-left font-kantumruy">{selectedAddress ? `${selectedAddress.fullName}, ${selectedAddress.area}, ${selectedAddress.state}` : "Select delivery address"}</span>
-            {isDropdownOpen ? <FaChevronUp className="ml-2 text-gray-500" /> : <FaChevronDown className="ml-2 text-gray-500" />}
-          </button>
-          {isDropdownOpen && (
-            <ul className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 shadow-lg rounded-md max-h-60 overflow-y-auto z-10">
-              {userAddresses.length > 0 ? userAddresses.map((address, index) => (<li key={index} className="px-4 py-3 hover:bg-gray-50 cursor-pointer" onClick={() => handleAddressSelect(address)}><p className="font-medium text-gray-800">{address.fullName}</p><p className="text-gray-600 text-sm mt-1">{address.area}, {address.state}</p></li>)) : <li className="px-4 py-3 text-gray-500 italic">No addresses found</li>}
-              <li onClick={() => router.push("/add-address")} className="px-4 py-3 bg-gray-50 hover:bg-gray-100 cursor-pointer text-center text-blue-600 font-medium">+ Add New Address</li>
-            </ul>
+      <BakongQRModal show={showBakongModal} onClose={resetBakongState} qrString={bakongQrString} isAwaitingPayment={isAwaitingPayment} isPlacingOrder={isPlacingOrder} />
+      <div className="w-full md:w-96 border border-gray-200 bg-gray-50 shadow-sm p-6 sticky top-24 h-fit">
+        <h2 className="text-xl text-gray-800 mb-6 uppercase font-medium">Order Summary</h2>
+
+        {/* Address Section */}
+        <div className="mb-6">
+          <div className="flex items-center mb-3"><FaMapMarkerAlt className="text-gray-500 mr-2" /><h3 className="text-sm font-medium uppercase text-gray-700">Delivery Address</h3></div>
+          <div className="relative w-full text-sm">
+            <button className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 transition-colors rounded-md" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+              <span className="text-gray-700 truncate flex-1 text-left font-kantumruy">{selectedAddress ? `${selectedAddress.fullName}, ${selectedAddress.area}, ${selectedAddress.state}` : "Select delivery address"}</span>
+              {isDropdownOpen ? <FaChevronUp className="ml-2 text-gray-500" /> : <FaChevronDown className="ml-2 text-gray-500" />}
+            </button>
+            {isDropdownOpen && (
+              <ul className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 shadow-lg rounded-md max-h-60 overflow-y-auto z-10">
+                {userAddresses.length > 0 ? userAddresses.map((address, index) => (<li key={index} className="px-4 py-3 hover:bg-gray-50 cursor-pointer" onClick={() => handleAddressSelect(address)}><p className="font-medium text-gray-800">{address.fullName}</p><p className="text-gray-600 text-sm mt-1">{address.area}, {address.state}</p></li>)) : <li className="px-4 py-3 text-gray-500 italic">No addresses found</li>}
+                <li onClick={() => router.push("/add-address")} className="px-4 py-3 bg-gray-50 hover:bg-gray-100 cursor-pointer text-center text-blue-600 font-medium">+ Add New Address</li>
+              </ul>
+            )}
+          </div>
+        </div>
+
+        {/* Promo Code Section */}
+        <div className="mb-6">
+          {!appliedPromo ? (
+            <>
+              <button className="flex items-center justify-between w-full" onClick={() => setPromoExpanded(!promoExpanded)}>
+                <div className="flex items-center"><FaTag className="text-gray-500 mr-2" /><h3 className="text-sm font-medium uppercase text-gray-700">Apply Promo Code</h3></div>
+                {promoExpanded ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />}
+              </button>
+              {promoExpanded && (
+                <div className="mt-3">
+                  <div className="flex">
+                    <input type="text" value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase())} placeholder="Enter promo code" className="flex-grow outline-none p-3 text-gray-700 border border-gray-200 rounded-l-md focus:border-blue-500" />
+                    <button className="bg-black text-white px-4 py-3 rounded-r-md hover:bg-gray-800 disabled:bg-gray-300" onClick={applyPromoCode} disabled={applyingPromo || !promoCode.trim()}>
+                      {applyingPromo ? <FaSpinner className="animate-spin h-5 w-5" /> : "Apply"}
+                    </button>
+                  </div>
+                  {promoError && <p className="text-red-500 text-xs mt-2">{promoError}</p>}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center justify-between bg-green-50 p-3 border border-green-200 rounded-md">
+              <div className="flex items-center"><FaTag className="text-green-600 mr-2" /><div><p className="text-sm font-medium">{appliedPromo.code}</p><p className="text-xs text-gray-600">{appliedPromo.discountType === 'percentage' ? `${appliedPromo.discountValue}% off` : `${currency}${appliedPromo.discountValue} off`}</p></div></div>
+              <button className="text-gray-500 hover:text-red-500" onClick={removePromoCode}><FaTimes /></button>
+            </div>
           )}
         </div>
-      </div>
-      
-      {/* Promo Code Section */}
-      <div className="mb-6">
-        {!appliedPromo ? (
-          <>
-            <button className="flex items-center justify-between w-full" onClick={() => setPromoExpanded(!promoExpanded)}>
-              <div className="flex items-center"><FaTag className="text-gray-500 mr-2" /><h3 className="text-sm font-medium uppercase text-gray-700">Apply Promo Code</h3></div>
-              {promoExpanded ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />}
-            </button>
-            {promoExpanded && (
-              <div className="mt-3">
-                <div className="flex">
-                  <input type="text" value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase())} placeholder="Enter promo code" className="flex-grow outline-none p-3 text-gray-700 border border-gray-200 rounded-l-md focus:border-blue-500"/>
-                  <button className="bg-black text-white px-4 py-3 rounded-r-md hover:bg-gray-800 disabled:bg-gray-300" onClick={applyPromoCode} disabled={applyingPromo || !promoCode.trim()}>
-                    {applyingPromo ? <FaSpinner className="animate-spin h-5 w-5" /> : "Apply"}
-                  </button>
-                </div>
-                {promoError && <p className="text-red-500 text-xs mt-2">{promoError}</p>}
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="flex items-center justify-between bg-green-50 p-3 border border-green-200 rounded-md">
-            <div className="flex items-center"><FaTag className="text-green-600 mr-2" /><div><p className="text-sm font-medium">{appliedPromo.code}</p><p className="text-xs text-gray-600">{appliedPromo.discountType === 'percentage' ? `${appliedPromo.discountValue}% off` : `${currency}${appliedPromo.discountValue} off`}</p></div></div>
-            <button className="text-gray-500 hover:text-red-500" onClick={removePromoCode}><FaTimes /></button>
-          </div>
-        )}
-      </div>
 
-      {/* Payment Method Section */}
-      <div className="mb-6">
-        <h3 className="text-sm font-medium uppercase text-gray-700 mb-3">Payment Method</h3>
-        <div className="space-y-3">
-          <label className={`flex items-center p-3 border rounded-md cursor-pointer ${selectedPaymentMethod === "COD" ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500" : "border-gray-200"}`}>
-            <input type="radio" name="paymentMethod" value="COD" checked={selectedPaymentMethod === "COD"} onChange={() => handlePaymentMethodChange("COD")} className="sr-only"/>
-            <FaMoneyBillWave className={`mr-3 h-5 w-5 ${selectedPaymentMethod === "COD" ? "text-blue-600" : "text-gray-400"}`}/><span>Cash on Delivery</span>
-          </label>
-          <label className={`flex items-center p-3 border rounded-md cursor-pointer ${selectedPaymentMethod === "ABA" ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500" : "border-gray-200"}`}>
-            <input type="radio" name="paymentMethod" value="ABA" checked={selectedPaymentMethod === "ABA"} onChange={() => handlePaymentMethodChange("ABA")} className="sr-only"/>
-            <FaCreditCard className={`mr-3 h-5 w-5 ${selectedPaymentMethod === "ABA" ? "text-blue-600" : "text-gray-400"}`}/><span>ABA Bank Transfer</span>
-          </label>
-          <label className={`flex items-center p-3 border rounded-md cursor-pointer ${selectedPaymentMethod === "Bakong" ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500" : "border-gray-200"}`}>
-            <input type="radio" name="paymentMethod" value="Bakong" checked={selectedPaymentMethod === "Bakong"} onChange={() => handlePaymentMethodChange("Bakong")} className="sr-only"/>
-            <FaQrcode className={`mr-3 h-5 w-5 ${selectedPaymentMethod === "Bakong" ? "text-blue-600" : "text-gray-400"}`}/><span>Bakong KHQR</span>
-          </label>
-        </div>
-        {selectedPaymentMethod === 'ABA' && (
+        {/* Payment Method Section */}
+        <div className="mb-6">
+          <h3 className="text-sm font-medium uppercase text-gray-700 mb-3">Payment Method</h3>
+          <div className="space-y-3">
+            <label className={`flex items-center p-3 border rounded-md cursor-pointer ${selectedPaymentMethod === "COD" ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500" : "border-gray-200"}`}>
+              <input type="radio" name="paymentMethod" value="COD" checked={selectedPaymentMethod === "COD"} onChange={() => handlePaymentMethodChange("COD")} className="sr-only" />
+              <FaMoneyBillWave className={`mr-3 h-5 w-5 ${selectedPaymentMethod === "COD" ? "text-blue-600" : "text-gray-400"}`} /><span>Cash on Delivery</span>
+            </label>
+            <label className={`flex items-center p-3 border rounded-md cursor-pointer ${selectedPaymentMethod === "ABA" ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500" : "border-gray-200"}`}>
+              <input type="radio" name="paymentMethod" value="ABA" checked={selectedPaymentMethod === "ABA"} onChange={() => handlePaymentMethodChange("ABA")} className="sr-only" />
+              <FaCreditCard className={`mr-3 h-5 w-5 ${selectedPaymentMethod === "ABA" ? "text-blue-600" : "text-gray-400"}`} /><span>ABA Bank Transfer</span>
+            </label>
+            <label className={`flex items-center p-3 border rounded-md cursor-pointer ${selectedPaymentMethod === "Bakong" ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500" : "border-gray-200"}`}>
+              <input type="radio" name="paymentMethod" value="Bakong" checked={selectedPaymentMethod === "Bakong"} onChange={() => handlePaymentMethodChange("Bakong")} className="sr-only" />
+              <FaQrcode className={`mr-3 h-5 w-5 ${selectedPaymentMethod === "Bakong" ? "text-blue-600" : "text-gray-400"}`} /><span>Bakong KHQR</span>
+            </label>
+          </div>
+          {selectedPaymentMethod === 'ABA' && (
             <div className="mt-4 p-4 border border-gray-200 rounded-md bg-white">
-            <p className="text-xs text-gray-600 mb-1">Please transfer to the following ABA account and upload a screenshot of your transaction.</p>
-            <div className="bg-gray-50 p-3 rounded mb-3 space-y-1">
-              <div className="flex items-center justify-between"><p className="text-sm">Account: <span className="font-semibold text-blue-600">001 223 344</span></p><button onClick={() => handleCopyText("001 223 344", "Account Copied!")} className="p-1 text-blue-500 hover:text-blue-700"><FaCopy size={14} /></button></div>
-              <div className="flex items-center justify-between"><p className="text-sm">Name: <span className="font-semibold text-blue-600">SAY SAKSOPHANNA</span></p><button onClick={() => handleCopyText("SAY SAKSOPHANNA", "Name Copied!")} className="p-1 text-blue-500 hover:text-blue-700"><FaCopy size={14} /></button></div>
+              <p className="text-xs text-gray-600 mb-1">Please transfer to the following ABA account and upload a screenshot of your transaction.</p>
+              <div className="bg-gray-50 p-3 rounded mb-3 space-y-1">
+                <div className="flex items-center justify-between"><p className="text-sm">Account: <span className="font-semibold text-blue-600">001 223 344</span></p><button onClick={() => handleCopyText("001 223 344", "Account Copied!")} className="p-1 text-blue-500 hover:text-blue-700"><FaCopy size={14} /></button></div>
+                <div className="flex items-center justify-between"><p className="text-sm">Name: <span className="font-semibold text-blue-600">SAY SAKSOPHANNA</span></p><button onClick={() => handleCopyText("SAY SAKSOPHANNA", "Name Copied!")} className="p-1 text-blue-500 hover:text-blue-700"><FaCopy size={14} /></button></div>
+              </div>
+              <label htmlFor="transaction-proof-upload" className="block text-sm font-medium text-gray-700 mb-1">Upload Transaction <span className="text-red-500">*</span></label>
+              <input type="file" id="transaction-proof-upload" ref={fileInputRef} onChange={handleTransactionProofChange} accept="image/png, image/jpeg, image/gif" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50" disabled={uploadingProof} />
+              {transactionProofPreview && <div className="mt-3"><img src={transactionProofPreview} alt="Preview" className="max-h-32 rounded-md border" /></div>}
+              {uploadingProof && <div className="flex items-center text-sm text-blue-600 mt-2"><FaSpinner className="animate-spin mr-2" /><span>Uploading...</span></div>}
+              {transactionProofUrl && !uploadingProof && <div className="flex items-center text-sm text-green-600 mt-2"><FaCheck className="mr-2" /><span>Uploaded!</span></div>}
             </div>
-            <label htmlFor="transaction-proof-upload" className="block text-sm font-medium text-gray-700 mb-1">Upload Transaction <span className="text-red-500">*</span></label>
-            <input type="file" id="transaction-proof-upload" ref={fileInputRef} onChange={handleTransactionProofChange} accept="image/png, image/jpeg, image/gif" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50" disabled={uploadingProof}/>
-            {transactionProofPreview && <div className="mt-3"><img src={transactionProofPreview} alt="Preview" className="max-h-32 rounded-md border"/></div>}
-            {uploadingProof && <div className="flex items-center text-sm text-blue-600 mt-2"><FaSpinner className="animate-spin mr-2" /><span>Uploading...</span></div>}
-            {transactionProofUrl && !uploadingProof && <div className="flex items-center text-sm text-green-600 mt-2"><FaCheck className="mr-2" /><span>Uploaded!</span></div>}
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
-      {/* Order Summary Details Section */}
-      <div className="space-y-3 border-t border-b py-5 mb-6">
-        <div className="flex justify-between text-gray-600"><p>Subtotal ({getCartCount()} items)</p><p className="font-medium">{currency}{subtotal.toFixed(2)}</p></div>
-        {appliedPromo && <div className="flex justify-between text-green-600"><p>Discount</p><p>-{currency}{calculatedDiscountValue.toFixed(2)}</p></div>}
-        <div className="flex justify-between text-gray-600"><p>Delivery Fee</p><p className="font-medium">{isFreeDelivery ? <span className="text-green-600">Free</span> : `${currency}${fee.toFixed(2)}`}</p></div>
-        <div className="flex justify-between text-lg font-medium border-t pt-3 mt-3"><p>Total</p><p>{currency}{totalAmount.toFixed(2)}</p></div>
-      </div>
+        {/* Order Summary Details Section */}
+        <div className="space-y-3 border-t border-b py-5 mb-6">
+          <div className="flex justify-between text-gray-600"><p>Subtotal ({getCartCount()} items)</p><p className="font-medium">{currency}{subtotal.toFixed(2)}</p></div>
+          {appliedPromo && <div className="flex justify-between text-green-600"><p>Discount</p><p>-{currency}{calculatedDiscountValue.toFixed(2)}</p></div>}
+          <div className="flex justify-between text-gray-600"><p>Delivery Fee</p><p className="font-medium">{isFreeDelivery ? <span className="text-green-600">Free</span> : `${currency}${fee.toFixed(2)}`}</p></div>
+          <div className="flex justify-between text-lg font-medium border-t pt-3 mt-3"><p>Total</p><p>{currency}{totalAmount.toFixed(2)}</p></div>
+        </div>
 
-      {/* ACTION BUTTONS AREA */}
-      <div className="mt-6">
-        {selectedPaymentMethod === 'Bakong' ? (
-          <button
-            onClick={handleGenerateBakongQR}
-            disabled={isGeneratingQR || isAwaitingPayment || isPlacingOrder}
-            className="w-full py-3 rounded-md flex items-center justify-center transition-all duration-300 text-base font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-wait"
-          >
-            {isAwaitingPayment || isPlacingOrder ? (<><FaSpinner className="animate-spin mr-3 h-5 w-5" /> Waiting for Payment...</>) : isGeneratingQR ? (<><FaSpinner className="animate-spin mr-3 h-5 w-5" /> Generating QR...</>) : ("Generate Bakong KHQR to Pay")}
-          </button>
-        ) : (
-          <button
-            onClick={() => createOrder(false)}
-            disabled={loading || uploadingProof}
-            className={`w-full py-3 rounded-md flex items-center justify-center transition-all duration-300 text-base font-medium ${
-              loading || uploadingProof ? "bg-gray-300 cursor-not-allowed" : "bg-black text-white hover:bg-gray-800"
-            }`}
-          >
-            {loading ? (<><FaSpinner className="animate-spin mr-3 h-5 w-5" /> Processing...</>) : ("Place Order")}
-          </button>
-        )}
-      </div>
+        {/* ACTION BUTTONS AREA */}
+        <div className="mt-6">
+          {selectedPaymentMethod === 'Bakong' ? (
+            <button
+              onClick={handleGenerateBakongQR}
+              disabled={isGeneratingQR || isAwaitingPayment || isPlacingOrder}
+              className="w-full py-3 rounded-md flex items-center justify-center transition-all duration-300 text-base font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-wait"
+            >
+              {isAwaitingPayment || isPlacingOrder ? (<><FaSpinner className="animate-spin mr-3 h-5 w-5" /> Waiting for Payment...</>) : isGeneratingQR ? (<><FaSpinner className="animate-spin mr-3 h-5 w-5" /> Generating QR...</>) : ("Generate Bakong KHQR to Pay")}
+            </button>
+          ) : (
+            <button
+              onClick={() => createOrder(false)}
+              disabled={loading || uploadingProof}
+              className={`w-full py-3 rounded-md flex items-center justify-center transition-all duration-300 text-base font-medium ${loading || uploadingProof ? "bg-gray-300 cursor-not-allowed" : "bg-black text-white hover:bg-gray-800"
+                }`}
+            >
+              {loading ? (<><FaSpinner className="animate-spin mr-3 h-5 w-5" /> Processing...</>) : ("Place Order")}
+            </button>
+          )}
+        </div>
 
-      <div className="mt-4 text-center">
-        <p className="text-xs text-gray-500 flex items-center justify-center"><FaLock className="mr-1" /> Secure checkout</p>
+        <div className="mt-4 text-center">
+          <p className="text-xs text-gray-500 flex items-center justify-center"><FaLock className="mr-1" /> Secure checkout</p>
+        </div>
       </div>
-    </div>
     </>
   );
 };
