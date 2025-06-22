@@ -30,15 +30,15 @@ const debounce = (func, delay) => {
 const sectionVariants = {
   hidden: { 
     opacity: 0, 
-    y: 50
+    y: 30 // Reduced for mobile
   },
   visible: { 
     opacity: 1, 
     y: 0,
     transition: {
-      duration: 0.6,
+      duration: 0.5, // Faster for mobile
       ease: [0.25, 0.46, 0.45, 0.94],
-      staggerChildren: 0.1
+      staggerChildren: 0.08
     }
   }
 };
@@ -46,29 +46,30 @@ const sectionVariants = {
 const cardVariants = {
   hidden: { 
     opacity: 0, 
-    x: 50
+    x: 30 // Reduced for mobile
   },
   visible: { 
     opacity: 1, 
     x: 0,
     transition: {
-      duration: 0.5,
+      duration: 0.4, // Faster for mobile
       ease: [0.25, 0.46, 0.45, 0.94]
     }
   }
 };
 
 const categoryButtonVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 15 },
   visible: { 
     opacity: 1, 
     y: 0,
     transition: {
-      duration: 0.4,
+      duration: 0.3,
       ease: "easeOut"
     }
   },
   tap: {
+    scale: 0.95,
     transition: {
       duration: 0.1
     }
@@ -86,16 +87,16 @@ const ProductScrollSection = ({
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { 
     once: true, 
-    margin: "-100px 0px" 
+    margin: "-50px 0px" // Reduced margin for mobile
   });
 
-  // Parallax effect for section headers
+  // Parallax effect for section headers (disabled on mobile for performance)
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start end", "end start"]
   });
   
-  const y = useTransform(scrollYProgress, [0, 1], [0, -50]);
+  const y = useTransform(scrollYProgress, [0, 1], [0, -25]); // Reduced effect
   const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0, 1, 1, 0]);
 
   // Save and restore scroll position
@@ -130,31 +131,34 @@ const ProductScrollSection = ({
   return (
     <motion.div 
       ref={sectionRef}
-      className="pt-6"
+      className="pt-4 md:pt-6 px-4 md:px-0"
       variants={sectionVariants}
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
-      style={{ y, opacity }}
+      style={{ 
+        y: window.innerWidth > 768 ? y : 0, // Disable parallax on mobile
+        opacity: window.innerWidth > 768 ? opacity : 1 
+      }}
     >
       <motion.div 
-        className="flex items-center justify-between mb-6"
+        className="flex items-center justify-between mb-4 md:mb-6"
         variants={{
           visible: {
             transition: {
-              staggerChildren: 0.2
+              staggerChildren: 0.15
             }
           }
         }}
       >
         <motion.h2 
-          className="text-xl md:text-2xl text-sky-300 opacity-80 flex items-center gap-2"
+          className="text-lg sm:text-xl md:text-2xl text-sky-300 opacity-80 flex items-center gap-2"
           variants={{
-            hidden: { opacity: 0, x: -30 },
+            hidden: { opacity: 0, x: -20 },
             visible: { 
               opacity: 1, 
               x: 0,
               transition: {
-                duration: 0.6,
+                duration: 0.5,
                 ease: "easeOut"
               }
             }
@@ -165,12 +169,12 @@ const ProductScrollSection = ({
         
         <motion.div
           variants={{
-            hidden: { opacity: 0, x: 30 },
+            hidden: { opacity: 0, x: 20 },
             visible: { 
               opacity: 1, 
               x: 0,
               transition: {
-                duration: 0.6,
+                duration: 0.5,
                 ease: "easeOut"
               }
             }
@@ -178,33 +182,33 @@ const ProductScrollSection = ({
         >
           <Link href={seeAllLink}>
             <motion.div
-              className="font-prata text-sm text-sky-300 hover:text-sky-200 flex items-center gap-1 group"
+              className="font-prata text-xs sm:text-sm text-sky-300 hover:text-sky-200 flex items-center gap-1 group"
               whileTap={{ opacity: 0.8 }}
             >
               <span>See all</span>
               <motion.div
                 initial={{ x: 0 }}
-                whileHover={{ x: 3 }}
+                whileHover={{ x: 2 }}
                 transition={{ duration: 0.2 }}
               >
-                <FiChevronRight className="text-sm group-hover:text-sky-200" />
+                <FiChevronRight className="text-xs sm:text-sm group-hover:text-sky-200" />
               </motion.div>
             </motion.div>
           </Link>
         </motion.div>
       </motion.div>
 
-      <div className="relative group">
-        <div className="overflow-x-auto">
+      <div className="relative group -mx-4 md:mx-0">
+        <div className="overflow-x-auto px-4 md:px-0">
           <motion.div
             ref={containerRef}
-            className="flex gap-2"
+            className="flex gap-3 md:gap-4 pb-2"
             style={{ scrollSnapType: 'x mandatory' }}
             variants={{
               visible: {
                 transition: {
-                  staggerChildren: 0.1,
-                  delayChildren: 0.2
+                  staggerChildren: 0.08,
+                  delayChildren: 0.1
                 }
               }
             }}
@@ -214,17 +218,17 @@ const ProductScrollSection = ({
                 products.map((product, idx) => (
                   <motion.div 
                     key={product._id || idx} 
-                    className="flex-shrink-0 w-2/5 sm:w-52" 
+                    className="flex-shrink-0 w-36 xs:w-40 sm:w-44 md:w-52" 
                     style={{ scrollSnapAlign: 'start' }}
                     variants={cardVariants}
                     layout
                   >
                     <motion.div
-                      initial={{ opacity: 0, y: 20 }}
+                      initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ 
-                        delay: idx * 0.1,
-                        duration: 0.5,
+                        delay: idx * 0.08,
+                        duration: 0.4,
                         ease: "easeOut"
                       }}
                     >
@@ -234,7 +238,7 @@ const ProductScrollSection = ({
                 ))
               ) : (
                 <motion.div 
-                  className="flex-none w-full flex flex-col items-center justify-center py-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200"
+                  className="flex-none w-full flex flex-col items-center justify-center py-12 md:py-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 mx-4 md:mx-0"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.5 }}
@@ -247,10 +251,10 @@ const ProductScrollSection = ({
                       rotate: { duration: 2, repeat: Infinity, ease: "linear" }
                     }}
                   >
-                    <CiGrid41 className="text-6xl text-gray-300 mb-4" />
+                    <CiGrid41 className="text-4xl md:text-6xl text-gray-300 mb-3 md:mb-4" />
                   </motion.div>
                   <motion.p 
-                    className="text-gray-500 text-lg"
+                    className="text-gray-500 text-base md:text-lg"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3 }}
@@ -260,7 +264,7 @@ const ProductScrollSection = ({
                 </motion.div>
               )}
             </AnimatePresence>
-            <div className="flex-shrink-0 w-1"></div>
+            <div className="flex-shrink-0 w-4 md:w-1"></div>
           </motion.div>
         </div>
       </div>
@@ -278,12 +282,12 @@ const HomeProducts = () => {
   const isHeaderInView = useInView(headerRef, { once: true });
 
   const categoryButtons = [
-    { name: 'Baby Milk', icon: <CiPillsBottle1 className="text-base md:text-xl" />, link: '/all-products?category=PowderedMilk' },
-    { name: 'Bath & Body Care', icon: <CiHeart className="text-base md:text-xl" />, link: '/all-products?category=BathBodyCare' },
-    { name: 'Vitamins', icon: <CiApple className="text-base md:text-xl" />, link: '/all-products?category=Vitamins' },
-    { name: 'Hygiene', icon: <CiMedicalCross className="text-base md:text-xl" />, link: '/all-products?category=Accessories' },
-    { name: 'Diapers', icon: <CiBandage className="text-base md:text-xl" />, link: '/all-products?category=Diapers' },
-    { name: 'Feeding', icon: <CiShoppingCart className="text-base md:text-xl" />, link: '/all-products?category=FeedingTools' },
+    { name: 'Baby Milk', icon: <CiPillsBottle1 className="text-sm sm:text-base md:text-xl" />, link: '/all-products?category=PowderedMilk' },
+    { name: 'Bath & Body', icon: <CiHeart className="text-sm sm:text-base md:text-xl" />, link: '/all-products?category=BathBodyCare' },
+    { name: 'Vitamins', icon: <CiApple className="text-sm sm:text-base md:text-xl" />, link: '/all-products?category=Vitamins' },
+    { name: 'Hygiene', icon: <CiMedicalCross className="text-sm sm:text-base md:text-xl" />, link: '/all-products?category=Accessories' },
+    { name: 'Diapers', icon: <CiBandage className="text-sm sm:text-base md:text-xl" />, link: '/all-products?category=Diapers' },
+    { name: 'Feeding', icon: <CiShoppingCart className="text-sm sm:text-base md:text-xl" />, link: '/all-products?category=FeedingTools' },
   ];
 
   const getProductsByCategory = (categories) => {
@@ -367,51 +371,45 @@ const HomeProducts = () => {
     }
   }, [products, sortOption]);
 
-  // Debug: Log products data
-  useEffect(() => {
-    console.log('Products from context:', products);
-    console.log('Product sections:', productSections);
-  }, [products, productSections]);
-
   return (
     <>
       <motion.div 
         className="w-full bg-white overflow-hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.8 }}
+        transition={{ duration: 0.6 }}
       >
-        {/* Enhanced Marquee */}
+        {/* Enhanced Marquee - Mobile Optimized */}
         <motion.div 
-          className="w-full overflow-hidden py-4 font-prata"
-          initial={{ opacity: 0, y: -20 }}
+          className="w-full overflow-hidden py-3 md:py-4 font-prata"
+          initial={{ opacity: 0, y: -15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.5 }}
         >
           <div className="whitespace-nowrap animate-marquee">
             <motion.span 
-              className="text-base md:text-lg text-sky-300/70 mx-2"
+              className="text-sm sm:text-base md:text-lg text-sky-300/70 mx-2"
               animate={{ opacity: [0.7, 1, 0.7] }}
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
             >
               Premium USA-imported milk and baby essentials for your family.
             </motion.span>
             <motion.span 
-              className="text-base md:text-lg text-sky-300/70 mx-2"
+              className="text-sm sm:text-base md:text-lg text-sky-300/70 mx-2"
               animate={{ opacity: [1, 0.7, 1] }}
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
             >
               Pure, nutritious, and trusted by parents everywhere.
             </motion.span>
             <motion.span 
-              className="text-base md:text-lg text-sky-300/70 mx-2"
+              className="text-sm sm:text-base md:text-lg text-sky-300/70 mx-2"
               animate={{ opacity: [0.7, 1, 0.7] }}
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
             >
               Premium USA-imported milk and baby essentials for your family.
             </motion.span>
             <motion.span 
-              className="text-base md:text-lg text-sky-300/70 mx-2"
+              className="text-sm sm:text-base md:text-lg text-sky-300/70 mx-2"
               animate={{ opacity: [1, 0.7, 1] }}
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
             >
@@ -420,21 +418,21 @@ const HomeProducts = () => {
           </div>
         </motion.div>
 
-        {/* Enhanced Category Buttons */}
+        {/* Enhanced Category Buttons - Mobile Optimized */}
         <motion.div 
           ref={headerRef}
-          className="w-full"
-          initial={{ opacity: 0, y: 30 }}
-          animate={isHeaderInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="w-full px-4 md:px-0"
+          initial={{ opacity: 0, y: 20 }}
+          animate={isHeaderInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <div className="w-full overflow-x-auto">
+          <div className="w-full overflow-x-auto -mx-4 px-4">
             <motion.div 
-              className="flex space-x-3 pb-6 min-w-max"
+              className="flex space-x-2 sm:space-x-3 pb-4 md:pb-6 min-w-max"
               variants={{
                 visible: {
                   transition: {
-                    staggerChildren: 0.1
+                    staggerChildren: 0.08
                   }
                 }
               }}
@@ -444,7 +442,7 @@ const HomeProducts = () => {
               {categoryButtons.map((button, index) => (
                 <Link href={button.link} key={index}>
                   <motion.div
-                    className="px-4 md:px-6 py-2 border border-sky-200 rounded-xl transition-all flex items-center gap-3 whitespace-nowrap cursor-pointer bg-white hover:bg-sky-50 hover:border-sky-300"
+                    className="px-3 sm:px-4 md:px-6 py-2 md:py-3 border border-sky-200 rounded-lg md:rounded-xl transition-all flex items-center gap-2 md:gap-3 whitespace-nowrap cursor-pointer bg-white hover:bg-sky-50 hover:border-sky-300 active:scale-95"
                     variants={categoryButtonVariants}
                     whileHover="hover"
                     whileTap="tap"
@@ -456,7 +454,7 @@ const HomeProducts = () => {
                     >
                       {button.icon}
                     </motion.span>
-                    <span className="text-sm md:text-base text-sky-300">
+                    <span className="text-xs sm:text-sm md:text-base text-sky-300">
                       {button.name}
                     </span>
                   </motion.div>
@@ -467,7 +465,7 @@ const HomeProducts = () => {
         </motion.div>
 
         {/* Product Sections */}
-        <div className="w-full pb-8">
+        <div className="w-full pb-6 md:pb-8">
           {productSections.length > 0 ? (
             productSections.map((section, index) => (
               <ProductScrollSection
@@ -481,7 +479,7 @@ const HomeProducts = () => {
             ))
           ) : (
             <motion.div 
-              className="flex flex-col items-center justify-center py-16 px-4"
+              className="flex flex-col items-center justify-center py-12 md:py-16 px-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5 }}
@@ -494,10 +492,10 @@ const HomeProducts = () => {
                   rotate: { duration: 2, repeat: Infinity, ease: "linear" }
                 }}
               >
-                <CiGrid41 className="text-6xl text-gray-300 mb-4" />
+                <CiGrid41 className="text-4xl md:text-6xl text-gray-300 mb-3 md:mb-4" />
               </motion.div>
               <motion.p 
-                className="text-gray-500 text-lg text-center"
+                className="text-gray-500 text-base md:text-lg text-center"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
@@ -519,9 +517,14 @@ const HomeProducts = () => {
           animation: marquee 40s linear infinite;
         }
         
-        /* Enhanced scrollbar styling */
+        /* Mobile-optimized scrollbar styling */
         .overflow-x-auto::-webkit-scrollbar {
-          height: 4px;
+          height: 3px;
+        }
+        @media (min-width: 768px) {
+          .overflow-x-auto::-webkit-scrollbar {
+            height: 4px;
+          }
         }
         .overflow-x-auto::-webkit-scrollbar-track {
           background: rgba(125, 211, 252, 0.1);
@@ -533,6 +536,19 @@ const HomeProducts = () => {
         }
         .overflow-x-auto::-webkit-scrollbar-thumb:hover {
           background: rgba(125, 211, 252, 0.5);
+        }
+        
+        /* Touch-friendly scrolling */
+        .overflow-x-auto {
+          -webkit-overflow-scrolling: touch;
+          scroll-behavior: smooth;
+        }
+        
+        /* Custom breakpoint for extra small screens */
+        @media (min-width: 475px) {
+          .xs\\:w-40 {
+            width: 10rem;
+          }
         }
       `}</style>
     </>
