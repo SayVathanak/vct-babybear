@@ -8,12 +8,9 @@ import axios from "axios";
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "babybear-next" });
 
-// The URL of your running Python FastAPI service
-// IMPORTANT: Add this to your .env.local file
-const FASTAPI_SERVICE_URL = process.env.FASTAPI_URL || "http://127.0.0.1:8000";
-
-
-// --- USER SYNC FUNCTIONS ---
+const FASTAPI_SERVICE_URL = process.env.FASTAPI_URL
+  ? `https://${process.env.FASTAPI_URL}`
+  : "http://127.0.0.1:8000";
 
 // Inngest function to save user data to a db
 export const syncUserCreation = inngest.createFunction(
