@@ -253,12 +253,13 @@ const ProductList = () => {
       <div className="flex p-4 flex-1">
         {/* Product Image */}
         <div className="bg-white rounded-lg p-2 flex-shrink-0 mr-4">
-          <Image
+         <Image
             src={product.image[0]}
             alt={product.name}
             className={`w-20 h-20 object-cover rounded ${!product.isAvailable ? 'opacity-60' : ''}`}
-            width={80}
-            height={80}
+            width={240}
+            height={240}
+            quality={90}
           />
         </div>
 
@@ -329,7 +330,7 @@ const ProductList = () => {
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={() => router.push(`/product/${product._id}`)}
-            className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-green-500 text-white text-xs font-medium rounded-md hover:bg-green-600 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-green-500 text-white text-xs rounded-md hover:bg-green-600 transition-colors"
             aria-label="View product"
           >
             <FiExternalLink className="h-3 w-3" />
@@ -338,7 +339,7 @@ const ProductList = () => {
 
           <button
             onClick={() => handleQuickEdit(product)}
-            className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-500 text-white text-xs font-medium rounded-md hover:bg-blue-600 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-500 text-white text-xs rounded-md hover:bg-blue-600 transition-colors"
             aria-label="Quick edit"
           >
             <FiEdit2 className="h-3 w-3" />
@@ -348,7 +349,7 @@ const ProductList = () => {
           <button
             onClick={() => confirmDelete(product)}
             disabled={deletingProductId === product._id}
-            className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-red-500 text-white text-xs font-medium rounded-md hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-red-500 text-white text-xs rounded-md hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Delete product"
           >
             {deletingProductId === product._id ? (
@@ -356,9 +357,75 @@ const ProductList = () => {
             ) : (
               <>
                 <FiTrash2 className="h-3 w-3" />
-                <span className="hidden sm:inline">Delete</span>
+                <span className="hidden lg:inline">Delete</span>
               </>
             )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const SellerGridItem = ({ product }) => (
+    <div className={`relative rounded-lg overflow-hidden border flex flex-col h-full transition-all ${!product.isAvailable ? 'bg-gray-50 opacity-70' : 'bg-white'}`}>
+      {/* Image section */}
+      <div className="relative w-full pb-[100%] bg-gray-100">
+        <Image
+          src={product.image[0]}
+          alt={product.name}
+          className="absolute top-0 left-0 w-full h-full object-cover"
+          layout="fill"
+        />
+      </div>
+
+      {/* Details section */}
+      <div className="p-3 flex flex-col flex-1">
+        <h3 className="text-sm font-medium text-gray-800 line-clamp-2 mb-2 flex-1">
+          {product.name}
+        </h3>
+        <div className="mb-2">
+          <span className="text-lg font-bold text-gray-900">${product.offerPrice}</span>
+          {product.price !== product.offerPrice && (
+            <span className="ml-2 text-xs text-gray-500 line-through">${product.price}</span>
+          )}
+        </div>
+        <p className={`text-xs font-medium ${product.stock > 10 ? 'text-gray-600' : product.stock > 0 ? 'text-amber-700' : 'text-red-700'}`}>
+          {product.stock} units in stock
+        </p>
+      </div>
+
+      {/* Actions section */}
+      <div className="p-2 bg-gray-50 border-t space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium">Status:</span>
+          <button
+            onClick={() => toggleAvailability(product._id, product.isAvailable)}
+            disabled={updatingProductId === product._id}
+            className={`px-2 py-0.5 rounded-full text-xs font-semibold transition-colors ${product.isAvailable
+              ? 'bg-green-100 text-green-800 hover:bg-green-200'
+              : 'bg-red-100 text-red-800 hover:bg-red-200'
+              }`}
+          >
+            {updatingProductId === product._id ? '...' : (product.isAvailable ? 'Available' : 'Unavailable')}
+          </button>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <button
+            onClick={() => handleQuickEdit(product)}
+            className="flex-1 px-2 py-1.5 bg-blue-500 text-white text-xs font-medium rounded-md hover:bg-blue-600 transition-colors flex items-center justify-center gap-1"
+            aria-label="Quick edit"
+          >
+            <FiEdit2 className="h-3 w-3" />
+            <span>Edit</span>
+          </button>
+          <button
+            onClick={() => confirmDelete(product)}
+            disabled={deletingProductId === product._id}
+            className="flex-1 px-2 py-1.5 bg-red-500 text-white text-xs font-medium rounded-md hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
+            aria-label="Delete product"
+          >
+            {deletingProductId === product._id ? <FiLoader className="animate-spin h-3 w-3" /> : <FiTrash2 className="h-3 w-3" />}
+            <span>Delete</span>
           </button>
         </div>
       </div>
@@ -458,7 +525,13 @@ const ProductList = () => {
                   </div>
                 )}
                 {viewMode === "cards" && (<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">{sortedProducts.map((product) => (<ProductCard key={product._id} product={product} />))}</div>)}
-                {viewMode === "grid" && (<div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-4">{sortedProducts.map((product) => (<ProductGrid key={product._id} product={product} />))}</div>)}
+                {viewMode === "grid" && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {sortedProducts.map((product) => (
+                      <SellerGridItem key={product._id} product={product} />
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </div>
