@@ -1,5 +1,6 @@
 'use client'
 import React, { useEffect, useState } from "react";
+import { assets, productsDummyData } from "@/assets/assets";
 import Image from "next/image";
 import { useAppContext } from "@/context/AppContext";
 import Footer from "@/components/seller/Footer";
@@ -13,7 +14,9 @@ import {
   FiExternalLink,
   FiEdit2,
   FiTrash2,
-  FiLoader
+  FiLoader,
+  FiCheck,
+  FiX
 } from 'react-icons/fi';
 
 const ProductList = () => {
@@ -28,9 +31,7 @@ const ProductList = () => {
   const [sortBy, setSortBy] = useState("newest")
   const [isFiltersOpen, setIsFiltersOpen] = useState(false)
   const [deleteConfirmation, setDeleteConfirmation] = useState(null)
-  
-  // Set the default view to 'cards' which is more mobile-friendly
-  const [viewMode, setViewMode] = useState("cards")
+  const [viewMode, setViewMode] = useState("cards") // table, cards, grid
 
   const categories = [
     { value: '', label: 'All Categories' },
@@ -130,7 +131,7 @@ const ProductList = () => {
       ...product,
       price: product.price.toString(),
       offerPrice: product.offerPrice.toString(),
-      stock: product.stock.toString(),
+      stock: product.stock.toString(), // Add stock for editing
     })
   }
 
@@ -203,6 +204,7 @@ const ProductList = () => {
         return a.offerPrice - b.offerPrice;
       case "price-desc":
         return b.offerPrice - a.offerPrice;
+      // --- INVENTORY: Add sorting options for stock ---
       case "stock-asc":
         return a.stock - b.stock;
       case "stock-desc":
@@ -225,51 +227,70 @@ const ProductList = () => {
         className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === "table" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:text-gray-900"}`}
         title="Table View"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
       </button>
       <button
         onClick={() => setViewMode("cards")}
         className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === "cards" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:text-gray-900"}`}
         title="Card View"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14-7H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2z" /></svg>
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14-7H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2z" /></svg>
+      </button>
+      <button
+        onClick={() => setViewMode("grid")}
+        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === "grid" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:text-gray-900"}`}
+        title="Grid View"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
       </button>
     </div>
   );
 
   const ProductCard = ({ product }) => (
-    // RESPONSIVE: Card now uses flex-col on small screens and flex-row on medium screens up
-    <div className={`relative border rounded-xl overflow-hidden shadow-sm transition-all flex flex-col md:flex-row h-full ${!product.isAvailable ? 'bg-gray-50' : 'bg-white'}`}>
+    <div className={`relative border-x border-gray-50 rounded-xl overflow-hidden mb-3 transition-all flex flex-col h-full ${!product.isAvailable ? 'bg-gray-50' : 'bg-white'}`}>
+      {/* Main Content - Takes up available space */}
       <div className="flex p-4 flex-1">
+        {/* Product Image */}
         <div className="bg-white rounded-lg p-2 flex-shrink-0 mr-4">
           <Image
             src={product.image[0]}
             alt={product.name}
-            className={`w-24 h-24 md:w-28 md:h-28 object-cover rounded ${!product.isAvailable ? 'opacity-60' : ''}`}
-            width={112}
-            height={112}
+            className={`w-20 h-20 object-cover rounded ${!product.isAvailable ? 'opacity-60' : ''}`}
+            width={80}
+            height={80}
           />
         </div>
-        <div className="flex flex-col flex-1 min-w-0">
-          <div className="flex-grow">
-            <h3 className="text-md font-medium text-gray-800 line-clamp-2 mb-2">
+
+        {/* Product Details */}
+        <div className="flex flex-col flex-1 min-h-0">
+          {/* Product Name - Fixed height container */}
+          <div className="min-h-[3rem] flex items-start mb-2">
+            <h3 className="text-md font-medium text-gray-800 line-clamp-2">
               {product.name}
             </h3>
-            <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mb-3">
-              {categories.find(c => c.value === product.category)?.label || product.category}
-            </span>
-            <div>
-              <span className="text-xl text-green-600 font-semibold">
-                ${product.offerPrice}
-              </span>
-              {product.price !== product.offerPrice && (
-                <span className="ml-2 text-sm text-gray-500 line-through">
-                  ${product.price}
-                </span>
-              )}
-            </div>
           </div>
-          <div className="mt-auto pt-2">
+
+          {/* Category Badge */}
+          <div className="mb-3">
+            <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+              {product.category}
+            </span>
+          </div>
+
+          {/* Price Section */}
+          <div className="mb-3">
+            <span className="text-xl text-green-600">
+              ${product.offerPrice}
+            </span>
+            {product.price !== product.offerPrice && (
+              <span className="ml-2 text-sm text-gray-500 line-through">
+                ${product.price}
+              </span>
+            )}
+          </div>
+
+          {/* Stock Information - Push to bottom */}
+          <div className="mt-auto">
             <p className={`text-sm ${product.stock > 10 ? 'text-gray-600' : product.stock > 0 ? 'text-amber-700' : 'text-red-700'}`}>
               <span className={`inline-block w-2 h-2 rounded-full mr-2 ${product.stock > 10 ? 'bg-green-600' : product.stock > 0 ? 'bg-amber-600' : 'bg-red-600'}`}></span>
               {product.stock} units in stock
@@ -277,65 +298,85 @@ const ProductList = () => {
           </div>
         </div>
       </div>
-      
-      {/* RESPONSIVE: Action bar stacks vertically on mobile and horizontally on desktop */}
-      <div className="flex flex-col md:flex-col justify-start md:justify-center items-stretch md:items-center gap-2 bg-gray-50/70 p-3 border-t md:border-t-0 md:border-l">
-        <button
-          onClick={() => toggleAvailability(product._id, product.isAvailable)}
-          disabled={updatingProductId === product._id}
-          className={`w-full px-3 py-2 rounded-md text-xs font-medium transition-colors ${product.isAvailable
-            ? 'bg-green-100 text-green-800 hover:bg-green-200'
-            : 'bg-red-100 text-red-800 hover:bg-red-200'
-            }`}
-        >
-          {updatingProductId === product._id ? 'Updating...' : (product.isAvailable ? 'Available' : 'Unavailable')}
-        </button>
-        <button
-          onClick={() => router.push(`/product/${product._id}`)}
-          className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-200 text-gray-700 text-xs font-medium rounded-md hover:bg-gray-300 transition-colors"
-        >
-          <FiExternalLink className="h-4 w-4" />
-          <span>View</span>
-        </button>
-        <button
-          onClick={() => handleQuickEdit(product)}
-          className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-500 text-white text-xs font-medium rounded-md hover:bg-blue-600 transition-colors"
-        >
-          <FiEdit2 className="h-4 w-4" />
-          <span>Edit</span>
-        </button>
-        <button
-          onClick={() => confirmDelete(product)}
-          disabled={deletingProductId === product._id}
-          className="flex items-center justify-center gap-1.5 px-3 py-2 bg-red-500 text-white text-xs font-medium rounded-md hover:bg-red-600 transition-colors disabled:opacity-50"
-        >
-          {deletingProductId === product._id ? <FiLoader className="animate-spin h-4 w-4" /> : <FiTrash2 className="h-4 w-4" />}
-          <span>Delete</span>
-        </button>
+
+      {/* Action Bar - Fixed at bottom */}
+      <div className="flex items-center bg-gray-50 px-4 py-3 mt-auto">
+        {/* Left Side - Availability Toggle */}
+        <div className="flex-shrink-0 w-32">
+          <button
+            onClick={() => toggleAvailability(product._id, product.isAvailable)}
+            disabled={updatingProductId === product._id}
+            className={`w-full px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${product.isAvailable
+              ? 'bg-green-100 text-green-700 hover:bg-green-200'
+              : 'bg-red-100 text-red-700 hover:bg-red-200'
+              }`}
+          >
+            {updatingProductId === product._id ? (
+              'Updating...'
+            ) : (
+              <span className="whitespace-nowrap">
+                {product.isAvailable ? 'Available' : 'Not Available'}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Spacer */}
+        <div className="flex-1"></div>
+
+        {/* Right Side - Action Buttons */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={() => router.push(`/product/${product._id}`)}
+            className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-green-500 text-white text-xs font-medium rounded-md hover:bg-green-600 transition-colors"
+            aria-label="View product"
+          >
+            <FiExternalLink className="h-3 w-3" />
+            <span>View</span>
+          </button>
+
+          <button
+            onClick={() => handleQuickEdit(product)}
+            className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-500 text-white text-xs font-medium rounded-md hover:bg-blue-600 transition-colors"
+            aria-label="Quick edit"
+          >
+            <FiEdit2 className="h-3 w-3" />
+            <span>Edit</span>
+          </button>
+
+          <button
+            onClick={() => confirmDelete(product)}
+            disabled={deletingProductId === product._id}
+            className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-red-500 text-white text-xs font-medium rounded-md hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Delete product"
+          >
+            {deletingProductId === product._id ? (
+              <FiLoader className="animate-spin h-3 w-3" />
+            ) : (
+              <>
+                <FiTrash2 className="h-3 w-3" />
+                <span className="hidden sm:inline">Delete</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
 
-  const DeleteConfirmationModal = ({ product, onConfirm, onCancel, isDeleting }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="p-6">
-                <div className="flex items-start">
-                    <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                        <svg className="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" /></svg>
-                    </div>
-                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                        <h3 className="text-lg font-medium text-gray-900">Delete Product</h3>
-                        <p className="text-sm text-gray-500 mt-2">Are you sure you want to delete "<span className="font-semibold">{product.name}</span>"? This action cannot be undone.</p>
-                    </div>
-                </div>
-            </div>
-            <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
-                <button onClick={() => onConfirm(product._id)} disabled={isDeleting} className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center">{isDeleting ? 'Deleting...' : 'Delete Product'}</button>
-                <button onClick={onCancel} disabled={isDeleting} className="w-full sm:w-auto mt-2 sm:mt-0 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50">Cancel</button>
-            </div>
+  // And make sure your parent container gives equal heights:
+  const ProductList = ({ products }) => (
+    <div className="space-y-0"> {/* Remove mb-3 from individual cards and use space-y-3 here instead */}
+      {products.map(product => (
+        <div key={product.id} className="h-48"> {/* Set a consistent height for all cards */}
+          <ProductCard product={product} />
         </div>
+      ))}
     </div>
+  );
+
+  const DeleteConfirmationModal = ({ product, onConfirm, onCancel, isDeleting }) => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-lg shadow-xl max-w-md w-full"><div className="p-6"><div className="flex items-center mb-4"><div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100"><svg className="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" /></svg></div></div><div className="text-center"><h3 className="text-lg font-medium text-gray-900 mb-2">Delete Product</h3><p className="text-sm text-gray-500 mb-4">Are you sure you want to delete "<span className="font-medium">{product.name}</span>"? This action cannot be undone.</p></div><div className="flex flex-col sm:flex-row gap-3 sm:gap-2"><button onClick={onCancel} disabled={isDeleting} className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Cancel</button><button onClick={() => onConfirm(product._id)} disabled={isDeleting} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">{isDeleting ? 'Deleting...' : 'Delete Product'}</button></div></div></div></div>
   );
 
   return (
@@ -343,50 +384,44 @@ const ProductList = () => {
       {loading ? <Loading /> : (
         <div className="flex-1">
           <div className="w-full px-4 py-6 sm:px-6 lg:px-8 max-w-full">
-            
-            {/* RESPONSIVE: Header now stacks on mobile and is a row on medium screens up */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-              <h1 className="text-2xl md:text-3xl text-gray-800 font-semibold">Product List</h1>
-              <button onClick={() => setIsFiltersOpen(!isFiltersOpen)} className="flex items-center justify-center gap-2 px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 transition-colors md:w-auto">
-                <CiSliderHorizontal size={16} />
-                <span>Filter and Sort</span>
-                {isFiltersOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </button>
+            <div className="grid grid-cols-[1fr_1.5fr] gap-4 mb-4">
+              <h1 className="flex items-center text-lg md:text-3xl text-gray-800 font-medium">Product List</h1>
+              <div className="relative"><button onClick={() => setIsFiltersOpen(!isFiltersOpen)} className="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 rounded-md transition-colors w-full justify-center md:w-auto md:float-right"><CiSliderHorizontal size={16} />Filter and Sort{isFiltersOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</button></div>
             </div>
-
-            <div className={`transition-all duration-300 ease-in-out ${isFiltersOpen ? 'max-h-[500px] opacity-100 mb-6' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+            <div className={`transition-all duration-300 ease-in-out ${isFiltersOpen ? 'max-h-96 opacity-100 mb-6' : 'max-h-0 opacity-0 overflow-hidden'}`}>
               <div className="bg-white rounded-lg shadow-sm border p-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="relative md:col-span-2 lg:col-span-1">
-                    <input type="text" placeholder="Search products or barcode..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row gap-3 flex-1">
+                    <div className="relative flex-1 max-w-md">
+                      <input type="text" placeholder="Search products or barcode..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" /><svg className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    </div>
+                    <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white min-w-0 sm:min-w-[200px]">{categories.map(category => (<option key={category.value} value={category.value}>{category.label}</option>))}</select>
+                    <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white min-w-0 sm:min-w-[150px]">
+                      <option value="newest">Newest First</option>
+                      <option value="oldest">Oldest First</option>
+                      <option value="name-asc">Name A-Z</option>
+                      <option value="name-desc">Name Z-A</option>
+                      <option value="price-asc">Price Low-High</option>
+                      <option value="price-desc">Price High-Low</option>
+                      {/* --- INVENTORY: Add sorting options for stock --- */}
+                      <option value="stock-desc">Stock: High to Low</option>
+                      <option value="stock-asc">Stock: Low to High</option>
+                    </select>
                   </div>
-                  <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white">{categories.map(category => (<option key={category.value} value={category.value}>{category.label}</option>))}</select>
-                  <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white">
-                    <option value="newest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
-                    <option value="name-asc">Name A-Z</option>
-                    <option value="name-desc">Name Z-A</option>
-                    <option value="price-asc">Price Low-High</option>
-                    <option value="price-desc">Price High-Low</option>
-                    <option value="stock-desc">Stock: High to Low</option>
-                    <option value="stock-asc">Stock: Low to High</option>
-                  </select>
-                   <div className="flex items-center justify-end gap-3">
-                    <button onClick={resetFilters} className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors">Reset</button>
+                  <div className="flex items-center gap-3">
+                    <button onClick={resetFilters} className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors">Reset Filters</button>
                     <ViewModeSelector />
                   </div>
                 </div>
+                <div className="mt-3 pt-3 border-t border-gray-100"><p className="text-sm text-gray-600">Showing {sortedProducts.length} of {products.length} products{searchTerm && ` for "${searchTerm}"`}{filterCategory && ` in ${categories.find(cat => cat.value === filterCategory)?.label}`}</p></div>
               </div>
             </div>
-            
             {sortedProducts.length === 0 ? (
               <div className="bg-white rounded-lg shadow-sm border p-8 text-center"><div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4"><svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg></div><h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3><p className="text-gray-500 mb-4">{products.length === 0 ? "You haven't added any products yet." : "Try adjusting your search or filter criteria."}</p></div>
             ) : (
               <>
                 {viewMode === "table" && (
                   <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-                    <p className="p-4 text-sm text-gray-500 md:hidden">Scroll horizontally to see all columns &rarr;</p>
                     <div className="overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -394,6 +429,7 @@ const ProductList = () => {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                            {/* --- INVENTORY: Add Stock Header --- */}
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -405,6 +441,7 @@ const ProductList = () => {
                               <td className="px-6 py-4 whitespace-nowrap"><div className="flex items-center"><div className="flex-shrink-0 h-12 w-12"><Image src={product.image[0]} alt={product.name} className={`h-12 w-12 rounded-md object-cover ${!product.isAvailable ? 'opacity-60' : ''}`} width={48} height={48} /></div><div className="ml-4"><div className={`text-sm font-medium ${!product.isAvailable ? 'text-gray-400' : 'text-gray-900'}`}>{product.name}</div>{product.barcode && <div className="text-xs text-gray-500">Barcode: {product.barcode}</div>}</div></div></td>
                               <td className="px-6 py-4 whitespace-nowrap"><span className="px-2 py-1 inline-flex text-xs font-medium rounded-full bg-blue-100 text-blue-800">{categories.find(cat => cat.value === product.category)?.label || product.category}</span></td>
                               <td className="px-6 py-4 whitespace-nowrap"><div className="flex items-center"><span className="text-sm font-medium text-gray-900">${product.offerPrice}</span>{product.price !== product.offerPrice && <span className="ml-2 text-sm line-through text-gray-400">${product.price}</span>}</div></td>
+                              {/* --- INVENTORY: Add Stock Data Cell --- */}
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <span className={`text-sm font-bold ${product.stock > 10 ? 'text-green-600' : product.stock > 0 ? 'text-amber-600' : 'text-red-600'}`}>
                                   {product.stock}
@@ -419,8 +456,8 @@ const ProductList = () => {
                     </div>
                   </div>
                 )}
-                {/* RESPONSIVE: Card grid is now responsive with different columns at different breakpoints */}
-                {viewMode === "cards" && (<div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">{sortedProducts.map((product) => (<ProductCard key={product._id} product={product} />))}</div>)}
+                {viewMode === "cards" && (<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">{sortedProducts.map((product) => (<ProductCard key={product._id} product={product} />))}</div>)}
+                {viewMode === "grid" && (<div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-4">{sortedProducts.map((product) => (<ProductGrid key={product._id} product={product} />))}</div>)}
               </>
             )}
           </div>
