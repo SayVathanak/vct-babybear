@@ -131,7 +131,7 @@ const ProductScrollSection = ({
   return (
     <motion.div 
       ref={sectionRef}
-      className="pt-4 md:pt-6 px-4 md:px-0"
+      className="pt-4 md:pt-6 px-0"
       variants={sectionVariants}
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
@@ -198,8 +198,8 @@ const ProductScrollSection = ({
         </motion.div>
       </motion.div>
 
-      <div className="relative group -mx-4 md:mx-0">
-        <div className="overflow-x-auto px-4 md:px-0">
+      <div className="relative group mx-0">
+        <div className="overflow-x-auto px-0">
           <motion.div
             ref={containerRef}
             className="flex gap-3 md:gap-4 pb-2"
@@ -421,7 +421,7 @@ const HomeProducts = () => {
         {/* Enhanced Category Buttons - Mobile Optimized */}
         <motion.div 
           ref={headerRef}
-          className="w-full px-4 md:px-0"
+          className="w-full px-0"
           initial={{ opacity: 0, y: 20 }}
           animate={isHeaderInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
