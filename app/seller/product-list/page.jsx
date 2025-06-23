@@ -18,6 +18,7 @@ import {
   FiCheck,
   FiX
 } from 'react-icons/fi';
+import ProductGrid from "@/components/ProductGrid";
 
 const ProductList = () => {
   const { router, getToken, user } = useAppContext()
