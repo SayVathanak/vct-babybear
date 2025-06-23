@@ -67,13 +67,9 @@ export const syncUserDeletion = inngest.createFunction(
 
 // --- ORDER & INVENTORY FUNCTIONS ---
 
-// REVISED AND MORE RELIABLE ORDER CREATION FUNCTION
+// CORRECTED ORDER CREATION FUNCTION
 export const createUserOrder = inngest.createFunction(
-    {
-        id: 'create-user-order',
-        // Process events one by one for better reliability and logging
-        batchEvents: { maxSize: 1, timeout: '5s' },
-    },
+    { id: 'create-user-order' }, // No batching configuration
     { event: 'order/created' },
     async ({ event, step }) => {
         await connectDB();
@@ -197,7 +193,7 @@ export const restoreInventory = inngest.createFunction(
 );
 
 
-// --- OTHER ORDER STATUS FUNCTIONS (UNCHANGED) ---
+// --- OTHER ORDER STATUS FUNCTIONS ---
 
 // Function to handle item status updates
 export const handleItemStatusUpdated = inngest.createFunction(
@@ -209,7 +205,6 @@ export const handleItemStatusUpdated = inngest.createFunction(
         console.log(`[Inngest] Updating item status for Order ID: ${orderId}, Item ID: ${itemId} to ${status}`);
 
         const order = await step.run("find-order-for-item-update", async () => {
-            // Find an order that contains an item with the specific _id
             return await Order.findOne({ "items._id": itemId });
         });
 
@@ -217,17 +212,14 @@ export const handleItemStatusUpdated = inngest.createFunction(
             throw new Error(`Order containing item ID ${itemId} not found.`);
         }
 
-        // Find the index of the item to update
         const itemIndex = order.items.findIndex(item => item._id.toString() === itemId);
 
         if (itemIndex === -1) {
             throw new Error(`Item with ID ${itemId} not found within Order ${order._id}.`);
         }
 
-        // Update the status of the specific item
         order.items[itemIndex].status = status;
 
-        // Save the entire order document with the updated item
         await step.run("save-updated-item-status", async () => {
             await order.save();
         });
@@ -244,15 +236,13 @@ export const handleOrderStatusUpdated = inngest.createFunction(
     async ({ event, step }) => {
         const { orderId, status } = event.data;
 
-        // If the order is cancelled, trigger the inventory restoration.
         if (status === 'Cancelled') {
             await step.sendEvent('send-inventory-restoration-on-cancellation', {
-                name: "order/cancelled", // This event triggers the restoreInventory function
+                name: "order/cancelled",
                 data: { orderId }
             });
         }
         
-        // ... your other existing logic for status updates
         await connectDB();
         await Order.findByIdAndUpdate(orderId, { status: status });
 
@@ -261,9 +251,9 @@ export const handleOrderStatusUpdated = inngest.createFunction(
 );
 
 
-// --- PAYMENT VERIFICATION FUNCTIONS (UNCHANGED) ---
+// --- PAYMENT VERIFICATION FUNCTIONS ---
 
-// NEW FUNCTION TO VERIFY BAKONG PAYMENTS
+// FUNCTION TO VERIFY BAKONG PAYMENTS
 export const verifyBakongPayments = inngest.createFunction(
   { id: "verify-bakong-payments-cron" },
   { cron: "*/5 * * * *" }, // Runs every 5 minutes.
