@@ -128,7 +128,7 @@ export const deductInventory = inngest.createFunction(
                 }
 
                 console.log(`[Inngest] Successfully updated stock for Product ID ${updatedProduct._id}. New stock: ${updatedProduct.stock}`);
-                
+
                 if (updatedProduct.stock <= 5 && updatedProduct.stock > 0) {
                     console.warn(`[Inngest] LOW STOCK WARNING: ${updatedProduct.name} has only ${updatedProduct.stock} items left.`);
                 } else if (updatedProduct.stock <= 0) {
@@ -162,10 +162,10 @@ export const restoreInventory = inngest.createFunction(
             console.error(`[Inngest] Order ${orderId} not found for inventory restoration.`);
             return { success: false, message: `Order ${orderId} not found.` };
         }
-        
+
         if (order.status !== 'Cancelled') {
-             console.warn(`[Inngest] Order ${orderId} is not in 'Cancelled' state. Skipping inventory restore.`);
-             return { success: false, message: "Order not in 'Cancelled' state." };
+            console.warn(`[Inngest] Order ${orderId} is not in 'Cancelled' state. Skipping inventory restore.`);
+            return { success: false, message: "Order not in 'Cancelled' state." };
         }
 
         for (const item of order.items) {
@@ -176,17 +176,17 @@ export const restoreInventory = inngest.createFunction(
                     { $inc: { stock: item.quantity }, $set: { isAvailable: true } },
                     { new: true }
                 );
-                
+
                 if (!updatedProduct) {
                     console.error(`[Inngest] Failed to find Product ID: ${item.product} to restore stock.`);
                     return { productId: item.product, status: 'failed_product_not_found' };
                 }
-                
+
                 console.log(`[Inngest] Successfully restored stock for Product ID ${item.product}. New stock: ${updatedProduct.stock}`);
                 return { productId: item.product, newStock: updatedProduct.stock };
             });
         }
-        
+
         console.log(`[Inngest] Inventory restoration completed for Order ID: ${orderId}`);
         return { success: true, orderId };
     }
@@ -242,7 +242,7 @@ export const handleOrderStatusUpdated = inngest.createFunction(
                 data: { orderId }
             });
         }
-        
+
         await connectDB();
         await Order.findByIdAndUpdate(orderId, { status: status });
 
@@ -251,204 +251,204 @@ export const handleOrderStatusUpdated = inngest.createFunction(
 );
 
 export const verifyBakongPayments = inngest.createFunction(
-  { id: "verify-bakong-payments-cron" },
-  // Run every 2 minutes to promptly handle 10-minute timeouts
-  { cron: "*/2 * * * *" }, 
-  async ({ step }) => {
-    console.log('[Inngest] Starting Bakong payment verification cron job');
-    
-    await connectDB();
+    { id: "verify-bakong-payments-cron" },
+    // Run every 2 minutes to promptly handle 10-minute timeouts
+    { cron: "*/2 * * * *" },
+    async ({ step }) => {
+        console.log('[Inngest] Starting Bakong payment verification cron job');
 
-    const pendingOrders = await step.run("find-pending-bakong-orders", async () => {
-      const orders = await Order.find({
-        paymentMethod: "Bakong",
-        paymentStatus: "pending",
-      }).lean();
-      
-      console.log(`[Inngest] Found ${orders.length} pending Bakong orders`);
-      return orders;
-    });
+        await connectDB();
 
-    if (pendingOrders.length === 0) {
-      console.log('[Inngest] No pending Bakong orders to check');
-      return { 
-        success: true, 
-        message: "No pending Bakong orders to check.",
-        processedOrders: 0,
-        expiredOrders: 0,
-        paidOrders: 0,
-        errors: 0
-      };
-    }
-    
-    const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
-    const results = {
-      processedOrders: 0,
-      expiredOrders: 0,
-      paidOrders: 0,
-      errors: 0,
-      details: []
-    };
-
-    // Process orders in batches to avoid overwhelming the system
-    for (let i = 0; i < pendingOrders.length; i++) {
-      const order = pendingOrders[i];
-      const orderAge = Date.now() - new Date(order.date).getTime();
-      
-      try {
-        // Check if the order is older than 10 minutes
-        if (new Date(order.date).getTime() < tenMinutesAgo) {
-          // Order has expired. Cancel it.
-          const cancelResult = await step.run(`cancel-expired-order-${order._id}`, async () => {
-            console.log(`[Inngest] Bakong order ${order._id} is older than 10 minutes (${Math.round(orderAge / 1000 / 60)}min). Cancelling.`);
-            
-            try {
-              // Update order status to Cancelled
-              await Order.findByIdAndUpdate(order._id, {
-                status: 'Cancelled',
-                paymentStatus: 'failed',
-                updatedAt: new Date()
-              });
-              
-              console.log(`[Inngest] Successfully cancelled expired order ${order._id}`);
-              return { success: true, orderId: order._id, action: 'cancelled_expired' };
-            } catch (error) {
-              console.error(`[Inngest] Error cancelling order ${order._id}:`, error);
-              return { success: false, orderId: order._id, error: error.message };
-            }
-          });
-
-          if (cancelResult.success) {
-            // Send event to restore inventory - but don't await it to prevent blocking
-            try {
-              await step.sendEvent('send-inventory-restoration-for-expired-order', {
-                name: "order/cancelled",
-                data: { orderId: order._id }
-              });
-              console.log(`[Inngest] Sent inventory restoration event for order ${order._id}`);
-            } catch (eventError) {
-              console.error(`[Inngest] Failed to send inventory restoration event for order ${order._id}:`, eventError);
-            }
-            
-            results.expiredOrders++;
-          } else {
-            results.errors++;
-          }
-          
-          results.details.push({
-            orderId: order._id,
-            action: 'expired',
-            success: cancelResult.success
-          });
-        } else {
-          // Order is still within the 10-minute window. Check for payment.
-          const paymentResult = await step.run(`verify-payment-for-order-${order._id}`, async () => {
-            const md5Hash = order.bakongPaymentDetails?.md5;
-
-            if (!md5Hash) {
-              console.warn(`[Inngest] Order ${order._id} missing MD5 hash - skipping payment check`);
-              return { success: false, orderId: order._id, status: "skipped", reason: "Missing MD5 hash" };
-            }
-
-            try {
-              console.log(`[Inngest] Checking payment status for order ${order._id} (age: ${Math.round(orderAge / 1000)}s)`);
-              
-              // Add timeout to prevent hanging requests
-              const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-              
-              const response = await axios.post(`${FASTAPI_SERVICE_URL}/api/v1/check-payment-status`, {
-                md5_hash: md5Hash,
-              }, {
-                timeout: 10000, // 10 second timeout
-                signal: controller.signal
-              });
-              
-              clearTimeout(timeoutId);
-
-              if (response.data.is_paid) {
-                await Order.findByIdAndUpdate(order._id, { 
-                  paymentStatus: "paid",
-                  updatedAt: new Date()
-                });
-                console.log(`[Inngest] Payment confirmed for order ${order._id}`);
-                return { success: true, orderId: order._id, status: "updated_to_paid" };
-              } else {
-                console.log(`[Inngest] Order ${order._id} still unpaid`);
-                return { success: true, orderId: order._id, status: "still_unpaid" };
-              }
-            } catch (error) {
-              if (error.name === 'AbortError') {
-                console.error(`[Inngest] Payment check timeout for order ${order._id}`);
-                return { success: false, orderId: order._id, status: "timeout", error: "Request timeout" };
-              }
-              
-              console.error(`[Inngest] Failed to verify payment for order ${order._id}:`, error.response?.data || error.message);
-              return { success: false, orderId: order._id, status: "error", error: error.message };
-            }
-          });
-
-          if (paymentResult.success && paymentResult.status === "updated_to_paid") {
-            results.paidOrders++;
-          } else if (!paymentResult.success) {
-            results.errors++;
-          }
-          
-          results.details.push({
-            orderId: order._id,
-            action: 'payment_check',
-            status: paymentResult.status,
-            success: paymentResult.success
-          });
-        }
-        
-        results.processedOrders++;
-      } catch (stepError) {
-        console.error(`[Inngest] Unexpected error processing order ${order._id}:`, stepError);
-        results.errors++;
-        results.processedOrders++;
-        results.details.push({
-          orderId: order._id,
-          action: 'error',
-          success: false,
-          error: stepError.message
+        // Just add this validation to your existing verifyBakongPayments
+        const pendingOrders = await step.run("find-pending-bakong-orders", async () => {
+            const orders = await Order.find({
+                paymentMethod: "Bakong",
+                paymentStatus: "pending",
+                bakongPaymentDetails: { $exists: true, $ne: null } // This prevents the infinite loop
+            }).lean();
+            return orders;
         });
-      }
+
+        if (pendingOrders.length === 0) {
+            console.log('[Inngest] No pending Bakong orders to check');
+            return {
+                success: true,
+                message: "No pending Bakong orders to check.",
+                processedOrders: 0,
+                expiredOrders: 0,
+                paidOrders: 0,
+                errors: 0
+            };
+        }
+
+        const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
+        const results = {
+            processedOrders: 0,
+            expiredOrders: 0,
+            paidOrders: 0,
+            errors: 0,
+            details: []
+        };
+
+        // Process orders in batches to avoid overwhelming the system
+        for (let i = 0; i < pendingOrders.length; i++) {
+            const order = pendingOrders[i];
+            const orderAge = Date.now() - new Date(order.date).getTime();
+
+            try {
+                // Check if the order is older than 10 minutes
+                if (new Date(order.date).getTime() < tenMinutesAgo) {
+                    // Order has expired. Cancel it.
+                    const cancelResult = await step.run(`cancel-expired-order-${order._id}`, async () => {
+                        console.log(`[Inngest] Bakong order ${order._id} is older than 10 minutes (${Math.round(orderAge / 1000 / 60)}min). Cancelling.`);
+
+                        try {
+                            // Update order status to Cancelled
+                            await Order.findByIdAndUpdate(order._id, {
+                                status: 'Cancelled',
+                                paymentStatus: 'failed',
+                                updatedAt: new Date()
+                            });
+
+                            console.log(`[Inngest] Successfully cancelled expired order ${order._id}`);
+                            return { success: true, orderId: order._id, action: 'cancelled_expired' };
+                        } catch (error) {
+                            console.error(`[Inngest] Error cancelling order ${order._id}:`, error);
+                            return { success: false, orderId: order._id, error: error.message };
+                        }
+                    });
+
+                    if (cancelResult.success) {
+                        // Send event to restore inventory - but don't await it to prevent blocking
+                        try {
+                            await step.sendEvent('send-inventory-restoration-for-expired-order', {
+                                name: "order/cancelled",
+                                data: { orderId: order._id }
+                            });
+                            console.log(`[Inngest] Sent inventory restoration event for order ${order._id}`);
+                        } catch (eventError) {
+                            console.error(`[Inngest] Failed to send inventory restoration event for order ${order._id}:`, eventError);
+                        }
+
+                        results.expiredOrders++;
+                    } else {
+                        results.errors++;
+                    }
+
+                    results.details.push({
+                        orderId: order._id,
+                        action: 'expired',
+                        success: cancelResult.success
+                    });
+                } else {
+                    // Order is still within the 10-minute window. Check for payment.
+                    const paymentResult = await step.run(`verify-payment-for-order-${order._id}`, async () => {
+                        const md5Hash = order.bakongPaymentDetails?.md5;
+
+                        if (!md5Hash) {
+                            console.warn(`[Inngest] Order ${order._id} missing MD5 hash - skipping payment check`);
+                            return { success: false, orderId: order._id, status: "skipped", reason: "Missing MD5 hash" };
+                        }
+
+                        try {
+                            console.log(`[Inngest] Checking payment status for order ${order._id} (age: ${Math.round(orderAge / 1000)}s)`);
+
+                            // Add timeout to prevent hanging requests
+                            const controller = new AbortController();
+                            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+                            const response = await axios.post(`${FASTAPI_SERVICE_URL}/api/v1/check-payment-status`, {
+                                md5_hash: md5Hash,
+                            }, {
+                                timeout: 10000, // 10 second timeout
+                                signal: controller.signal
+                            });
+
+                            clearTimeout(timeoutId);
+
+                            if (response.data.is_paid) {
+                                await Order.findByIdAndUpdate(order._id, {
+                                    paymentStatus: "paid",
+                                    updatedAt: new Date()
+                                });
+                                console.log(`[Inngest] Payment confirmed for order ${order._id}`);
+                                return { success: true, orderId: order._id, status: "updated_to_paid" };
+                            } else {
+                                console.log(`[Inngest] Order ${order._id} still unpaid`);
+                                return { success: true, orderId: order._id, status: "still_unpaid" };
+                            }
+                        } catch (error) {
+                            if (error.name === 'AbortError') {
+                                console.error(`[Inngest] Payment check timeout for order ${order._id}`);
+                                return { success: false, orderId: order._id, status: "timeout", error: "Request timeout" };
+                            }
+
+                            console.error(`[Inngest] Failed to verify payment for order ${order._id}:`, error.response?.data || error.message);
+                            return { success: false, orderId: order._id, status: "error", error: error.message };
+                        }
+                    });
+
+                    if (paymentResult.success && paymentResult.status === "updated_to_paid") {
+                        results.paidOrders++;
+                    } else if (!paymentResult.success) {
+                        results.errors++;
+                    }
+
+                    results.details.push({
+                        orderId: order._id,
+                        action: 'payment_check',
+                        status: paymentResult.status,
+                        success: paymentResult.success
+                    });
+                }
+
+                results.processedOrders++;
+            } catch (stepError) {
+                console.error(`[Inngest] Unexpected error processing order ${order._id}:`, stepError);
+                results.errors++;
+                results.processedOrders++;
+                results.details.push({
+                    orderId: order._id,
+                    action: 'error',
+                    success: false,
+                    error: stepError.message
+                });
+            }
+        }
+
+        console.log(`[Inngest] Bakong verification completed. Processed: ${results.processedOrders}, Expired: ${results.expiredOrders}, Paid: ${results.paidOrders}, Errors: ${results.errors}`);
+
+        return {
+            success: true,
+            message: `Processed ${results.processedOrders} pending Bakong orders.`,
+            ...results
+        };
     }
-    
-    console.log(`[Inngest] Bakong verification completed. Processed: ${results.processedOrders}, Expired: ${results.expiredOrders}, Paid: ${results.paidOrders}, Errors: ${results.errors}`);
-    
-    return { 
-      success: true,
-      message: `Processed ${results.processedOrders} pending Bakong orders.`,
-      ...results
-    };
-  }
 );
 
 export const checkFastApiHealth = inngest.createFunction(
-  { id: "check-fastapi-health" },
-  { cron: "*/5 * * * *" }, // Check every 5 minutes
-  async ({ step }) => {
-    const healthCheck = await step.run("ping-fastapi-service", async () => {
-      try {
-        const response = await axios.get(`${FASTAPI_SERVICE_URL}/`, {
-          timeout: 5000
+    { id: "check-fastapi-health" },
+    { cron: "*/5 * * * *" }, // Check every 5 minutes
+    async ({ step }) => {
+        const healthCheck = await step.run("ping-fastapi-service", async () => {
+            try {
+                const response = await axios.get(`${FASTAPI_SERVICE_URL}/`, {
+                    timeout: 5000
+                });
+
+                if (response.status === 200) {
+                    console.log('[Inngest] FastAPI service is healthy');
+                    return { status: 'healthy', response: response.data };
+                } else {
+                    console.warn(`[Inngest] FastAPI service returned unexpected status: ${response.status}`);
+                    return { status: 'unhealthy', statusCode: response.status };
+                }
+            } catch (error) {
+                console.error('[Inngest] FastAPI service health check failed:', error.message);
+                return { status: 'error', error: error.message };
+            }
         });
-        
-        if (response.status === 200) {
-          console.log('[Inngest] FastAPI service is healthy');
-          return { status: 'healthy', response: response.data };
-        } else {
-          console.warn(`[Inngest] FastAPI service returned unexpected status: ${response.status}`);
-          return { status: 'unhealthy', statusCode: response.status };
-        }
-      } catch (error) {
-        console.error('[Inngest] FastAPI service health check failed:', error.message);
-        return { status: 'error', error: error.message };
-      }
-    });
-    
-    return healthCheck;
-  }
+
+        return healthCheck;
+    }
 );
