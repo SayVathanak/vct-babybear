@@ -253,10 +253,11 @@ export const handleOrderStatusUpdated = inngest.createFunction(
 
 // --- PAYMENT VERIFICATION FUNCTIONS ---
 
-// FUNCTION TO VERIFY BAKONG PAYMENTS
+// FUNCTION TO VERIFY BAKONG PAYMENTS AND CANCEL EXPIRED ORDERS
 export const verifyBakongPayments = inngest.createFunction(
   { id: "verify-bakong-payments-cron" },
-  { cron: "*/5 * * * *" }, // Runs every 5 minutes.
+  // Run every 2 minutes to promptly handle 10-minute timeouts
+  { cron: "*/2 * * * *" }, 
   async ({ step }) => {
     await connectDB();
 
@@ -270,34 +271,58 @@ export const verifyBakongPayments = inngest.createFunction(
     if (pendingOrders.length === 0) {
       return { message: "No pending Bakong orders to check." };
     }
-
-    const verificationTasks = pendingOrders.map((order) => {
-      return step.run(`verify-order-${order._id}`, async () => {
-        const md5Hash = order.bakongPaymentDetails?.md5;
-
-        if (!md5Hash) {
-          return { orderId: order._id, status: "skipped", reason: "Missing MD5 hash" };
-        }
-
-        try {
-          const response = await axios.post(`${FASTAPI_SERVICE_URL}/api/v1/check-payment-status`, {
-            md5_hash: md5Hash,
-          });
-
-          if (response.data.is_paid) {
-            await Order.updateOne({ _id: order._id }, { $set: { paymentStatus: "paid" } });
-            return { orderId: order._id, status: "updated_to_paid" };
-          } else {
-            return { orderId: order._id, status: "still_unpaid" };
-          }
-        } catch (error) {
-          console.error(`Failed to verify payment for order ${order._id}:`, error.response?.data || error.message);
-          return { orderId: order._id, status: "error", error: error.message };
-        }
-      });
-    });
     
-    const results = await Promise.all(verificationTasks);
-    return { message: `Checked ${pendingOrders.length} orders.`, results };
+    const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
+
+    for (const order of pendingOrders) {
+        // Check if the order is older than 10 minutes
+        if (new Date(order.date).getTime() < tenMinutesAgo) {
+            // Order has expired. Cancel it.
+            await step.run(`cancel-expired-order-${order._id}`, async () => {
+                console.log(`[Inngest] Bakong order ${order._id} is older than 10 minutes. Cancelling.`);
+                
+                // Update order status to Failed/Cancelled
+                await Order.findByIdAndUpdate(order._id, {
+                    status: 'Cancelled',
+                    paymentStatus: 'failed',
+                });
+                
+                // Send event to restore inventory
+                await step.sendEvent('send-inventory-restoration-for-expired-order', {
+                    name: "order/cancelled",
+                    data: { orderId: order._id }
+                });
+
+                return { orderId: order._id, status: 'cancelled_expired' };
+            });
+        } else {
+            // Order is still within the 10-minute window. Check for payment.
+            await step.run(`verify-payment-for-order-${order._id}`, async () => {
+                const md5Hash = order.bakongPaymentDetails?.md5;
+
+                if (!md5Hash) {
+                    return { orderId: order._id, status: "skipped", reason: "Missing MD5 hash" };
+                }
+
+                try {
+                    const response = await axios.post(`${FASTAPI_SERVICE_URL}/api/v1/check-payment-status`, {
+                        md5_hash: md5Hash,
+                    });
+
+                    if (response.data.is_paid) {
+                        await Order.updateOne({ _id: order._id }, { $set: { paymentStatus: "paid" } });
+                        return { orderId: order._id, status: "updated_to_paid" };
+                    } else {
+                        return { orderId: order._id, status: "still_unpaid" };
+                    }
+                } catch (error) {
+                    console.error(`Failed to verify payment for order ${order._id}:`, error.response?.data || error.message);
+                    return { orderId: order._id, status: "error", error: error.message };
+                }
+            });
+        }
+    }
+    
+    return { message: `Processed ${pendingOrders.length} pending Bakong orders.` };
   }
 );
