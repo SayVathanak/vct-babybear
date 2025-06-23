@@ -11,6 +11,7 @@ const productSchema = new mongoose.Schema({
     barcode: { type: String, unique: true, sparse: true },
     date: { type: Number, required: true },
     isAvailable: { type: Boolean, default: true },
+    stock: { type: Number, required: true, default: 0 }
 });
 
 const Product = mongoose.models.product || mongoose.model('product', productSchema);

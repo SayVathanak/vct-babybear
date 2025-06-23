@@ -1,7 +1,6 @@
 import { inngest } from "@/config/inngest";
 import Product from "@/models/Product";
 import User from "@/models/User";
-import PromoCode from "@/models/PromoCode";
 import Order from "@/models/Order";
 import { getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
@@ -25,17 +24,28 @@ export async function POST(request) {
       amount: requestAmount,
       promoCode: requestPromoDetails,
       paymentMethod,
-      paymentTransactionImage, // For ABA
-      bakongPaymentDetails // New field for Bakong
+      paymentTransactionImage,
+      bakongPaymentDetails 
     } = requestData;
-
-    console.log("Received request data for order creation:", requestData);
 
     if (!address || !items || items.length === 0 || !paymentMethod) {
       return NextResponse.json({ success: false, message: "Invalid data: Address, items, and payment method are required." }, { status: 400 });
     }
+    
+    await connectDB();
 
-    // --- Validation for different payment methods ---
+    // --- INVENTORY VALIDATION ---
+    for (const item of items) {
+        const productDoc = await Product.findById(item.product).lean();
+        if (!productDoc) {
+            return NextResponse.json({ success: false, message: `Product with ID ${item.product} not found.` }, { status: 404 });
+        }
+        if (productDoc.stock < item.quantity) {
+            return NextResponse.json({ success: false, message: `Not enough stock for ${productDoc.name}. Only ${productDoc.stock} left.` }, { status: 400 });
+        }
+    }
+    // --- END INVENTORY VALIDATION ---
+
     if (paymentMethod === "ABA" && !paymentTransactionImage) {
         return NextResponse.json({ success: false, message: "Transaction proof is required for ABA payment." }, { status: 400 });
     }
@@ -43,19 +53,16 @@ export async function POST(request) {
         return NextResponse.json({ success: false, message: "Bakong payment details (MD5 hash) are required." }, { status: 400 });
     }
 
-    await connectDB();
-
-    // --- (Keep your existing subtotal, delivery fee, and discount calculation logic here) ---
-    // ... This part of your code seems correct and remains unchanged.
     const calculatedSubtotal = Number(
       (await items.reduce(async (accPromise, item) => {
         const acc = await accPromise;
         const productDoc = await Product.findById(item.product).lean();
-        if (!productDoc) throw new Error(`Product with ID ${item.product} not found.`);
+        // We already checked for the product existence, so no need to re-validate here.
         const price = productDoc.offerPrice || productDoc.price;
         return acc + price * item.quantity;
       }, Promise.resolve(0))).toFixed(2)
     );
+
     const itemCount = items.reduce((count, item) => count + item.quantity, 0);
     const calculatedDeliveryFee = Number((itemCount > 1 ? 0 : 1.5).toFixed(2));
     let discount = requestDiscount || 0;
@@ -73,11 +80,9 @@ export async function POST(request) {
       };
       discount = requestDiscount || discount;
     } 
-    // ... (rest of your discount logic)
 
     const finalAmount = requestAmount !== undefined ? Number(requestAmount.toFixed(2)) : Number((subtotal + deliveryFee - discount).toFixed(2));
 
-    // --- Determine paymentStatus based on paymentMethod ---
     let orderPaymentStatus = 'pending';
     let orderPaymentConfirmationStatus = 'na';
 
@@ -86,13 +91,10 @@ export async function POST(request) {
       orderPaymentConfirmationStatus = 'pending_review';
     } else if (paymentMethod === 'COD') {
       orderPaymentStatus = 'pending';
-      orderPaymentConfirmationStatus = 'na';
     } else if (paymentMethod === 'Bakong') {
-      orderPaymentStatus = 'pending'; // Stays pending until payment is confirmed
-      orderPaymentConfirmationStatus = 'na';
+      orderPaymentStatus = 'pending';
     }
 
-    // --- Prepare the data for the Inngest event and DB save ---
     const finalOrderDataForEvent = {
         userId,
         address,
@@ -100,7 +102,6 @@ export async function POST(request) {
         subtotal,
         deliveryFee,
         discount,
-
         promoCode: promoCodeDetails,
         amount: finalAmount,
         date: Date.now(),
@@ -109,17 +110,16 @@ export async function POST(request) {
         paymentTransactionImage: paymentMethod === 'ABA' ? paymentTransactionImage : null,
         paymentStatus: orderPaymentStatus,
         paymentConfirmationStatus: orderPaymentConfirmationStatus,
-        // Add Bakong details if the method is 'Bakong'
         ...(paymentMethod === 'Bakong' && { bakongPaymentDetails })
     };
     
-    console.log("Final order data being sent to Inngest:", finalOrderDataForEvent);
-
+    // The order data is validated, now send it to Inngest for processing
     await inngest.send({
       name: "order/created",
       data: finalOrderDataForEvent 
     });
 
+    // Clear user's cart after successful order submission
     const userDoc = await User.findById(userId);
     if (userDoc) {
         userDoc.cartItems = {};

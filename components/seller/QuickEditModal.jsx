@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { Check, X, AlertCircle, EyeIcon, Upload, Trash2, Package, Hash, RefreshCw, Copy, Download } from 'lucide-react';
+import { Check, X, AlertCircle, EyeIcon, Upload, Trash2, Package, Hash, RefreshCw, Copy, Download, Box } from 'lucide-react';
 import Barcode from 'react-barcode'; // Import the barcode library
 
 const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
@@ -13,8 +13,10 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
     isAvailable: product.isAvailable,
     description: product.description,
     barcode: product.barcode || '',
-    image: product.image
+    image: product.image,
+    stock: product.stock !== undefined ? product.stock : 0,
   });
+
   const [errors, setErrors] = useState({});
   const [isDirty, setIsDirty] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -58,22 +60,21 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
   // Handle input changes
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    const newValue = type === 'checkbox' ? checked : value;
+    let newValue = type === 'checkbox' ? checked : value;
 
-    setFormData({
-      ...formData,
-      [name]: newValue
-    });
+    let newFormData = { ...formData, [name]: newValue };
 
-    setIsDirty(true);
-
-    // Clear error when user types
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: ''
-      });
+    // --- INVENTORY LOGIC: Automatically set availability based on stock ---
+    if (name === 'stock') {
+      const stockValue = Number(value);
+      if (!isNaN(stockValue) && stockValue >= 0) {
+        newFormData.isAvailable = stockValue > 0;
+      }
     }
+
+    setFormData(newFormData);
+    setIsDirty(true);
+    if (errors[name]) setErrors({ ...errors, [name]: '' });
   };
 
   // Function to calculate EAN-13 check digit
@@ -102,23 +103,23 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
   // Generate a random barcode
   const generateBarcode = () => {
     setIsGeneratingBarcode(true);
-    
+
     const countryCode = '890';
     const companyCode = '1234';
     const productCode = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
     const partialBarcode = countryCode + companyCode + productCode;
     const checkDigit = calculateEAN13CheckDigit(partialBarcode);
     const fullBarcode = partialBarcode + checkDigit;
-    
+
     setFormData({
       ...formData,
       barcode: fullBarcode
     });
-    
+
     setIsDirty(true);
     setIsGeneratingBarcode(false);
     setShowBarcodePreview(true);
-    
+
     // Clear any barcode error
     if (errors.barcode) {
       setErrors({
@@ -137,34 +138,34 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
       });
       return;
     }
-    
+
     setIsGeneratingBarcode(true);
-    
+
     let hash = 0;
     for (let i = 0; i < formData.name.length; i++) {
       const char = formData.name.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash;
     }
-    
+
     const positiveHash = Math.abs(hash);
     const productCode = (positiveHash % 100000).toString().padStart(5, '0');
-    
+
     const countryCode = '890';
     const companyCode = '1234';
     const partialBarcode = countryCode + companyCode + productCode;
     const checkDigit = calculateEAN13CheckDigit(partialBarcode);
     const fullBarcode = partialBarcode + checkDigit;
-    
+
     setFormData({
       ...formData,
       barcode: fullBarcode
     });
-    
+
     setIsDirty(true);
     setIsGeneratingBarcode(false);
     setShowBarcodePreview(true);
-    
+
     // Clear any barcode error
     if (errors.barcode) {
       setErrors({
@@ -208,11 +209,11 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
       // Set canvas dimensions to match image dimensions
       canvas.width = img.width;
       canvas.height = img.height;
-      
+
       // Fill background with white
       ctx.fillStyle = 'white';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
+
       // Draw the image on the canvas
       ctx.drawImage(img, 0, 0);
 
@@ -223,7 +224,7 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
       downloadLink.href = pngFile;
       downloadLink.click();
     };
-    
+
     img.src = "data:image/svg+xml;base64," + btoa(svgData);
   };
 
@@ -312,20 +313,20 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
         <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold">Product Barcode</h3>
-            <button 
+            <button
               onClick={() => setShowBarcodeModal(false)}
               className="text-gray-500 hover:text-gray-700 text-xl"
             >
               ×
             </button>
           </div>
-          
+
           {/* This div is used to hold the barcode for download */}
           <div ref={barcodeRef} className="text-center p-4 bg-white">
             {/* The react-barcode component generates the scannable image */}
             <Barcode value={formData.barcode} />
           </div>
-          
+
           <div className="flex flex-col gap-3 mt-4">
             <button
               onClick={handleDownloadBarcode}
@@ -349,7 +350,7 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
   // Render barcode display
   const renderBarcodeDisplay = () => {
     if (!formData.barcode) return null;
-    
+
     return (
       <div className="mt-2 p-3 bg-white border border-gray-200 rounded-md shadow-sm">
         <div className="flex justify-between items-center mb-2">
@@ -384,7 +385,7 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
             </button>
           </div>
         </div>
-        
+
         {/* Simplified barcode visualization */}
         <div className="flex flex-col items-center">
           {/* Display barcode-like pattern */}
@@ -393,7 +394,7 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
               // Generate a pseudo-random height based on the character
               const height = 30 + (char.charCodeAt(0) % 5) * 8;
               return (
-                <div 
+                <div
                   key={index}
                   className="bg-black w-0.5"
                   style={{ height: `${height}px` }}
@@ -442,6 +443,7 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
     formDataToSubmit.append('category', formData.category);
     formDataToSubmit.append('isAvailable', formData.isAvailable);
     formDataToSubmit.append('description', formData.description);
+    formDataToSubmit.append('stock', parseInt(formData.stock, 10));
     formDataToSubmit.append('barcode', formData.barcode);
 
     // Add existing image URLs
@@ -490,6 +492,7 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
     if (data.barcode && data.barcode.trim()) {
       if (!validateBarcode(data.barcode.trim())) {
         newErrors.barcode = 'Invalid barcode format. Must be a valid 12 or 13 digit EAN format';
+        if (data.stock === '' || isNaN(data.stock) || parseInt(data.stock, 10) < 0) newErrors.stock = 'Stock must be a non-negative number.';
       }
     }
 
@@ -608,7 +611,7 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
                       ))}
                     </div>
                   </div>
-                  
+
                   {/* Barcode preview in preview mode */}
                   {formData.barcode && (
                     <div className="mt-4 bg-gray-50 rounded-lg p-3 border border-gray-200">
@@ -620,7 +623,7 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
                             {formData.barcode.split('').map((char, index) => {
                               const height = 30 + (char.charCodeAt(0) % 5) * 8;
                               return (
-                                <div 
+                                <div
                                   key={index}
                                   className="bg-black w-0.5"
                                   style={{ height: `${height}px` }}
@@ -822,6 +825,32 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
                     </div>
                   </div>
 
+                  {/* --- INVENTORY SECTION RESTORED AND ENHANCED --- */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                    <div>
+                      <label className="text-sm font-medium flex items-center" htmlFor="stock">
+                        <Box className="h-4 w-4 mr-1" /> Stock Quantity <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      <input
+                        id="stock"
+                        name="stock"
+                        type="number"
+                        min="0"
+                        className={`w-full mt-1 outline-none py-2 px-3 rounded border ${errors.stock ? 'border-red-500' : 'border-gray-300'}`}
+                        onChange={handleInputChange}
+                        value={formData.stock}
+                      />
+                      {errors.stock && <p className="text-red-500 text-xs mt-1">{errors.stock}</p>}
+                    </div>
+                    <div className="flex flex-col justify-center">
+                      <label className="text-sm font-medium">Availability</label>
+                      <div className={`mt-2 flex items-center px-3 py-2 rounded-md text-sm font-medium ${formData.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {formData.isAvailable ? <Check className="h-4 w-4 mr-2" /> : <X className="h-4 w-4 mr-2" />}
+                        {formData.isAvailable ? 'Available' : 'Out of Stock'}
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Enhanced Barcode Field with Generator */}
                   <div className="flex flex-col gap-1 mb-4">
                     <label className="text-sm font-medium flex items-center" htmlFor="barcode">
@@ -849,7 +878,7 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
                         <RefreshCw className={`h-4 w-4 ${isGeneratingBarcode ? 'animate-spin' : ''}`} />
                       </button>
                     </div>
-                    
+
                     <div className="flex gap-2 mt-1">
                       <button
                         type="button"
@@ -871,7 +900,7 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
                         </button>
                       )}
                     </div>
-                    
+
                     {errors.barcode && (
                       <p className="text-red-500 text-xs flex items-center mt-1">
                         <AlertCircle className="h-3 w-3 mr-1" />
@@ -881,7 +910,7 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
                     <p className="text-xs text-gray-500 mt-1">
                       Used for inventory tracking and quick product lookup. For EAN-13 format, use 12-13 digits.
                     </p>
-                    
+
                     {/* Barcode preview */}
                     {showBarcodePreview && formData.barcode && renderBarcodeDisplay()}
                   </div>
@@ -1004,7 +1033,7 @@ const QuickEditModal = ({ product, onClose, onSubmit, isSubmitting }) => {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Barcode Information Box */}
                   <div className="bg-yellow-50 border border-yellow-100 rounded-md p-3 mt-4">
                     <div className="flex items-start">

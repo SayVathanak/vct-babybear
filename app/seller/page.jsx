@@ -530,6 +530,7 @@ const AddProduct = () => {
     const [category, setCategory] = useState('PowderedMilk');
     const [price, setPrice] = useState('');
     const [offerPrice, setOfferPrice] = useState('');
+    const [stock, setStock] = useState('');
     const [barcode, setBarcode] = useState('');
     const [isGeneratingBarcode, setIsGeneratingBarcode] = useState(false);
     const [showBarcodeModal, setShowBarcodeModal] = useState(false);
@@ -544,6 +545,7 @@ const AddProduct = () => {
         setPrice('');
         setOfferPrice('');
         setBarcode('');
+        setStock(''); // --- INVENTORY: Clear stock state
         setShowBarcodeModal(false);
         setShowScanner(false);
         toast.success('Form cleared successfully!');
@@ -645,6 +647,12 @@ const AddProduct = () => {
             return;
         }
 
+        // --- INVENTORY: Validate stock input ---
+        if (stock.trim() === '' || Number(stock) < 0) {
+            toast.error('Please enter a valid stock quantity (0 or more)');
+            return;
+        }
+
         // If offer price is empty, use the regular price
         const finalOfferPrice = offerPrice.trim() === '' ? price : offerPrice;
 
@@ -654,6 +662,7 @@ const AddProduct = () => {
         formData.append('category', category);
         formData.append('price', price);
         formData.append('offerPrice', finalOfferPrice);
+        formData.append('stock', stock); // --- INVENTORY: Append stock to form data
         formData.append('barcode', barcode);
         for (let i = 0; i < files.length; i++) {
             formData.append('images', files[i]);
@@ -866,7 +875,7 @@ const AddProduct = () => {
                         </div>
 
                         {/* Pricing */}
-                        <div className="grid grid-cols-2 gap-4">
+                        {/* <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-gray-700 font-medium mb-2">Regular Price <span className="text-red-500">*</span></label>
                                 <input
@@ -893,6 +902,32 @@ const AddProduct = () => {
                                     placeholder="0.00"
                                     min="0"
                                     step="0.01"
+                                />
+                            </div>
+                        </div> */}
+
+                        {/* --- INVENTORY: Pricing and Stock Section --- */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-gray-700 font-medium mb-2">Regular Price <span className="text-red-500">*</span></label>
+                                <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg" placeholder="0.00" min="0" step="0.01" required />
+                            </div>
+                            <div>
+                                <label className="block text-gray-700 font-medium mb-2">Offer Price</label>
+                                <input type="number" value={offerPrice} onChange={(e) => setOfferPrice(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg" placeholder="0.00" min="0" step="0.01" />
+                            </div>
+                            {/* --- INVENTORY: New Stock Quantity Input --- */}
+                            <div>
+                                <label className="block text-gray-700 font-medium mb-2">Stock Qty <span className="text-red-500">*</span></label>
+                                <input
+                                    type="number"
+                                    value={stock}
+                                    onChange={(e) => setStock(e.target.value)}
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="e.g., 50"
+                                    min="0"
+                                    step="1"
+                                    required
                                 />
                             </div>
                         </div>

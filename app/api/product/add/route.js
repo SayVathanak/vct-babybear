@@ -1,4 +1,4 @@
-// 2. Product creation route: /api/product/create/route.js
+// 2. Product creation route: /api/product/add/route.js
 import { v2 as cloudinary } from "cloudinary";
 import { getAuth } from "@clerk/nextjs/server";
 import authSeller from "@/lib/authSeller";
@@ -31,6 +31,7 @@ export async function POST(request) {
         const price = formData.get('price');
         const offerPrice = formData.get('offerPrice');
         const barcode = formData.get('barcode');
+        const stock = formData.get('stock'); // --- INVENTORY: Get stock from form data
 
         const files = formData.getAll('images');
 
@@ -38,13 +39,22 @@ export async function POST(request) {
             return NextResponse.json({ success: false, message: 'No files uploaded' })
         }
 
-        // Validate required fields
-        if (!name || !price || !offerPrice) {
+        // --- INVENTORY: Validate required fields including stock ---
+        if (!name || !price || !offerPrice || !stock) {
             return NextResponse.json({ 
                 success: false, 
-                message: 'Name, price, and offer price are required' 
+                message: 'Name, price, offer price, and stock are required' 
             })
         }
+        
+        // --- INVENTORY: Validate stock is a non-negative number ---
+        if (isNaN(Number(stock)) || Number(stock) < 0) {
+            return NextResponse.json({
+                success: false,
+                message: 'Stock must be a valid, non-negative number.'
+            });
+        }
+
 
         await connectDB()
 
@@ -90,8 +100,9 @@ export async function POST(request) {
             category: category?.trim() || '',
             price: Number(price),
             offerPrice: Number(offerPrice),
+            stock: Number(stock), // --- INVENTORY: Add stock to the product data ---
             image,
-            isAvailable: true, // Default to available
+            isAvailable: Number(stock) > 0, // --- INVENTORY: Set availability based on stock ---
             date: Date.now()
         }
 
@@ -111,7 +122,6 @@ export async function POST(request) {
     } catch (error) {
         console.error('Product creation error:', error);
         
-        // Handle duplicate barcode error specifically
         if (error.code === 11000 && error.keyPattern?.barcode) {
             return NextResponse.json({ 
                 success: false, 
