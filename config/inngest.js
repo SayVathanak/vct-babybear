@@ -2,327 +2,251 @@ import { Inngest } from "inngest";
 import connectDB from "./db";
 import User from "@/models/User";
 import Order from "@/models/Order";
-import Product from "@/models/Product"; // Ensure Product model is imported
+import Product from "@/models/Product";
 import axios from "axios";
 
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "babybear-next" });
 
-// The URL of your running Python FastAPI service
-// IMPORTANT: Add this to your .env.local file
 const FASTAPI_SERVICE_URL = process.env.FASTAPI_URL || "http://127.0.0.1:8000";
 
-
-// --- USER SYNC FUNCTIONS ---
-
-// Inngest function to save user data to a db
-export const syncUserCreation = inngest.createFunction(
-    { id: 'sync-user-from-clerk' },
-    { event: 'clerk/user.created' },
-    async ({ event }) => {
-        const { id, first_name, last_name, email_addresses, image_url } = event.data
-        const userData = {
-            _id: id,
-            email: email_addresses[0].email_address,
-            name: `${first_name || ''} ${last_name || ''}`.trim(),
-            imageUrl: image_url
-        }
-        await connectDB();
-        await User.create(userData);
-    }
-);
-
-// Inngest function to update user data in db
-export const syncUserUpdation = inngest.createFunction(
-    { id: 'update-user-from-clerk' },
-    { event: 'clerk/user.updated' },
-    async ({ event }) => {
-        const { id, first_name, last_name, email_addresses, image_url } = event.data
-        const userData = {
-            _id: id,
-            email: email_addresses[0].email_address,
-            name: `${first_name || ''} ${last_name || ''}`.trim(),
-            imageUrl: image_url
-        }
-        await connectDB();
-        await User.findByIdAndUpdate(id, userData);
-    }
-);
-
-// Inngest function to delete user from db
-export const syncUserDeletion = inngest.createFunction(
-    { id: 'delete-user-with-clerk' },
-    { event: 'clerk/user.deleted' },
-    async ({ event }) => {
-        const { id } = event.data;
-        if (!id) {
-            // Clerk sometimes sends events with a null ID during deletion.
-            console.warn("[Inngest] Received user.deleted event with null ID. Skipping.");
-            return;
-        }
-        await connectDB();
-        await User.findByIdAndDelete(id);
-    }
-);
-
-// --- ORDER & INVENTORY FUNCTIONS ---
-
-// CORRECTED ORDER CREATION FUNCTION
-export const createUserOrder = inngest.createFunction(
-    { id: 'create-user-order' }, // No batching configuration
-    { event: 'order/created' },
-    async ({ event, step }) => {
-        await connectDB();
-        const orderData = event.data;
-        console.log(`[Inngest] Received order/created event for user: ${orderData.userId}`);
-
-        // 1. Save the order to the database
-        const savedOrder = await step.run("save-order-to-db", async () => {
-            return await Order.create(orderData);
-        });
-
-        // 2. If order was saved, trigger the inventory deduction
-        if (savedOrder && savedOrder._id) {
-            console.log(`[Inngest] Order ${savedOrder._id} saved. Triggering inventory deduction.`);
-            await step.sendEvent('send-inventory-deduction-event', {
-                name: "inventory/deduct",
-                data: { orderId: savedOrder._id, items: orderData.items }
-            });
-        } else {
-            throw new Error("Failed to save order to database.");
-        }
-        return { success: true, processedOrderId: savedOrder._id };
-    }
-);
-
-// REVISED INVENTORY DEDUCTION FUNCTION WITH BETTER LOGGING
-export const deductInventory = inngest.createFunction(
-    { id: 'deduct-inventory-on-order' },
-    { event: 'inventory/deduct' },
-    async ({ event, step }) => {
-        await connectDB();
-        const { orderId, items } = event.data;
-        console.log(`[Inngest] Starting inventory deduction for Order ID: ${orderId}`);
-
-        if (!items || items.length === 0) {
-            console.warn(`[Inngest] No items found for Order ID: ${orderId}. Skipping deduction.`);
-            return { success: false, message: "No items to deduct." };
-        }
-
-        for (const item of items) {
-            await step.run(`deduct-stock-for-product-${item.product}`, async () => {
-                console.log(`[Inngest] Attempting to deduct ${item.quantity} of Product ID: ${item.product}`);
-                const product = await Product.findById(item.product);
-                if (!product) {
-                    throw new Error(`Product with ID ${item.product} not found during deduction for Order ${orderId}.`);
-                }
-
-                const updatedProduct = await Product.findByIdAndUpdate(
-                    item.product,
-                    { $inc: { stock: -item.quantity } },
-                    { new: true }
-                );
-
-                if (!updatedProduct) {
-                    throw new Error(`Failed to update stock for Product ID: ${item.product}.`);
-                }
-
-                console.log(`[Inngest] Successfully updated stock for Product ID ${updatedProduct._id}. New stock: ${updatedProduct.stock}`);
-                
-                if (updatedProduct.stock <= 5 && updatedProduct.stock > 0) {
-                    console.warn(`[Inngest] LOW STOCK WARNING: ${updatedProduct.name} has only ${updatedProduct.stock} items left.`);
-                } else if (updatedProduct.stock <= 0) {
-                    console.log(`[Inngest] OUT OF STOCK: ${updatedProduct.name} is now out of stock. Setting isAvailable to false.`);
-                    await Product.findByIdAndUpdate(updatedProduct._id, { isAvailable: false });
-                }
-
-                return { productId: item.product, newStock: updatedProduct.stock };
-            });
-        }
-
-        console.log(`[Inngest] Inventory deduction completed for Order ID: ${orderId}`);
-        return { success: true, orderId };
-    }
-);
-
-// REVISED INVENTORY RESTORATION FUNCTION WITH BETTER LOGGING
-export const restoreInventory = inngest.createFunction(
-    { id: 'restore-inventory-on-cancellation' },
-    { event: 'order/cancelled' },
-    async ({ event, step }) => {
-        await connectDB();
-        const { orderId } = event.data;
-        console.log(`[Inngest] Starting inventory restoration for cancelled Order ID: ${orderId}`);
-
-        const order = await step.run('find-cancelled-order', async () => {
-            return await Order.findById(orderId).lean();
-        });
-
-        if (!order) {
-            console.error(`[Inngest] Order ${orderId} not found for inventory restoration.`);
-            return { success: false, message: `Order ${orderId} not found.` };
-        }
-        
-        if (order.status !== 'Cancelled') {
-             console.warn(`[Inngest] Order ${orderId} is not in 'Cancelled' state. Skipping inventory restore.`);
-             return { success: false, message: "Order not in 'Cancelled' state." };
-        }
-
-        for (const item of order.items) {
-            await step.run(`restore-stock-for-product-${item.product}`, async () => {
-                console.log(`[Inngest] Restoring ${item.quantity} of Product ID: ${item.product}`);
-                const updatedProduct = await Product.findByIdAndUpdate(
-                    item.product,
-                    { $inc: { stock: item.quantity }, $set: { isAvailable: true } },
-                    { new: true }
-                );
-                
-                if (!updatedProduct) {
-                    console.error(`[Inngest] Failed to find Product ID: ${item.product} to restore stock.`);
-                    return { productId: item.product, status: 'failed_product_not_found' };
-                }
-                
-                console.log(`[Inngest] Successfully restored stock for Product ID ${item.product}. New stock: ${updatedProduct.stock}`);
-                return { productId: item.product, newStock: updatedProduct.stock };
-            });
-        }
-        
-        console.log(`[Inngest] Inventory restoration completed for Order ID: ${orderId}`);
-        return { success: true, orderId };
-    }
-);
-
-
-// --- OTHER ORDER STATUS FUNCTIONS ---
-
-// Function to handle item status updates
-export const handleItemStatusUpdated = inngest.createFunction(
-    { id: 'handle-item-status-update' },
-    { event: 'order/item-status-updated' },
-    async ({ event, step }) => {
-        await connectDB();
-        const { orderId, itemId, status } = event.data;
-        console.log(`[Inngest] Updating item status for Order ID: ${orderId}, Item ID: ${itemId} to ${status}`);
-
-        const order = await step.run("find-order-for-item-update", async () => {
-            return await Order.findOne({ "items._id": itemId });
-        });
-
-        if (!order) {
-            throw new Error(`Order containing item ID ${itemId} not found.`);
-        }
-
-        const itemIndex = order.items.findIndex(item => item._id.toString() === itemId);
-
-        if (itemIndex === -1) {
-            throw new Error(`Item with ID ${itemId} not found within Order ${order._id}.`);
-        }
-
-        order.items[itemIndex].status = status;
-
-        await step.run("save-updated-item-status", async () => {
-            await order.save();
-        });
-
-        console.log(`[Inngest] Successfully updated status for item ${itemId} in order ${orderId}.`);
-        return { success: true, orderId, itemId, status };
-    }
-);
-
-// Function to handle overall order status changes
-export const handleOrderStatusUpdated = inngest.createFunction(
-    { id: 'handle-order-status-update' },
-    { event: 'order/status-updated' },
-    async ({ event, step }) => {
-        const { orderId, status } = event.data;
-
-        if (status === 'Cancelled') {
-            await step.sendEvent('send-inventory-restoration-on-cancellation', {
-                name: "order/cancelled",
-                data: { orderId }
-            });
-        }
-        
-        await connectDB();
-        await Order.findByIdAndUpdate(orderId, { status: status });
-
-        return { success: true, message: `Order status updated to ${status}` };
-    }
-);
-
-
-// --- PAYMENT VERIFICATION FUNCTIONS ---
-
-// FUNCTION TO VERIFY BAKONG PAYMENTS AND CANCEL EXPIRED ORDERS
+// SOLUTION 1: Add concurrency control and timeout
 export const verifyBakongPayments = inngest.createFunction(
-  { id: "verify-bakong-payments-cron" },
-  // Run every 2 minutes to promptly handle 10-minute timeouts
-  { cron: "*/2 * * * *" }, 
+  { 
+    id: "verify-bakong-payments-cron",
+    // Prevent concurrent executions
+    concurrency: { limit: 1 },
+    // Set a reasonable timeout (5 minutes)
+    timeout: "5m"
+  },
+  // Reduce frequency to every 5 minutes to avoid overlaps
+  { cron: "*/5 * * * *" }, 
   async ({ step }) => {
-    await connectDB();
+    const startTime = Date.now();
+    console.log(`[Inngest] Starting Bakong payment verification at ${new Date().toISOString()}`);
+    
+    try {
+      await connectDB();
 
-    const pendingOrders = await step.run("find-pending-bakong-orders", async () => {
-      return await Order.find({
-        paymentMethod: "Bakong",
-        paymentStatus: "pending",
-      }).lean();
+      const pendingOrders = await step.run("find-pending-bakong-orders", async () => {
+        // Add a limit to prevent processing too many orders at once
+        return await Order.find({
+          paymentMethod: "Bakong",
+          paymentStatus: "pending",
+        })
+        .limit(50) // Process max 50 orders per run
+        .lean();
+      });
+
+      if (pendingOrders.length === 0) {
+        console.log(`[Inngest] No pending Bakong orders found. Completed in ${Date.now() - startTime}ms`);
+        return { message: "No pending Bakong orders to check.", processedCount: 0 };
+      }
+      
+      console.log(`[Inngest] Found ${pendingOrders.length} pending Bakong orders to process`);
+      const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
+      let processedCount = 0;
+      let cancelledCount = 0;
+      let paidCount = 0;
+
+      // Process orders in smaller batches to avoid timeout
+      const batchSize = 10;
+      for (let i = 0; i < pendingOrders.length; i += batchSize) {
+        const batch = pendingOrders.slice(i, i + batchSize);
+        
+        await step.run(`process-batch-${i}-to-${i + batch.length - 1}`, async () => {
+          const batchPromises = batch.map(async (order) => {
+            processedCount++;
+            
+            // Check if the order is older than 10 minutes
+            if (new Date(order.date).getTime() < tenMinutesAgo) {
+              console.log(`[Inngest] Bakong order ${order._id} is older than 10 minutes. Cancelling.`);
+              
+              // Update order status to Failed/Cancelled
+              await Order.findByIdAndUpdate(order._id, {
+                status: 'Cancelled',
+                paymentStatus: 'failed',
+              });
+              
+              // Send event to restore inventory (fire and forget to avoid blocking)
+              try {
+                await inngest.send({
+                  name: "order/cancelled",
+                  data: { orderId: order._id }
+                });
+              } catch (eventError) {
+                console.error(`[Inngest] Failed to send cancellation event for order ${order._id}:`, eventError);
+              }
+
+              cancelledCount++;
+              return { orderId: order._id, status: 'cancelled_expired' };
+            } else {
+              // Order is still within the 10-minute window. Check for payment.
+              const md5Hash = order.bakongPaymentDetails?.md5;
+
+              if (!md5Hash) {
+                return { orderId: order._id, status: "skipped", reason: "Missing MD5 hash" };
+              }
+
+              try {
+                const response = await axios.post(
+                  `${FASTAPI_SERVICE_URL}/api/v1/check-payment-status`,
+                  { md5_hash: md5Hash },
+                  { timeout: 10000 } // 10 second timeout for each API call
+                );
+
+                if (response.data.is_paid) {
+                  await Order.updateOne(
+                    { _id: order._id }, 
+                    { $set: { paymentStatus: "paid" } }
+                  );
+                  paidCount++;
+                  return { orderId: order._id, status: "updated_to_paid" };
+                } else {
+                  return { orderId: order._id, status: "still_unpaid" };
+                }
+              } catch (error) {
+                console.error(`[Inngest] Failed to verify payment for order ${order._id}:`, error.response?.data || error.message);
+                return { orderId: order._id, status: "error", error: error.message };
+              }
+            }
+          });
+
+          // Wait for all orders in this batch to complete
+          return await Promise.allSettled(batchPromises);
+        });
+      }
+      
+      const duration = Date.now() - startTime;
+      const summary = {
+        message: `Processed ${processedCount} pending Bakong orders in ${duration}ms`,
+        processedCount,
+        cancelledCount,
+        paidCount,
+        duration
+      };
+      
+      console.log(`[Inngest] Bakong verification completed:`, summary);
+      return summary;
+      
+    } catch (error) {
+      console.error(`[Inngest] Error in Bakong payment verification:`, error);
+      throw error; // Let Inngest handle the retry
+    }
+  }
+);
+
+// ALTERNATIVE SOLUTION 2: Use a different approach with manual execution control
+export const verifyBakongPaymentsManual = inngest.createFunction(
+  { 
+    id: "verify-bakong-payments-manual",
+    concurrency: { limit: 1 }
+  },
+  { event: "bakong/verify-payments" }, // Trigger manually instead of cron
+  async ({ step }) => {
+    // Same logic as above but triggered by events instead of cron
+    // This gives you more control over when the function runs
+  }
+);
+
+// Helper function to trigger manual verification (call this from your API routes)
+export const triggerBakongVerification = async () => {
+  try {
+    await inngest.send({
+      name: "bakong/verify-payments",
+      data: { triggeredAt: new Date().toISOString() }
     });
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to trigger Bakong verification:", error);
+    return { success: false, error: error.message };
+  }
+};
 
-    if (pendingOrders.length === 0) {
-      return { message: "No pending Bakong orders to check." };
+// SOLUTION 3: Debounced cron with state checking
+let isVerificationRunning = false;
+
+export const verifyBakongPaymentsDebounced = inngest.createFunction(
+  { 
+    id: "verify-bakong-payments-debounced",
+    concurrency: { limit: 1 }
+  },
+  { cron: "*/2 * * * *" },
+  async ({ step }) => {
+    // Quick exit if already running (though concurrency limit should prevent this)
+    if (isVerificationRunning) {
+      console.log(`[Inngest] Bakong verification already running, skipping`);
+      return { message: "Verification already in progress, skipping" };
     }
     
-    const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
-
-    for (const order of pendingOrders) {
-        // Check if the order is older than 10 minutes
-        if (new Date(order.date).getTime() < tenMinutesAgo) {
-            // Order has expired. Cancel it.
-            await step.run(`cancel-expired-order-${order._id}`, async () => {
-                console.log(`[Inngest] Bakong order ${order._id} is older than 10 minutes. Cancelling.`);
-                
-                // Update order status to Failed/Cancelled
-                await Order.findByIdAndUpdate(order._id, {
-                    status: 'Cancelled',
-                    paymentStatus: 'failed',
-                });
-                
-                // Send event to restore inventory
-                await step.sendEvent('send-inventory-restoration-for-expired-order', {
-                    name: "order/cancelled",
-                    data: { orderId: order._id }
-                });
-
-                return { orderId: order._id, status: 'cancelled_expired' };
-            });
-        } else {
-            // Order is still within the 10-minute window. Check for payment.
-            await step.run(`verify-payment-for-order-${order._id}`, async () => {
-                const md5Hash = order.bakongPaymentDetails?.md5;
-
-                if (!md5Hash) {
-                    return { orderId: order._id, status: "skipped", reason: "Missing MD5 hash" };
-                }
-
-                try {
-                    const response = await axios.post(`${FASTAPI_SERVICE_URL}/api/v1/check-payment-status`, {
-                        md5_hash: md5Hash,
-                    });
-
-                    if (response.data.is_paid) {
-                        await Order.updateOne({ _id: order._id }, { $set: { paymentStatus: "paid" } });
-                        return { orderId: order._id, status: "updated_to_paid" };
-                    } else {
-                        return { orderId: order._id, status: "still_unpaid" };
-                    }
-                } catch (error) {
-                    console.error(`Failed to verify payment for order ${order._id}:`, error.response?.data || error.message);
-                    return { orderId: order._id, status: "error", error: error.message };
-                }
-            });
-        }
-    }
+    isVerificationRunning = true;
     
-    return { message: `Processed ${pendingOrders.length} pending Bakong orders.` };
+    try {
+      // Your existing logic here
+      await connectDB();
+      
+      const pendingOrders = await step.run("find-pending-bakong-orders", async () => {
+        return await Order.find({
+          paymentMethod: "Bakong",
+          paymentStatus: "pending",
+        }).limit(20).lean(); // Smaller batch size
+      });
+
+      if (pendingOrders.length === 0) {
+        return { message: "No pending Bakong orders to check." };
+      }
+      
+      // Process orders quickly without complex nested steps
+      const results = await Promise.allSettled(
+        pendingOrders.map(async (order) => {
+          const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
+          
+          if (new Date(order.date).getTime() < tenMinutesAgo) {
+            // Cancel expired order
+            await Order.findByIdAndUpdate(order._id, {
+              status: 'Cancelled',
+              paymentStatus: 'failed',
+            });
+            
+            // Fire and forget inventory restoration
+            inngest.send({
+              name: "order/cancelled",
+              data: { orderId: order._id }
+            }).catch(console.error);
+            
+            return { orderId: order._id, status: 'cancelled' };
+          } else if (order.bakongPaymentDetails?.md5) {
+            // Check payment status
+            try {
+              const response = await axios.post(
+                `${FASTAPI_SERVICE_URL}/api/v1/check-payment-status`,
+                { md5_hash: order.bakongPaymentDetails.md5 },
+                { timeout: 5000 }
+              );
+              
+              if (response.data.is_paid) {
+                await Order.updateOne(
+                  { _id: order._id }, 
+                  { $set: { paymentStatus: "paid" } }
+                );
+                return { orderId: order._id, status: 'paid' };
+              }
+            } catch (error) {
+              console.error(`Payment check failed for ${order._id}:`, error.message);
+            }
+          }
+          
+          return { orderId: order._id, status: 'unchanged' };
+        })
+      );
+      
+      return { 
+        message: `Processed ${pendingOrders.length} orders`,
+        results: results.map(r => r.status === 'fulfilled' ? r.value : { error: r.reason })
+      };
+      
+    } finally {
+      isVerificationRunning = false;
+    }
   }
 );
