@@ -25,7 +25,7 @@ import {
 import QRCode from "qrcode";
 
 // A new modal component to display the Bakong QR Code with payment status
-const BakongQRModal = ({ show, onClose, qrString, isAwaitingPayment, isPlacingOrder }) => {
+const BakongQRModal = ({ show, onClose, qrString, deeplink, isAwaitingPayment, isPlacingOrder }) => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -76,6 +76,18 @@ const BakongQRModal = ({ show, onClose, qrString, isAwaitingPayment, isPlacingOr
 
 
         <div className="space-y-3 mt-4">
+          {deeplink && (
+            <a
+              href={deeplink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full bg-yellow-400 text-black py-3 rounded-md hover:bg-yellow-500 transition-colors text-sm font-bold flex items-center justify-center disabled:opacity-50"
+              disabled={isPlacingOrder}
+            >
+              <img src="https://www.bakong.nbc.gov.kh/bakong-logo.svg" alt="Bakong Logo" className="h-5 w-5 mr-2" />
+              Pay with Bakong App
+            </a>
+          )}
           <button
             onClick={handleSaveImage}
             className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium disabled:bg-blue-300"
@@ -123,6 +135,7 @@ const OrderSummary = () => {
   // Bakong Payment State
   const [showBakongModal, setShowBakongModal] = useState(false);
   const [bakongQrString, setBakongQrString] = useState("");
+  const [bakongDeeplink, setBakongDeeplink] = useState(null);
   const [isGeneratingQR, setIsGeneratingQR] = useState(false);
   const [isAwaitingPayment, setIsAwaitingPayment] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -313,15 +326,20 @@ const OrderSummary = () => {
         ? `https://${process.env.NEXT_PUBLIC_FASTAPI_URL}`
         : "http://127.0.0.1:8000";
       const fastApiUrl = `${baseUrl}/api/v1/generate-qr`;
+      
       const { data } = await axios.post(fastApiUrl, {
         amount: total,
-        bill_number: billNumber
+        bill_number: billNumber,
+        generate_deeplink: true, // Request deeplink generation
       });
+
       if (data.qr_string && data.md5_hash) {
         setBakongQrString(data.qr_string);
+        setBakongDeeplink(data.deeplink); // Store the received deeplink
         bakongDetailsRef.current = {
           md5: data.md5_hash,
-          qrString: data.qr_string
+          qrString: data.qr_string,
+          deeplink: data.deeplink, // Also save deeplink to the ref
         };
         setShowBakongModal(true);
         setIsAwaitingPayment(true);
@@ -341,6 +359,7 @@ const OrderSummary = () => {
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     setShowBakongModal(false);
     setBakongQrString("");
+    setBakongDeeplink(null); // Reset deeplink state
     setIsAwaitingPayment(false);
     setIsPlacingOrder(false);
     bakongDetailsRef.current = null;
@@ -406,7 +425,13 @@ const OrderSummary = () => {
 
   return (
     <>
-      <BakongQRModal show={showBakongModal} onClose={resetBakongState} qrString={bakongQrString} isAwaitingPayment={isAwaitingPayment} isPlacingOrder={isPlacingOrder} />
+      <BakongQRModal 
+        show={showBakongModal} 
+        onClose={resetBakongState} 
+        qrString={bakongQrString} 
+        deeplink={bakongDeeplink}
+        isAwaitingPayment={isAwaitingPayment} 
+        isPlacingOrder={isPlacingOrder} />
       <div className="w-full md:w-96 border border-gray-200 bg-gray-50 shadow-sm p-6 sticky top-24 h-fit">
         <h2 className="text-xl text-gray-800 mb-6 uppercase font-medium">Order Summary</h2>
 
