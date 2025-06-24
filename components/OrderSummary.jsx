@@ -84,7 +84,7 @@ const BakongQRModal = ({ show, onClose, qrString, deeplink, isAwaitingPayment, i
               href={deeplink}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full bg-red-600 text-black py-3 rounded-md hover:bg-red-700 transition-colors text-sm font-bold flex items-center justify-center disabled:opacity-50"
+              className="w-full bg-red-600 text-white py-3 rounded-md hover:bg-red-700 transition-colors text-sm font-bold flex items-center justify-center disabled:opacity-50"
               disabled={isPlacingOrder}
             >
               {/* <img src="https://www.bakong.nbc.gov.kh/bakong-logo.svg" alt="Bakong Logo" className="h-5 w-5 mr-2" /> */}
