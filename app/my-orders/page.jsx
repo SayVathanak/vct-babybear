@@ -127,7 +127,7 @@ const MyOrders = () => {
         if (s === "payment rejected") return "bg-pink-100 text-pink-800";
         return "bg-gray-100 text-gray-800";
     }, []);
-    
+
     // Using user's getStatusIcon for more comprehensive status handling
     const getStatusIcon = useCallback((status) => {
         switch (status?.toLowerCase()) {
@@ -150,7 +150,7 @@ const MyOrders = () => {
         if (s === "na") return "text-gray-700";
         return "text-gray-700";
     }, []);
-    
+
     const getEstimatedDeliveryDate = useCallback((orderDate, status) => {
         const date = new Date(orderDate);
         let daysToAdd = 3;
@@ -327,7 +327,7 @@ const MyOrders = () => {
                                 {orders.length > 0 ? `${filteredOrders.length} of ${orders.length} orders` : "No orders found"}
                             </p>
                         </div>
-                        
+
                         {!loading && orders.length > 0 && (
                             <div className="flex flex-col sm:flex-row gap-3 mt-4 md:mt-0">
                                 <div className="relative">
@@ -341,7 +341,7 @@ const MyOrders = () => {
                                         aria-label="Search orders"
                                     />
                                 </div>
-                                
+
                                 <div className="flex gap-2">
                                     <div className="relative">
                                         <select
@@ -361,7 +361,7 @@ const MyOrders = () => {
                                         </select>
                                         <Filter className="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
                                     </div>
-                                    
+
                                     <div className="relative">
                                         <select
                                             className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm"
@@ -410,7 +410,7 @@ const MyOrders = () => {
                                     <div
                                         className="p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
                                         onClick={() => toggleOrderExpansion(order._id)}
-                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleOrderExpansion(order._id); }}}
+                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleOrderExpansion(order._id); } }}
                                         tabIndex={0}
                                         role="button"
                                         aria-expanded={expandedOrder === order._id}
@@ -433,7 +433,7 @@ const MyOrders = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                        
+
                                         <div className="flex items-center justify-between md:justify-end w-full md:w-auto">
                                             <div className="flex items-center space-x-2 sm:space-x-4"> {/* Adjusted spacing for smaller screens */}
                                                 <div className="text-right">
@@ -443,7 +443,7 @@ const MyOrders = () => {
                                                 <div className={`flex items-center px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(order.status)}`}> {/* Using user's getStatusColor */}
                                                     {getStatusIcon(order.status)} {/* Using user's getStatusIcon */}
                                                     <span className="ml-1.5 hidden sm:inline">{order.status?.replace(/_/g, ' ') || "N/A"}</span> {/* Show full status text on sm+ */}
-                                                    <span className="ml-1.5 sm:hidden">{(order.status?.replace(/_/g, ' ') || "N/A").substring(0,7)}..</span> {/* Abbreviate on xs */}
+                                                    <span className="ml-1.5 sm:hidden">{(order.status?.replace(/_/g, ' ') || "N/A").substring(0, 7)}..</span> {/* Abbreviate on xs */}
                                                 </div>
                                             </div>
                                             <div className="ml-3 sm:ml-4"> {/* Adjusted spacing */}
@@ -479,7 +479,7 @@ const MyOrders = () => {
                                                                 <div className="flex justify-between text-sm text-gray-600"><span>Delivery Fee:</span><span className="font-medium text-gray-800">{order.deliveryFee === 0 ? "Free" : `${currency}${(order.deliveryFee || 0).toFixed(2)}`}</span></div>
                                                             )}
                                                             <div className="flex justify-between text-base font-semibold text-gray-900 pt-2 border-t border-gray-200 mt-2"><span>Total:</span><span>{currency}{(order.total || order.amount || 0).toFixed(2)}</span></div>
-                                                            
+
                                                             <div className="mt-2 border-t border-gray-200 pt-2 space-y-1">
                                                                 <div className="flex justify-between text-sm">
                                                                     <span className="text-gray-600">Payment Method:</span>
@@ -533,14 +533,20 @@ const MyOrders = () => {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                
+
                                                 {/* Invoice Generator - Placed at the bottom of the expanded view, spanning if needed or as a separate card */}
                                                 <div className="lg:col-span-2 mt-2"> {/* Spans two columns on large screens */}
-                                                     <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+                                                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
                                                         <FileText className="h-5 w-5 mr-2 text-sky-600" /> Invoice
                                                     </h3>
                                                     <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-                                                        <InvoiceGenerator order={order} currency={currency} user={user} />
+                                                        {/* <InvoiceGenerator order={order} currency={currency} user={user} /> */}
+                                                        <InvoiceGenerator
+                                                            order={order}
+                                                            currency={currency}
+                                                            user={user}
+                                                            companyLogo={assets.logo_2}
+                                                        />
                                                     </div>
                                                 </div>
                                             </div>
