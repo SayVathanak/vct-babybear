@@ -12,6 +12,7 @@ import {
     Package, Search, Filter, Calendar, Phone, MapPin, ChevronDown, ChevronUp,
     FileText, Truck, CheckCircle, Clock, XCircle, AlertCircle, RefreshCw, Eye
 } from "lucide-react";
+import { assets } from "@/assets/assets";
 
 // Assuming assets are available at this path or you have an assets object
 // import { assets } from "@/assets/assets"; // If you have an assets object like in reference
