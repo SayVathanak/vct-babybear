@@ -57,25 +57,33 @@ const InvoiceGenerator = ({ order, currency, user, companyLogo }) => {
                     -moz-osx-font-smoothing: grayscale;
                     text-rendering: optimizeLegibility;
                 ">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; margin-bottom: 30px;">
-                        <div style="display: flex; align-items: center;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; margin-bottom: 30px; border-bottom: 1px solid #eee;">
+                        
+                        <!-- Left Column - Company Info -->
+                        <div style="text-align: left; width: 30%; flex: 0 0 30%;">
+                            <div style="font-size: 24px; font-weight: bold;">BABY Bear</div>
+                            <div style="font-size: 14px; color: #555;">Serve Baby's Need</div>
+                        </div>
+
+                        <!-- Center Column - Logo -->
+                        <div style="text-align: center; width: 40%; flex: 0 0 40%; display: flex; justify-content: center; align-items: flex-start;">
                             ${companyLogo ? `
-                                <img src="${assets.logo_2}" alt="Company Logo" style="
-                                    width: 60px;
-                                    height: 60px;
-                                    margin-right: 16px;
+                                <img src="${companyLogo.src}" alt="Company Logo" style="
+                                    width: 180px;
+                                    height: 180px;
                                     object-fit: contain;
                                 " />
                             ` : ''}
-                            <h1 style="font-size: 36px; font-weight: 700; margin: 0; color: #000;">INVOICE</h1>
                         </div>
-                        <div style="text-align: right;">
-                             <div style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Baby Bear (VCT)</div>
-                             <div style="font-size: 14px; line-height: 1.4;">
-                                 078 333 929<br>
-                                 St 230, Sangkat Beoung Salang,<br>
-                                 Khan Toul Kork, Phnom Penh<br>
-                             </div>
+
+                        <!-- Right Column - Invoice Title & Contact -->
+                        <div style="text-align: right; width: 30%; flex: 0 0 30%;">
+                            <h1 style="font-size: 48px; font-weight: 700; margin: 0 0 20px 0; color: #000;">INVOICE</h1>
+                            <div style="font-size: 14px; line-height: 1.4;">
+                                078 333 929<br>
+                                St 230, Beoung Salang,<br>
+                                Toul Kork, Phnom Penh<br>
+                            </div>
                         </div>
                     </div>
 
@@ -95,16 +103,13 @@ const InvoiceGenerator = ({ order, currency, user, companyLogo }) => {
                             <div style="margin-bottom: 4px;">
                                 ${formatDate(order.date)}
                             </div>
-                            <div style="font-size: 12px; color: #666;">
-                                Created: ${invoiceTime}
-                            </div>
                         </div>
                     </div>
 
                     <div style="margin-bottom: 32px;">
                         <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                             <thead>
-                                <tr style="background-color: #f1f3f4;">
+                                <tr>
                                     <th style="border-bottom: 2px solid #000; padding: 12px 16px; text-align: left; font-weight: 700;">Product</th>
                                     <th style="border-bottom: 2px solid #000; padding: 12px 16px; text-align: right; font-weight: 700;">Quantity</th>
                                     <th style="border-bottom: 2px solid #000; padding: 12px 16px; text-align: right; font-weight: 700;">Unit Price</th>
@@ -116,8 +121,8 @@ const InvoiceGenerator = ({ order, currency, user, companyLogo }) => {
                                     <tr>
                                         <td style="border-bottom: 1px solid #ddd; padding: 12px 16px; vertical-align: top; font-weight: 600;">${item.product.name}</td>
                                         <td style="border-bottom: 1px solid #ddd; padding: 12px 16px; text-align: right;">${item.quantity}</td>
-                                        <td style="border-bottom: 1px solid #ddd; padding: 12px 16px; text-align: right;">${currency}${item.product.offerPrice.toFixed(2)}</td>
-                                        <td style="border-bottom: 1px solid #ddd; padding: 12px 16px; text-align: right; font-weight: 700;">${currency}${(item.product.offerPrice * item.quantity).toFixed(2)}</td>
+                                        <td style="border-bottom: 1px solid #ddd; padding: 12px 16px; text-align: right;">${currency}${(item.product.offerPrice || 0).toFixed(2)}</td>
+                                        <td style="border-bottom: 1px solid #ddd; padding: 12px 16px; text-align: right; font-weight: 700;">${currency}${((item.product.offerPrice || 0) * item.quantity).toFixed(2)}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -149,7 +154,7 @@ const InvoiceGenerator = ({ order, currency, user, companyLogo }) => {
                         </div>
                     </div>
 
-                    <div style="border-top: 1px solid #d1d5db; margin-top: 40px; padding-top: 24px; text-align: center; font-size: 13px; color: #6b7280;">
+                    <div style="position: absolute; bottom: 40px; left: 40px; right: 40px; border-top: 1px solid #d1d5db; padding-top: 24px; text-align: center; font-size: 13px; color: #6b7280;">
                         <p style="margin: 0; font-weight: 600;">Thank you for your Business!</p>
                     </div>
                 </div>
@@ -166,7 +171,7 @@ const InvoiceGenerator = ({ order, currency, user, companyLogo }) => {
                 z-index: -1000;
                 pointer-events: none;
             `;
-            
+
             document.body.appendChild(container);
             const element = container.firstElementChild;
 

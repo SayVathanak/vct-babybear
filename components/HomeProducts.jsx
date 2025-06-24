@@ -13,6 +13,7 @@ import {
   CiFilter,
   CiGrid41,
 } from "react-icons/ci";
+import { AiOutlineLoading } from "react-icons/ai";
 import { FiChevronRight } from "react-icons/fi";
 
 // Enhanced debounce utility
@@ -251,7 +252,7 @@ const ProductScrollSection = ({
                       rotate: { duration: 2, repeat: Infinity, ease: "linear" }
                     }}
                   >
-                    <CiGrid41 className="text-4xl md:text-6xl text-gray-300 mb-3 md:mb-4" />
+                    <AiOutlineLoading className="text-4xl md:text-6xl text-gray-300 mb-3 md:mb-4" />
                   </motion.div>
                   <motion.p 
                     className="text-gray-500 text-base md:text-lg"
@@ -259,7 +260,7 @@ const ProductScrollSection = ({
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3 }}
                   >
-                    No products available
+                    Loading Products...
                   </motion.p>
                 </motion.div>
               )}
@@ -492,7 +493,7 @@ const HomeProducts = () => {
                   rotate: { duration: 2, repeat: Infinity, ease: "linear" }
                 }}
               >
-                <CiGrid41 className="text-4xl md:text-6xl text-gray-300 mb-3 md:mb-4" />
+                <AiOutlineLoading className="text-4xl md:text-6xl text-gray-300 mb-3 md:mb-4" />
               </motion.div>
               <motion.p 
                 className="text-gray-500 text-base md:text-lg text-center"
@@ -500,7 +501,7 @@ const HomeProducts = () => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                {products ? 'No products found' : 'Loading products...'}
+                {products ? 'Loading Products' : 'Loading products...'}
               </motion.p>
             </motion.div>
           )}

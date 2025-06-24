@@ -5,6 +5,7 @@ import Order from "@/models/Order";
 import { getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import connectDB from "@/config/db";
+import mongoose from "mongoose";
 
 export async function POST(request) {
   try {
@@ -29,38 +30,75 @@ export async function POST(request) {
     } = requestData;
 
     if (!address || !items || items.length === 0 || !paymentMethod) {
-      return NextResponse.json({ success: false, message: "Invalid data: Address, items, and payment method are required." }, { status: 400 });
+      return NextResponse.json({ 
+        success: false, 
+        message: "Invalid data: Address, items, and payment method are required." 
+      }, { status: 400 });
     }
     
     await connectDB();
 
-    // --- INVENTORY VALIDATION ---
+    // --- ENHANCED INVENTORY VALIDATION ---
+    const stockValidationErrors = [];
+    const validatedItems = [];
+    
     for (const item of items) {
-        const productDoc = await Product.findById(item.product).lean();
-        if (!productDoc) {
-            return NextResponse.json({ success: false, message: `Product with ID ${item.product} not found.` }, { status: 404 });
-        }
-        if (productDoc.stock < item.quantity) {
-            return NextResponse.json({ success: false, message: `Not enough stock for ${productDoc.name}. Only ${productDoc.stock} left.` }, { status: 400 });
-        }
+      const productDoc = await Product.findById(item.product).lean();
+      
+      if (!productDoc) {
+        stockValidationErrors.push(`Product with ID ${item.product} not found`);
+        continue;
+      }
+      
+      if (!productDoc.isAvailable) {
+        stockValidationErrors.push(`${productDoc.name} is currently unavailable`);
+        continue;
+      }
+      
+      if (productDoc.stock < item.quantity) {
+        stockValidationErrors.push(
+          `${productDoc.name} only has ${productDoc.stock} items in stock (requested ${item.quantity})`
+        );
+        continue;
+      }
+      
+      validatedItems.push({
+        ...item,
+        productName: productDoc.name,
+        availableStock: productDoc.stock,
+        price: productDoc.offerPrice || productDoc.price
+      });
     }
-    // --- END INVENTORY VALIDATION ---
 
+    if (stockValidationErrors.length > 0) {
+      return NextResponse.json({
+        success: false,
+        message: 'Stock validation failed',
+        errors: stockValidationErrors
+      }, { status: 400 });
+    }
+    // --- END ENHANCED INVENTORY VALIDATION ---
+
+    // Payment method specific validations
     if (paymentMethod === "ABA" && !paymentTransactionImage) {
-        return NextResponse.json({ success: false, message: "Transaction proof is required for ABA payment." }, { status: 400 });
+      return NextResponse.json({ 
+        success: false, 
+        message: "Transaction proof is required for ABA payment." 
+      }, { status: 400 });
     }
+    
     if (paymentMethod === "Bakong" && (!bakongPaymentDetails || !bakongPaymentDetails.md5)) {
-        return NextResponse.json({ success: false, message: "Bakong payment details (MD5 hash) are required." }, { status: 400 });
+      return NextResponse.json({ 
+        success: false, 
+        message: "Bakong payment details (MD5 hash) are required." 
+      }, { status: 400 });
     }
 
+    // Calculate subtotal using validated items
     const calculatedSubtotal = Number(
-      (await items.reduce(async (accPromise, item) => {
-        const acc = await accPromise;
-        const productDoc = await Product.findById(item.product).lean();
-        // We already checked for the product existence, so no need to re-validate here.
-        const price = productDoc.offerPrice || productDoc.price;
-        return acc + price * item.quantity;
-      }, Promise.resolve(0))).toFixed(2)
+      validatedItems.reduce((acc, item) => {
+        return acc + item.price * item.quantity;
+      }, 0).toFixed(2)
     );
 
     const itemCount = items.reduce((count, item) => count + item.quantity, 0);
@@ -70,7 +108,7 @@ export async function POST(request) {
     const subtotal = requestSubtotal !== undefined ? Number(requestSubtotal.toFixed(2)) : calculatedSubtotal;
     const deliveryFee = requestDeliveryFee !== undefined ? Number(requestDeliveryFee.toFixed(2)) : calculatedDeliveryFee;
 
-     if (requestPromoDetails) {
+    if (requestPromoDetails) {
       promoCodeDetails = {
         id: requestPromoDetails.id,
         code: requestPromoDetails.code,
@@ -95,10 +133,21 @@ export async function POST(request) {
       orderPaymentStatus = 'pending';
     }
 
-    const finalOrderDataForEvent = {
+    // Start transaction to ensure atomicity
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Create order in database first (for immediate order ID generation)
+      const order = new Order({
         userId,
         address,
-        items,
+        items: validatedItems.map(item => ({
+          product: item.product,
+          quantity: item.quantity,
+          productName: item.productName,
+          price: item.price
+        })),
         subtotal,
         deliveryFee,
         discount,
@@ -111,29 +160,80 @@ export async function POST(request) {
         paymentStatus: orderPaymentStatus,
         paymentConfirmationStatus: orderPaymentConfirmationStatus,
         ...(paymentMethod === 'Bakong' && { bakongPaymentDetails })
-    };
-    
-    // The order data is validated, now send it to Inngest for processing
-    await inngest.send({
-      name: "order/created",
-      data: finalOrderDataForEvent 
-    });
+      });
 
-    // Clear user's cart after successful order submission
-    const userDoc = await User.findById(userId);
-    if (userDoc) {
+      await order.save({ session });
+
+      // Update stock for each product
+      for (const item of validatedItems) {
+        await Product.findByIdAndUpdate(
+          item.product,
+          { $inc: { stock: -item.quantity } },
+          { session }
+        );
+      }
+
+      // Clear user's cart after successful order creation
+      const userDoc = await User.findById(userId);
+      if (userDoc) {
         userDoc.cartItems = {};
-        await userDoc.save();
-    }
+        await userDoc.save({ session });
+      }
 
-    return NextResponse.json({
-      success: true,
-      message: "Order Placed successfully. Awaiting processing.",
-      orderData: finalOrderDataForEvent
-    });
+      // Commit the transaction
+      await session.commitTransaction();
+      session.endSession();
+
+      // Prepare data for Inngest event
+      const finalOrderDataForEvent = {
+        orderId: order._id,
+        userId,
+        address,
+        items: validatedItems.map(item => ({
+          product: item.product,
+          quantity: item.quantity,
+          productName: item.productName,
+          price: item.price
+        })),
+        subtotal,
+        deliveryFee,
+        discount,
+        promoCode: promoCodeDetails,
+        amount: finalAmount,
+        date: order.date,
+        status: order.status,
+        paymentMethod,
+        paymentTransactionImage: order.paymentTransactionImage,
+        paymentStatus: orderPaymentStatus,
+        paymentConfirmationStatus: orderPaymentConfirmationStatus,
+        ...(paymentMethod === 'Bakong' && { bakongPaymentDetails })
+      };
+      
+      // Send to Inngest for additional processing (notifications, etc.)
+      await inngest.send({
+        name: "order/created",
+        data: finalOrderDataForEvent 
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "Order placed successfully",
+        orderId: order._id,
+        orderData: finalOrderDataForEvent
+      });
+
+    } catch (transactionError) {
+      // Rollback transaction on error
+      await session.abortTransaction();
+      session.endSession();
+      throw transactionError;
+    }
 
   } catch (error) {
     console.error("Error in order creation:", error);
-    return NextResponse.json({ success: false, message: error.message || "Failed to create order." }, { status: 500 });
+    return NextResponse.json({ 
+      success: false, 
+      message: error.message || "Failed to create order." 
+    }, { status: 500 });
   }
 }

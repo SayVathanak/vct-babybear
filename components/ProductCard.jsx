@@ -17,14 +17,18 @@ const ProductCard = ({ product }) => {
         cartItems,
         setShowCartPanel,
         isAddingToCart,
+        increaseQty,
+        decreaseQty,
     } = useAppContext();
 
     if (!product) return null;
 
     const currentQuantity = cartItems[product._id] || 0;
     const isInCart = currentQuantity > 0;
-    // Ensure product.stock is checked for availability
-    const isAvailable = product.isAvailable !== false && product.stock > 0;
+    const isAvailable = product.isAvailable !== false;
+    const stock = product.stock || 0;
+    const isLowStock = stock > 0 && stock <= 5;
+    const isOutOfStock = stock === 0;
 
     const calculateDiscount = () => {
         if (!product.price || !product.offerPrice) return 0;
@@ -37,13 +41,8 @@ const ProductCard = ({ product }) => {
     const handleAddToCart = (e) => {
         e.stopPropagation();
         e.preventDefault();
-        if (!isAvailable) {
-            toast.error("This product is currently out of stock");
-            return;
-        }
-        // --- INVENTORY: Prevent adding more items than available in stock ---
-        if (currentQuantity >= product.stock) {
-            toast.error("No more items in stock to add");
+        if (!isAvailable || isOutOfStock) {
+            toast.error("This product is currently not available");
             return;
         }
         addToCart(product._id);
@@ -77,19 +76,50 @@ const ProductCard = ({ product }) => {
         return title;
     };
 
+    const renderStockIndicator = () => {
+        if (isOutOfStock) {
+            return (
+                <span className="text-xs px-2 py-0.5 bg-red-50 text-red-600 rounded-full">
+                    Out of stock
+                </span>
+            );
+        }
+        
+        if (isLowStock) {
+            return (
+                <span className="text-xs px-2 py-0.5 bg-orange-50 text-orange-600 rounded-full">
+                    Only {stock} left
+                </span>
+            );
+        }
+        
+        // Show stock for all available items
+        if (stock > 5) {
+            return (
+                <span className="text-xs px-2 py-0.5 bg-green-50 text-green-600 rounded-full">
+                    {stock} in stock
+                </span>
+            );
+        }
+        
+        return null;
+    };
+
     return (
-        <div className="flex flex-col bg-white overflow-hidden transition-all duration-300 w-full h-full min-h-[150]">
-            {/* Image Container */}
+        <div className="group flex flex-col bg-white overflow-hidden transition-all duration-300 w-full h-full min-h-[150]">
+            {/* Image Container - Enhanced responsive heights */}
             <div
-                className={`cursor-pointer relative bg-white w-full flex items-center justify-center overflow-hidden ${!isAvailable ? 'opacity-70' : ''}`}
+                className={`cursor-pointer relative bg-white w-full flex items-center justify-center overflow-hidden ${(!isAvailable || isOutOfStock) ? 'opacity-70' : ''}`}
                 onClick={handleCardClick}
             >
+                {/* Discount Badge - Better positioning */}
                 {discountPercentage > 0 && (
                     <div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 bg-red-500 text-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium z-10 shadow-sm">
                         -{discountPercentage}%
                     </div>
                 )}
                 
+                {/* Wishlist Button - Better responsive sizing */}
                 <button
                     className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 bg-white p-1 sm:p-1.5 md:p-2 rounded-full shadow-sm hover:shadow-md transition-all duration-200 z-10"
                     onClick={handleWishlist}
@@ -98,19 +128,23 @@ const ProductCard = ({ product }) => {
                     <IoHeartOutline className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600 hover:text-red-500 transition-colors" />
                 </button>
                 
+                {/* Image Container - Better responsive padding */}
                 <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-3 md:p-4">
                     <Image
                         src={product.image?.[0] || "/fallback-image.jpg"}
                         alt={product.name || "Product Image"}
                         className="object-contain max-w-full max-h-full transition-transform duration-200"
-                        width={120}
-                        height={120}
+                        width={200}
+                        height={200}
+                        quality={85}
                         priority={false}
+                        sizes="(max-width: 640px) 150px, (max-width: 768px) 180px, 200px"
                         style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '100%' }}
                     />
                 </div>
                 
-                {!isAvailable && (
+                {/* Out of Stock Overlay */}
+                {(!isAvailable || isOutOfStock) && (
                     <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center">
                         <div className="text-red-500 text-xs sm:text-sm font-medium flex items-center px-2 py-1 bg-white rounded-lg shadow-sm">
                             <MdOutlineError className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
@@ -120,71 +154,91 @@ const ProductCard = ({ product }) => {
                 )}
             </div>
 
-            {/* Content Container */}
+            {/* Content Container - Better spacing */}
             <div className="flex flex-col p-2.5 sm:p-3 md:p-4 flex-grow">
+                {/* Product Title - Dynamic truncation based on screen size */}
                 <div className="mb-2 sm:mb-3 flex items-start">
                     <h3
-                        className={`text-xs md:text-base font-medium cursor-pointer w-full line-clamp-1 ${!isAvailable ? 'text-gray-400' : 'text-gray-800 hover:text-gray-600'} transition-colors`}
+                        className={`text-xs md:text-base font-medium cursor-pointer w-full line-clamp-1 ${(!isAvailable || isOutOfStock) ? 'text-gray-400' : 'text-gray-800 hover:text-gray-600'} transition-colors`}
                         onClick={handleCardClick}
                         title={product.name}
                     >
-                        <span className="block sm:hidden">{truncateTitle(product.name, 25)}</span>
-                        <span className="hidden md:block">{truncateTitle(product.name, 30)}</span>
+                        {/* Responsive truncation */}
+                        <span className="block sm:hidden">
+                            {truncateTitle(product.name, 25)}
+                        </span>
+                        <span className="hidden md:block">
+                            {truncateTitle(product.name, 30)}
+                        </span>
                     </h3>
                 </div>
 
+                {/* Stock Indicator - Positioned between title and price */}
+                <div className="mb-1.5 sm:mb-2 min-h-[16px] flex items-center">
+                    {renderStockIndicator()}
+                </div>
+
                 {/* Price and Action Section */}
-                <div className="mt-auto">
-                    {!isAvailable ? (
+                <div className="mt-0">
+                    {(!isAvailable || isOutOfStock) ? (
                         /* Out of Stock State */
                         <div className="flex items-center justify-between">
                             <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-2 text-gray-400">
-                                <span className="text-sm sm:text-base md:text-lg">{currency}{product.offerPrice || product.price}</span>
-                                {product.offerPrice < product.price && <span className="text-xs sm:text-sm line-through">{currency}{product.price}</span>}
+                                <span className="text-sm sm:text-base md:text-lg">
+                                    {currency}{product.offerPrice || product.price}
+                                </span>
+                                {product.offerPrice && product.offerPrice < product.price && (
+                                    <span className="text-xs sm:text-sm line-through">
+                                        {currency}{product.price}
+                                    </span>
+                                )}
                             </div>
                         </div>
                     ) : !isInCart ? (
                         /* Add to Cart State */
                         <div className="flex items-center justify-between gap-2">
                             <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-2 min-w-0 flex-1">
-                                <span className="text-sm sm:text-base md:text-lg text-gray-900 truncate">{currency}{product.offerPrice || product.price}</span>
-                                {product.offerPrice < product.price && <span className="text-xs sm:text-sm text-gray-400 line-through">{currency}{product.price}</span>}
-                            </div>
-                            <div className="flex flex-col items-center flex-shrink-0">
-                                <button
-                                    onClick={handleAddToCart}
-                                    disabled={isAddingToCart}
-                                    className={`p-2 rounded-full flex items-center justify-center transition-all duration-200 ${isAddingToCart ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-sky-300/70 text-white active:scale-95"}`}
-                                    aria-label="Add to cart"
-                                >
-                                    <IoMdAdd className="h-4 w-4 md:h-5 md:w-5" />
-                                </button>
-                                {/* --- INVENTORY: Stock Quantity Display --- */}
-                                <span className={`text-[10px] text-gray-500 mt-1 whitespace-nowrap ${product.stock <= 10 ? 'text-amber-600 font-semibold' : ''}`}>
-                                    {product.stock} in stock
+                                <span className="text-sm sm:text-base md:text-lg text-gray-900 truncate">
+                                    {currency}{product.offerPrice || product.price}
                                 </span>
+                                {product.offerPrice && product.offerPrice < product.price && (
+                                    <span className="text-xs sm:text-sm text-gray-400 line-through">
+                                        {currency}{product.price}
+                                    </span>
+                                )}
                             </div>
+                            <button
+                                onClick={handleAddToCart}
+                                disabled={isAddingToCart || isOutOfStock}
+                                className={`p-2 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${isAddingToCart || isOutOfStock
+                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                        : "bg-sky-300/70 text-white active:scale-95"
+                                    }`}
+                                aria-label="Add to cart"
+                            >
+                                <IoMdAdd className="h-4 w-4 md:h-5 md:w-5" />
+                            </button>
                         </div>
                     ) : (
                         /* In Cart State */
                         <div className="flex items-center justify-between gap-2">
                             <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-2 min-w-0 flex-1">
-                                <span className="text-sm sm:text-base text-gray-900 truncate">{currency}{product.offerPrice || product.price}</span>
-                                {product.offerPrice < product.price && <span className="text-xs sm:text-sm text-gray-400 line-through">{currency}{product.price}</span>}
-                            </div>
-                             <div className="flex flex-col items-center flex-shrink-0">
-                                <button
-                                    onClick={handleViewItem}
-                                    className="p-2 rounded-full flex items-center justify-center bg-green-400/80 text-white text-xs md:text-sm"
-                                    aria-label="View item in cart"
-                                >
-                                    <GoCheck className="h-4 w-4 md:h-5 md:w-5" />
-                                </button>
-                                {/* --- INVENTORY: Stock Quantity Display --- */}
-                                <span className={`text-[10px] text-gray-500 mt-1 whitespace-nowrap ${product.stock <= 10 ? 'text-amber-600 font-semibold' : ''}`}>
-                                    {product.stock} in stock
+                                <span className="text-sm sm:text-base text-gray-900 truncate">
+                                    {currency}{product.offerPrice || product.price}
                                 </span>
+                                {product.offerPrice && product.offerPrice < product.price && (
+                                    <span className="text-xs sm:text-sm text-gray-400 line-through">
+                                        {currency}{product.price}
+                                    </span>
+                                )}
                             </div>
+                            <button
+                                onClick={handleViewItem}
+                                className="p-2 rounded-full flex items-center justify-center bg-green-400/80 text-white text-xs md:text-sm"
+                                aria-label="View item in cart"
+                            >
+                                <GoCheck className="h-4 w-4 md:h-5 md:w-5" />
+                            </button>
                         </div>
                     )}
                 </div>
@@ -194,4 +248,3 @@ const ProductCard = ({ product }) => {
 };
 
 export default ProductCard;
-

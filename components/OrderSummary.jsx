@@ -329,7 +329,7 @@ const OrderSummary = () => {
         ? `https://${process.env.NEXT_PUBLIC_FASTAPI_URL}`
         : "http://127.0.0.1:8000";
       const fastApiUrl = `${baseUrl}/api/v1/generate-qr`;
-      
+
       const { data } = await axios.post(fastApiUrl, {
         amount: total,
         bill_number: billNumber,
@@ -381,9 +381,41 @@ const OrderSummary = () => {
   // --- ORDER CREATION & VALIDATION ---
 
   const validateOrderForm = () => {
-    if (!selectedAddress) { toast.error('Please select a delivery address'); return false; }
-    if (getCartCount() <= 0) { toast.error('Your cart is empty'); return false; }
-    if (selectedPaymentMethod === "ABA" && !transactionProofUrl) { toast.error("Please upload transaction proof for ABA payment."); return false; }
+    if (!selectedAddress) {
+      toast.error('Please select a delivery address');
+      return false;
+    }
+
+    if (getCartCount() <= 0) {
+      toast.error('Your cart is empty');
+      return false;
+    }
+
+    // Check stock availability for each item in cart
+    const stockIssues = [];
+    Object.keys(cartItems).forEach((productId) => {
+      const product = products.find(p => p._id === productId);
+      const requestedQuantity = cartItems[productId];
+
+      if (product) {
+        if (!product.isAvailable) {
+          stockIssues.push(`${product.name} is currently unavailable`);
+        } else if (product.stock < requestedQuantity) {
+          stockIssues.push(`${product.name} only has ${product.stock} items in stock (you requested ${requestedQuantity})`);
+        }
+      }
+    });
+
+    if (stockIssues.length > 0) {
+      toast.error(`Stock issues: ${stockIssues.join(', ')}`);
+      return false;
+    }
+
+    if (selectedPaymentMethod === "ABA" && !transactionProofUrl) {
+      toast.error("Please upload transaction proof for ABA payment.");
+      return false;
+    }
+
     return true;
   };
 
@@ -428,12 +460,12 @@ const OrderSummary = () => {
 
   return (
     <>
-      <BakongQRModal 
-        show={showBakongModal} 
-        onClose={resetBakongState} 
-        qrString={bakongQrString} 
+      <BakongQRModal
+        show={showBakongModal}
+        onClose={resetBakongState}
+        qrString={bakongQrString}
         deeplink={bakongDeeplink}
-        isAwaitingPayment={isAwaitingPayment} 
+        isAwaitingPayment={isAwaitingPayment}
         isPlacingOrder={isPlacingOrder} />
       <div className="w-full md:w-96 border border-gray-200 bg-gray-50 shadow-sm p-6 sticky top-24 h-fit">
         <h2 className="text-xl text-gray-800 mb-6 uppercase font-medium">Order Summary</h2>

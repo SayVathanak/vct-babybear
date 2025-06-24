@@ -6,6 +6,7 @@ import Image from "next/image";
 import Navbar from "@/components/Navbar/Navbar";
 import { useAppContext } from "@/context/AppContext";
 import { FaChevronLeft, FaTimes } from "react-icons/fa";
+import toast from "react-hot-toast";
 
 const Cart = () => {
   const { products, router, cartItems, updateCartQuantity, getCartCount } = useAppContext();
@@ -39,13 +40,32 @@ const Cart = () => {
   };
 
   const increaseQuantity = (productId, currentQuantity) => {
+    const product = products.find(p => p._id === productId);
+
+    if (!product) {
+      toast.error("Product not found");
+      return;
+    }
+
+    if (!product.isAvailable) {
+      toast.error(`${product.name} is currently unavailable`);
+      return;
+    }
+
     const newQuantity = currentQuantity + 1;
+
+    if (newQuantity > product.stock) {
+      toast.error(`Only ${product.stock} items available in stock`);
+      return;
+    }
+
     updateCartQuantity(productId, newQuantity);
     setInputQuantities({
       ...inputQuantities,
       [productId]: newQuantity.toString()
     });
   };
+
 
   const handleQuantityChange = (productId, value) => {
     // Always store input value as string
@@ -59,14 +79,44 @@ const Cart = () => {
     // When input field loses focus, update the cart
     const inputValue = inputQuantities[productId];
     const newQuantity = parseInt(inputValue);
+    const product = products.find(p => p._id === productId);
 
-    if (!isNaN(newQuantity) && newQuantity > 0) {
-      updateCartQuantity(productId, newQuantity);
-      // Ensure the displayed value is consistent
+    if (!product) {
+      toast.error("Product not found");
       setInputQuantities({
         ...inputQuantities,
-        [productId]: newQuantity.toString()
+        [productId]: (cartItems[productId] || 0).toString()
       });
+      return;
+    }
+
+    if (!product.isAvailable) {
+      toast.error(`${product.name} is currently unavailable`);
+      setInputQuantities({
+        ...inputQuantities,
+        [productId]: (cartItems[productId] || 0).toString()
+      });
+      return;
+    }
+
+    if (!isNaN(newQuantity) && newQuantity > 0) {
+      if (newQuantity > product.stock) {
+        toast.error(`Only ${product.stock} items available in stock`);
+        // Set to maximum available stock
+        const maxQuantity = Math.min(product.stock, cartItems[productId] || 0);
+        updateCartQuantity(productId, maxQuantity);
+        setInputQuantities({
+          ...inputQuantities,
+          [productId]: maxQuantity.toString()
+        });
+      } else {
+        updateCartQuantity(productId, newQuantity);
+        // Ensure the displayed value is consistent
+        setInputQuantities({
+          ...inputQuantities,
+          [productId]: newQuantity.toString()
+        });
+      }
     } else {
       // Reset the input field if value is invalid
       setInputQuantities({
@@ -127,26 +177,64 @@ const Cart = () => {
 
                 if (!product || cartItems[itemId] <= 0) return null;
 
+                const isOutOfStock = !product.isAvailable;
+                const isLowStock = product.stock < 5 && product.stock > 0;
+                const isOverStock = cartItems[itemId] > product.stock;
+
                 return (
                   <div key={itemId} className="mb-8 sm:mb-10 pb-8 sm:pb-10 border-b border-gray-200">
                     <div className="flex flex-row items-start justify-start md:justify-between">
                       {/* Product Image - Left */}
-                      <div className="w-24 sm:w-28 md:w-36 h-32 sm:h-40 bg-gray-50 mr-4 sm:mr-6 md:mr-8 flex-shrink-0 flex items-center justify-center rounded">
+                      <div className="w-24 sm:w-28 md:w-36 h-32 sm:h-40 bg-gray-50 mr-4 sm:mr-6 md:mr-8 flex-shrink-0 flex items-center justify-center rounded relative">
                         <Image
                           src={product.image[0]}
                           alt={product.name}
-                          className="w-20 sm:w-24 md:w-28 h-auto object-contain mix-blend-multiply"
-                          width={112}
-                          height={140}
+                          className={`w-20 sm:w-24 md:w-28 h-auto object-contain mix-blend-multiply ${isOutOfStock ? 'opacity-50 grayscale' : ''}`}
+                          width={300}
+                          height={300}
+                          quality={95}
                         />
+                        {isOutOfStock && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded">
+                            <span className="text-white text-xs font-bold">OUT OF STOCK</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Product Details - Right */}
                       <div className="flex-1">
                         <div className="flex justify-between items-start">
                           <div>
-                            <h2 className="text-sm md:text-xl uppercase font-medium tracking-wider line-clamp-2">{product.name}</h2>
-                            <p className="mt-1 sm:mt-2 text-gray-600">${product.offerPrice}</p>
+                            <h2 className={`text-sm md:text-xl uppercase font-medium tracking-wider line-clamp-2 ${isOutOfStock ? 'text-gray-500' : ''}`}>
+                              {product.name}
+                            </h2>
+                            <p className={`mt-1 sm:mt-2 ${isOutOfStock ? 'text-gray-400' : 'text-gray-600'}`}>
+                              ${product.offerPrice}
+                            </p>
+
+                            {/* Stock Status Indicators */}
+                            <div className="mt-2 flex flex-col space-y-1">
+                              {isOutOfStock && (
+                                <span className="text-xs text-red-600">
+                                  ❌ Out of Stock
+                                </span>
+                              )}
+                              {!isOutOfStock && isLowStock && (
+                                <span className="text-xs text-orange-600">
+                                  ⚠️ Only {product.stock} left in stock
+                                </span>
+                              )}
+                              {!isOutOfStock && !isLowStock && (
+                                <span className="text-xs text-green-600">
+                                  {product.stock} in stock
+                                </span>
+                              )}
+                              {isOverStock && (
+                                <span className="text-xs text-red-600">
+                                  ❌ Requested quantity exceeds available stock
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <button
                             onClick={() => updateCartQuantity(product._id, 0)}
@@ -165,9 +253,9 @@ const Cart = () => {
                             </span>
                             <div className="flex items-center px-2 rounded-lg overflow-hidden">
                               <button
-                                className="w-8 h-8 flex items-center justify-center text-sm transition-colors"
+                                className="w-8 h-8 flex items-center justify-center text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 onClick={() => decreaseQuantity(product._id, cartItems[itemId])}
-                                disabled={cartItems[itemId] <= 1}
+                                disabled={cartItems[itemId] <= 1 || isOutOfStock}
                                 aria-label="Decrease quantity"
                               >
                                 -
@@ -180,12 +268,15 @@ const Cart = () => {
                                 onChange={(e) => handleQuantityChange(product._id, e.target.value)}
                                 onBlur={() => handleQuantityBlur(product._id)}
                                 onKeyPress={(e) => handleKeyPress(e, product._id)}
-                                className="w-12 h-8 text-center focus:outline-none"
+                                className={`w-12 h-8 text-center focus:outline-none ${isOverStock ? 'text-red-600 border-red-300' : ''} ${isOutOfStock ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                                 aria-label="Quantity"
+                                disabled={isOutOfStock}
+                                max={product.stock}
                               />
                               <button
-                                className="w-8 h-8 flex items-center justify-center text-sm transition-colors"
+                                className="w-8 h-8 flex items-center justify-center text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 onClick={() => increaseQuantity(product._id, cartItems[itemId])}
+                                disabled={cartItems[itemId] >= product.stock || isOutOfStock}
                                 aria-label="Increase quantity"
                               >
                                 +
@@ -198,7 +289,7 @@ const Cart = () => {
                             <span className="text-xs sm:text-sm md:text-base uppercase tracking-wider mr-2 sm:mr-4 text-gray-600">
                               Subtotal
                             </span>
-                            <span className="text-sm md:text-lg ml-2 font-medium">
+                            <span className={`text-sm md:text-lg ml-2 font-medium ${isOutOfStock ? 'text-gray-400' : isOverStock ? 'text-red-600' : ''}`}>
                               ${(product.offerPrice * cartItems[itemId]).toFixed(2)}
                             </span>
                           </div>
