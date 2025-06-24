@@ -5,6 +5,9 @@ import axios from "axios";
 import React, { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
 import { sendTelegramNotification } from "@/utils/telegram-config";
+import { BsQrCodeScan } from "react-icons/bs";
+import { MdDeliveryDining } from "react-icons/md";
+import { BiTransfer } from "react-icons/bi";
 import {
   FaChevronDown,
   FaChevronUp,
@@ -81,10 +84,10 @@ const BakongQRModal = ({ show, onClose, qrString, deeplink, isAwaitingPayment, i
               href={deeplink}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full bg-yellow-400 text-black py-3 rounded-md hover:bg-yellow-500 transition-colors text-sm font-bold flex items-center justify-center disabled:opacity-50"
+              className="w-full bg-red-600 text-black py-3 rounded-md hover:bg-red-700 transition-colors text-sm font-bold flex items-center justify-center disabled:opacity-50"
               disabled={isPlacingOrder}
             >
-              <img src="https://www.bakong.nbc.gov.kh/bakong-logo.svg" alt="Bakong Logo" className="h-5 w-5 mr-2" />
+              {/* <img src="https://www.bakong.nbc.gov.kh/bakong-logo.svg" alt="Bakong Logo" className="h-5 w-5 mr-2" /> */}
               Pay with Bakong App
             </a>
           )}
@@ -486,7 +489,7 @@ const OrderSummary = () => {
           <div className="space-y-3">
             <label className={`flex items-center p-3 border rounded-md cursor-pointer ${selectedPaymentMethod === "COD" ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500" : "border-gray-200"}`}>
               <input type="radio" name="paymentMethod" value="COD" checked={selectedPaymentMethod === "COD"} onChange={() => handlePaymentMethodChange("COD")} className="sr-only" />
-              <FaMoneyBillWave className={`mr-3 h-5 w-5 ${selectedPaymentMethod === "COD" ? "text-blue-600" : "text-gray-400"}`} /><span>Cash on Delivery</span>
+              <MdDeliveryDining className={`mr-3 h-6 w-6 ${selectedPaymentMethod === "COD" ? "text-blue-600" : "text-gray-400"}`} /><span>Cash on Delivery</span>
             </label>
             <label className={`flex items-center p-3 border rounded-md cursor-pointer ${selectedPaymentMethod === "ABA" ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500" : "border-gray-200"}`}>
               <input type="radio" name="paymentMethod" value="ABA" checked={selectedPaymentMethod === "ABA"} onChange={() => handlePaymentMethodChange("ABA")} className="sr-only" />
@@ -494,7 +497,7 @@ const OrderSummary = () => {
             </label>
             <label className={`flex items-center p-3 border rounded-md cursor-pointer ${selectedPaymentMethod === "Bakong" ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500" : "border-gray-200"}`}>
               <input type="radio" name="paymentMethod" value="Bakong" checked={selectedPaymentMethod === "Bakong"} onChange={() => handlePaymentMethodChange("Bakong")} className="sr-only" />
-              <FaQrcode className={`mr-3 h-5 w-5 ${selectedPaymentMethod === "Bakong" ? "text-blue-600" : "text-gray-400"}`} /><span>Bakong KHQR</span>
+              <BsQrCodeScan className={`mr-3 h-4 w-4 ${selectedPaymentMethod === "Bakong" ? "text-blue-600" : "text-gray-400"}`} /><span>Bakong KHQR</span>
             </label>
           </div>
           {selectedPaymentMethod === 'ABA' && (
