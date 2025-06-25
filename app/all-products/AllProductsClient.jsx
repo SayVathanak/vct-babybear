@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useAppContext } from "@/context/AppContext";
 import { CiFilter } from "react-icons/ci";
 import { FiX, FiSearch } from "react-icons/fi";
+import { CiSliderHorizontal } from "react-icons/ci";
 import Navbar from "@/components/Navbar/Navbar";
 import Footer from "@/components/Footer";
 import ProductGrid from "@/components/ProductGrid";
@@ -132,10 +133,10 @@ const AllProductsClient = () => {
                             </div>
                             <button
                                 onClick={() => setIsSidebarOpen(true)}
-                                className="lg:hidden px-3 py-2 text-sm flex items-center gap-1.5 border border-gray-300 bg-white rounded-md"
+                                className="lg:hidden text-sm flex items-center gap-1.5"
                             >
-                                <CiFilter className="h-5 w-5" />
-                                <span>Filter</span>
+                                <CiSliderHorizontal className="h-5 w-5" />
+                                <span>Filter & Sort</span>
                             </button>
                         </div>
                     </div>
@@ -184,7 +185,7 @@ const AllProductsClient = () => {
                         <div className="flex-1">
                             <div className="mb-6">
                                 <div className="relative">
-                                    <FiSearch className="h-5 w-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                    <FiSearch className="h-5 w-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-200" />
                                     <input
                                         type="text"
                                         placeholder="Search for products by name..."

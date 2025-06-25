@@ -71,13 +71,6 @@ const ProductCard = ({ product }) => {
         setShowCartPanel(true);
     };
 
-    const truncateTitle = (title, maxLength = 20) => {
-        if (title.length > maxLength) {
-            return title.substring(0, maxLength) + '...';
-        }
-        return title;
-    };
-
     // Determine stock status for display
     const getStockStatus = () => {
         if (isOutOfStock || !isAvailable) return 'out-of-stock';
@@ -151,27 +144,28 @@ const ProductCard = ({ product }) => {
                 )}
             </div>
 
-            {/* Content Container */}
+            {/* Content Container - Fixed structure for consistent alignment */}
             <div className="flex flex-col p-2.5 sm:p-3 md:p-4 flex-grow">
-                {/* Product Title */}
-                <div className="mb-2 sm:mb-3 flex items-start">
+                {/* Product Title - Fixed height container for consistent alignment */}
+                <div className="mb-2 sm:mb-3 h-10 sm:h-12 md:h-12 flex items-start">
                     <h3
-                        className={`text-sm md:text-base cursor-pointer w-full line-clamp-2 ${!isAvailable || isOutOfStock ? 'text-gray-400' : 'text-gray-800 hover:text-gray-600'} transition-colors`}
+                        className={`text-sm md:text-base cursor-pointer w-full line-clamp-2 leading-tight ${!isAvailable || isOutOfStock ? 'text-gray-400' : 'text-gray-800 hover:text-gray-600'} transition-colors`}
                         onClick={handleCardClick}
                         title={product.name}
+                        style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            lineHeight: '1.2'
+                        }}
                     >
-                        {/* Responsive truncation */}
-                        <span className="block sm:hidden">
-                            {truncateTitle(product.name, 35)}
-                        </span>
-                        <span className="hidden md:block">
-                            {truncateTitle(product.name, 35)}
-                        </span>
+                        {product.name}
                     </h3>
                 </div>
 
-                {/* Price and Action Section */}
-                <div className="mt-0">
+                {/* Price and Action Section - Positioned at bottom */}
+                <div className="mt-auto">
                     {(!isAvailable || isOutOfStock) ? (
                         /* Out of Stock State */
                         <div className="flex items-center justify-between">
