@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { assets } from '../../assets/assets';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { CiShoppingTag, CiWavePulse1, CiMonitor } from "react-icons/ci";
+import { CiShoppingTag, CiWavePulse1, CiMonitor, CiWarning } from "react-icons/ci";
+import { GoPackage } from "react-icons/go";
 
 const SideBar = () => {
     const pathname = usePathname();
@@ -15,6 +16,7 @@ const SideBar = () => {
         { name: 'Promo codes', path: '/seller/promo-codes', icon: <CiShoppingTag size={28} className="text-black stroke-[0.2]" /> },
         { name: 'Promotion Banner', path: '/seller/promotion-slider', icon: <CiMonitor size={28} className="text-black stroke-[0.2]" /> },
         { name: 'Analytics', path: '/seller/analytics', icon: <CiWavePulse1 size={28} className="text-black stroke-[0.2]" /> },
+        { name: 'Stocks', path: '/seller/stock', icon: <GoPackage  size={26} className="text-gray-800" /> },
     ];
 
     return (
