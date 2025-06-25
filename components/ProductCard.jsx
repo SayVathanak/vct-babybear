@@ -203,13 +203,13 @@ const ProductCard = ({ product }) => {
                             <button
                                 onClick={handleAddToCart}
                                 disabled={isAddingToCart || isOutOfStock}
-                                className={`p-1.5 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${isAddingToCart || isOutOfStock
+                                className={`p-2 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${isAddingToCart || isOutOfStock
                                         ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                         : "bg-sky-300/70 text-white active:scale-95"
                                     }`}
                                 aria-label="Add to cart"
                             >
-                                <IoMdAdd className="h-3.5 w-3.5" />
+                                <IoMdAdd className="h-4 w-4" />
                             </button>
                         </div>
                     ) : (
@@ -227,10 +227,10 @@ const ProductCard = ({ product }) => {
                             </div>
                             <button
                                 onClick={handleViewItem}
-                                className="p-1.5 rounded-full flex items-center justify-center bg-green-400/80 text-white flex-shrink-0"
+                                className="p-2 rounded-full flex items-center justify-center bg-green-400/80 text-white flex-shrink-0"
                                 aria-label="View item in cart"
                             >
-                                <GoCheck className="h-3.5 w-3.5" />
+                                <GoCheck className="h-4 w-4" />
                             </button>
                         </div>
                     )}
