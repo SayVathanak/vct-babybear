@@ -101,7 +101,7 @@ const StockManagementPage = () => {
             return;
         }
 
-        const headers = ['Product Name', 'SKU/Barcode', 'Current Stock', 'Reorder Status'];
+        const headers = ['Product Name', 'Barcode', 'Current Stock', 'Reorder Status'];
         const csvRows = [headers.join(',')];
 
         reorderProducts.forEach(product => {
@@ -143,50 +143,56 @@ const StockManagementPage = () => {
     };
 
     // Mobile Card Component for better mobile display
-    const MobileProductCard = ({ product }) => (
-        <div className="bg-white border rounded-lg p-4 mb-3 shadow-sm">
-            <div className="flex items-start gap-3">
-                <div className="flex-shrink-0">
-                    <Image 
-                        src={product.image[0]} 
-                        alt={product.name} 
-                        width={60} 
-                        height={60} 
-                        className="rounded-md object-cover" 
-                    />
-                </div>
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between mb-2">
-                        <h3 className="text-sm font-medium text-gray-900 truncate pr-2">
-                            {product.name}
-                        </h3>
+const MobileProductCard = ({ product }) => (
+    <div className="bg-white active:bg-gray-50 transition-colors">
+        <div className="flex items-start gap-4 mb-6 border-b">
+            <div className="flex-shrink-0">
+                <Image 
+                    src={product.image[0]} 
+                    alt={product.name} 
+                    width={80} 
+                    height={80} 
+                    className="rounded-xl object-cover" 
+                />
+            </div>
+            <div className="flex-1 min-w-0">
+                <div className="mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900 leading-tight mb-2">
+                        {product.name}
+                    </h3>
+                    <div className="flex-shrink-0">
                         <StockStatusBadge stock={product.stock} />
                     </div>
-                    <div className="space-y-1 text-xs text-gray-500">
-                        <div className="flex justify-between">
-                            <span>SKU/Barcode:</span>
-                            <span className="font-medium text-gray-900">{product.barcode || 'N/A'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>Category:</span>
-                            <span className="font-medium text-gray-900">{product.category}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>Stock:</span>
-                            <span className="font-semibold text-gray-900">{product.stock}</span>
-                        </div>
+                </div>
+                <div className="space-y-2 text-sm text-gray-600">
+                    <div className="flex flex-col gap-1">
+                        <span className="text-gray-500 text-xs">Barcode:</span>
+                        <span className="font-medium text-gray-900 break-all">
+                            {product.barcode || 'N/A'}
+                        </span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <span className="text-gray-500 text-xs">Category:</span>
+                        <span className="font-medium text-gray-900">
+                            {product.category}
+                        </span>
+                    </div>
+                    <div className="flex justify-between items-center pt-1">
+                        <span className="text-gray-500 text-xs">Stock:</span>
+                        <span className="font-bold text-xl text-gray-900">{product.stock}</span>
                     </div>
                 </div>
             </div>
         </div>
-    );
+    </div>
+);
 
     return (
         <div className="flex-1 min-h-screen bg-gray-50">
             {loading ? (
                 <Loading />
             ) : (
-                <div className="p-3 sm:p-4 lg:p-8">
+                <div className="p-2 sm:p-4 lg:p-8">
                     <div className="max-w-7xl mx-auto">
                         {/* Header */}
                         <div className="mb-4 sm:mb-6">
@@ -199,68 +205,68 @@ const StockManagementPage = () => {
                         </div>
 
                         {/* Overview Cards */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-4 sm:mb-6">
-                            <div className="bg-white p-3 sm:p-4 lg:p-5 rounded-lg shadow-sm border">
-                                <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
-                                    <div className="bg-green-100 p-2 sm:p-3 rounded-full flex-shrink-0">
-                                        <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-green-600" />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-xs sm:text-sm text-gray-500 truncate">In Stock</p>
-                                        <p className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                            <div className="bg-white p-4 rounded-2xl shadow-sm border-0" style={{boxShadow: '0 1px 3px rgba(0,0,0,0.1)'}}>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm text-gray-600 mb-1">In Stock</p>
+                                        <p className="text-2xl font-medium text-gray-900">
                                             {inventoryStats.inStock}
                                         </p>
                                     </div>
+                                    <div className="bg-green-100 p-3 rounded-full">
+                                        <CheckCircle className="h-6 w-6 text-green-600" />
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div className="bg-white p-3 sm:p-4 lg:p-5 rounded-lg shadow-sm border">
-                                <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
-                                    <div className="bg-yellow-100 p-2 sm:p-3 rounded-full flex-shrink-0">
-                                        <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-yellow-600" />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-xs sm:text-sm text-gray-500 truncate">Low Stock</p>
-                                        <p className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900">
+                            <div className="bg-white p-4 rounded-2xl shadow-sm border-0" style={{boxShadow: '0 1px 3px rgba(0,0,0,0.1)'}}>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm text-gray-600 mb-1">Low Stock</p>
+                                        <p className="text-2xl font-medium text-gray-900">
                                             {inventoryStats.lowStock}
                                         </p>
                                     </div>
+                                    <div className="bg-yellow-100 p-3 rounded-full">
+                                        <AlertTriangle className="h-6 w-6 text-yellow-600" />
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div className="bg-white p-3 sm:p-4 lg:p-5 rounded-lg shadow-sm border">
-                                <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
-                                    <div className="bg-red-100 p-2 sm:p-3 rounded-full flex-shrink-0">
-                                        <PackageX className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-red-600" />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-xs sm:text-sm text-gray-500 truncate">Out of Stock</p>
-                                        <p className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900">
+                            <div className="bg-white p-4 rounded-2xl shadow-sm border-0" style={{boxShadow: '0 1px 3px rgba(0,0,0,0.1)'}}>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm text-gray-600 mb-1">Out of Stock</p>
+                                        <p className="text-2xl font-medium text-gray-900">
                                             {inventoryStats.outOfStock}
                                         </p>
                                     </div>
+                                    <div className="bg-red-100 p-3 rounded-full">
+                                        <PackageX className="h-6 w-6 text-red-600" />
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div className="bg-white p-3 sm:p-4 lg:p-5 rounded-lg shadow-sm border">
-                                <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
-                                    <div className="bg-blue-100 p-2 sm:p-3 rounded-full flex-shrink-0">
-                                        <Box className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-blue-600" />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-xs sm:text-sm text-gray-500 truncate">Total Products</p>
-                                        <p className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900">
+                            <div className="bg-white p-4 rounded-2xl shadow-sm border-0" style={{boxShadow: '0 1px 3px rgba(0,0,0,0.1)'}}>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm text-gray-600 mb-1">Total Products</p>
+                                        <p className="text-2xl font-medium text-gray-900">
                                             {products.length}
                                         </p>
+                                    </div>
+                                    <div className="bg-blue-100 p-3 rounded-full">
+                                        <Box className="h-6 w-6 text-blue-600" />
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Search and Filter Section */}
-                        <div className="bg-white rounded-lg shadow-sm border mb-4">
+                        <div className="bg-white sm:rounded-lg shadow-sm sm:border mb-4">
                             {/* Desktop Search and Filters */}
-                            <div className="hidden md:block p-4 border-b">
+                            <div className="hidden sm:block p-4 border-b">
                                 <div className="flex items-center justify-between gap-4">
                                     <div className="flex-1 max-w-md relative">
                                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -298,44 +304,44 @@ const StockManagementPage = () => {
                             </div>
 
                             {/* Mobile Search and Filter Toggle */}
-                            <div className="md:hidden p-3 border-b">
-                                <div className="relative mb-3">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <div className="sm:hidden p-4">
+                                <div className="relative mb-4">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                                     <input
                                         type="text"
                                         placeholder="Search products..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full pl-9 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        className="w-full pl-10 pr-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                     />
                                 </div>
                                 <div className="flex items-center justify-between gap-3">
                                     <button
                                         onClick={() => setShowMobileFilters(!showMobileFilters)}
-                                        className="flex items-center gap-2 px-3 py-2 border rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+                                        className="flex items-center gap-2 px-4 py-3 border rounded-lg text-sm text-gray-700 hover:bg-gray-50 min-h-[44px]"
                                     >
-                                        {showMobileFilters ? <X className="h-4 w-4" /> : <CiSliderHorizontal className="h-4 w-4" />}
-                                        Filter & Sort
+                                        Filters & Sort
+                                        {showMobileFilters ? <X className="h-5 w-5" /> : <CiSliderHorizontal className="h-5 w-5" />}
                                     </button>
                                     <button
                                         onClick={handleExportReorderList}
-                                        className="flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                                        className="flex items-center gap-2 px-6 py-3 border border-green-600 text-green-600 rounded-lg hover:bg-green-700 hover:text-white transition-colors text-sm min-h-[44px]"
                                     >
-                                        <Download className="h-4 w-4" />
+                                        <Download className="h-5 w-5" />
                                         Export
                                     </button>
                                 </div>
                                 
                                 {/* Mobile Filter Panel */}
                                 {showMobileFilters && (
-                                    <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                                        <label className="block text-base font-medium text-gray-700 mb-3">
                                             Filter by Status
                                         </label>
                                         <select
                                             value={statusFilter}
                                             onChange={(e) => setStatusFilter(e.target.value)}
-                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                            className="w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                                         >
                                             <option value="all">All Statuses</option>
                                             <option value="in_stock">In Stock</option>
@@ -347,23 +353,25 @@ const StockManagementPage = () => {
                             </div>
 
                             {/* Mobile Card View */}
-                            <div className="md:hidden p-3">
+                            <div className="sm:hidden p-4">
                                 {filteredProducts.length > 0 ? (
-                                    <div className="space-y-3">
+                                    <div className="space-y-0">
                                         {filteredProducts.map(product => (
                                             <MobileProductCard key={product._id} product={product} />
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-8">
-                                        <PackageX className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                                        <p className="text-gray-500 text-sm">No products match your current filters.</p>
+                                    <div className="text-center py-12">
+                                        <div className="bg-gray-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                                            <PackageX className="h-8 w-8 text-gray-400" />
+                                        </div>
+                                        <p className="text-gray-500 text-base">No products match your current filters.</p>
                                     </div>
                                 )}
                             </div>
 
                             {/* Desktop Table View */}
-                            <div className="hidden md:block overflow-x-auto">
+                            <div className="hidden sm:block overflow-x-auto">
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
                                         <tr>
@@ -371,7 +379,7 @@ const StockManagementPage = () => {
                                                 Product
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                SKU / Barcode
+                                                Barcode
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Category
