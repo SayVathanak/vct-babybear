@@ -294,7 +294,7 @@ const MobileProductCard = ({ product }) => (
                                         </div>
                                         <button
                                             onClick={handleExportReorderList}
-                                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium whitespace-nowrap"
+                                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium whitespace-nowrap"
                                         >
                                             <Download className="h-4 w-4" />
                                             Export Reorder List
@@ -325,7 +325,7 @@ const MobileProductCard = ({ product }) => (
                                     </button>
                                     <button
                                         onClick={handleExportReorderList}
-                                        className="flex items-center gap-2 px-6 py-3 border border-green-600 text-green-600 rounded-lg hover:bg-green-700 hover:text-white transition-colors text-sm min-h-[44px]"
+                                        className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm min-h-[44px]"
                                     >
                                         <Download className="h-5 w-5" />
                                         Export
