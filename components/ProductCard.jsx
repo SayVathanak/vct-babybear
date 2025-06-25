@@ -26,9 +26,11 @@ const ProductCard = ({ product }) => {
     const currentQuantity = cartItems[product._id] || 0;
     const isInCart = currentQuantity > 0;
     const isAvailable = product.isAvailable !== false;
-    const stock = product.stock || 0;
-    const isLowStock = stock > 0 && stock <= 5;
-    const isOutOfStock = stock === 0;
+
+    // Stock quantity - default to 0 if not provided
+    const stockQuantity = product.stockQuantity || product.stock || 0;
+    const isLowStock = stockQuantity > 0 && stockQuantity <= 5;
+    const isOutOfStock = stockQuantity <= 0;
 
     const calculateDiscount = () => {
         if (!product.price || !product.offerPrice) return 0;
@@ -69,119 +71,116 @@ const ProductCard = ({ product }) => {
         setShowCartPanel(true);
     };
 
-    const truncateTitle = (title, maxLength = 18) => {
+    const truncateTitle = (title, maxLength = 20) => {
         if (title.length > maxLength) {
             return title.substring(0, maxLength) + '...';
         }
         return title;
     };
 
-    const renderStockIndicator = () => {
-        if (isOutOfStock) {
-            return (
-                <span className="text-[10px] px-1.5 py-0.5 bg-red-50 text-red-600 rounded-full leading-none">
-                    Out of stock
-                </span>
-            );
-        }
-        
-        if (isLowStock) {
-            return (
-                <span className="text-[10px] px-1.5 py-0.5 bg-orange-50 text-orange-600 rounded-full leading-none">
-                    Only {stock} left
-                </span>
-            );
-        }
-        
-        if (stock > 5) {
-            return (
-                <span className="text-[10px] px-1.5 py-0.5 bg-green-50 text-green-600 rounded-full leading-none">
-                    {stock} in stock
-                </span>
-            );
-        }
-        
-        return null;
+    // Determine stock status for display
+    const getStockStatus = () => {
+        if (isOutOfStock || !isAvailable) return 'out-of-stock';
+        if (isLowStock) return 'low-stock';
+        return 'in-stock';
     };
 
+    const stockStatus = getStockStatus();
+
     return (
-        <div className="group flex flex-col bg-white overflow-hidden transition-all duration-300 w-full h-full">
-            {/* Image Container - Fixed aspect ratio for consistency */}
+        <div className="flex flex-col bg-white overflow-hidden transition-all duration-300 w-full h-full min-h-[150]">
+            {/* Image Container - Square aspect ratio with auto-crop */}
             <div
-                className={`cursor-pointer relative bg-white w-full aspect-square flex items-center justify-center overflow-hidden ${(!isAvailable || isOutOfStock) ? 'opacity-70' : ''}`}
+                className={`cursor-pointer relative bg-white w-full aspect-square flex items-center justify-center overflow-hidden ${!isAvailable || isOutOfStock ? 'opacity-70' : ''}`}
                 onClick={handleCardClick}
             >
-                {/* Discount Badge - Compact positioning */}
+                {/* Discount Badge */}
                 {discountPercentage > 0 && (
-                    <div className="absolute top-1 left-1 bg-red-500 text-white px-1 py-0.5 rounded text-[10px] font-medium z-10">
+                    <div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 bg-red-500 text-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium z-20 shadow-sm">
                         -{discountPercentage}%
                     </div>
                 )}
                 
-                {/* Wishlist Button - Compact sizing */}
+                {/* Stock Quantity Overlay - Bottom Left */}
+                <div className="absolute bottom-0 left-0 sm:bottom-2 sm:left-2 z-20">
+                    {stockStatus === 'out-of-stock' ? (
+                        <div className="bg-white opacity-0 text-red-500 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[10px] sm:text-xs shadow-sm">
+                            Out of Stock
+                        </div>
+                    ) : stockStatus === 'low-stock' ? (
+                        <div className="bg-white opacity-90 text-red-400 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[10px] sm:text-xs shadow-sm">
+                            Only {stockQuantity} left
+                        </div>
+                    ) : (
+                        <div className="bg-white opacity-90 text-green-500 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[10px] sm:text-xs shadow-sm">
+                            {stockQuantity} in stock
+                        </div>
+                    )}
+                </div>
+                
+                {/* Wishlist Button */}
                 <button
-                    className="absolute top-1 right-1 bg-white p-1 rounded-full shadow-sm hover:shadow-md transition-all duration-200 z-10"
+                    className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 bg-white p-1 sm:p-1.5 md:p-2 rounded-full shadow-sm hover:shadow-md transition-all duration-200 z-20"
                     onClick={handleWishlist}
                     aria-label="Add to wishlist"
                 >
-                    <IoHeartOutline className="h-3 w-3 text-gray-600 hover:text-red-500 transition-colors" />
+                    <IoHeartOutline className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600 hover:text-red-500 transition-colors" />
                 </button>
                 
-                {/* Image Container - Minimal padding for compact design */}
-                <div className="relative w-full h-full flex items-center justify-center p-2">
+                {/* Square Image Container with auto-crop */}
+                <div className="relative w-full h-full">
                     <Image
                         src={product.image?.[0] || "/fallback-image.jpg"}
                         alt={product.name || "Product Image"}
-                        className="object-contain max-w-full max-h-full transition-transform duration-200"
-                        width={150}
-                        height={150}
-                        quality={80}
+                        fill
+                        className="object-cover transition-transform duration-200 hover:scale-105"
+                        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                        quality={85}
                         priority={false}
-                        sizes="150px"
-                        style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '100%' }}
                     />
                 </div>
                 
                 {/* Out of Stock Overlay */}
                 {(!isAvailable || isOutOfStock) && (
-                    <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center">
-                        <div className="text-red-500 text-[10px] font-medium flex items-center px-1.5 py-1 bg-white rounded shadow-sm">
-                            <MdOutlineError className="mr-1 h-3 w-3" />
+                    <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center z-10">
+                        <div className="text-red-500 text-xs sm:text-sm font-medium flex items-center px-2 py-1 bg-white rounded-lg shadow-sm">
+                            <MdOutlineError className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
                             <span>Out of Stock</span>
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* Content Container - Compact spacing */}
-            <div className="flex flex-col p-2 flex-grow justify-between">
-                {/* Product Title - Single line with ellipsis */}
-                <div className="mb-1">
+            {/* Content Container */}
+            <div className="flex flex-col p-2.5 sm:p-3 md:p-4 flex-grow">
+                {/* Product Title */}
+                <div className="mb-2 sm:mb-3 flex items-start">
                     <h3
-                        className={`text-xs font-medium cursor-pointer line-clamp-2 leading-tight ${(!isAvailable || isOutOfStock) ? 'text-gray-400' : 'text-gray-800 hover:text-gray-600'} transition-colors`}
+                        className={`text-sm md:text-base cursor-pointer w-full line-clamp-2 ${!isAvailable || isOutOfStock ? 'text-gray-400' : 'text-gray-800 hover:text-gray-600'} transition-colors`}
                         onClick={handleCardClick}
                         title={product.name}
                     >
-                        {truncateTitle(product.name, 35)}
+                        {/* Responsive truncation */}
+                        <span className="block sm:hidden">
+                            {truncateTitle(product.name, 35)}
+                        </span>
+                        <span className="hidden md:block">
+                            {truncateTitle(product.name, 35)}
+                        </span>
                     </h3>
                 </div>
 
-                {/* Stock Indicator - Minimal spacing */}
-                <div className="mb-1 min-h-[14px] flex items-center">
-                    {renderStockIndicator()}
-                </div>
-
-                {/* Price and Action Section - Compact layout */}
-                <div className="mt-auto">
+                {/* Price and Action Section */}
+                <div className="mt-0">
                     {(!isAvailable || isOutOfStock) ? (
                         /* Out of Stock State */
                         <div className="flex items-center justify-between">
-                            <div className="flex flex-col gap-0.5 text-gray-400">
-                                <span className="text-sm font-medium">
+                            <div className="flex flex-row sm:items-baseline gap-0.5 sm:gap-2 text-gray-400">
+                                <span className="text-sm sm:text-base md:text-lg">
                                     {currency}{product.offerPrice || product.price}
                                 </span>
                                 {product.offerPrice && product.offerPrice < product.price && (
-                                    <span className="text-[10px] line-through">
+                                    <span className="text-xs sm:text-sm line-through">
                                         {currency}{product.price}
                                     </span>
                                 )}
@@ -189,13 +188,13 @@ const ProductCard = ({ product }) => {
                         </div>
                     ) : !isInCart ? (
                         /* Add to Cart State */
-                        <div className="flex items-center justify-between gap-1">
-                            <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                                <span className="text-sm font-medium text-gray-900 truncate">
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex flex-row sm:items-baseline gap-0.5 sm:gap-2 min-w-0 flex-1">
+                                <span className="text-md sm:text-base md:text-lg text-gray-900 truncate">
                                     {currency}{product.offerPrice || product.price}
                                 </span>
                                 {product.offerPrice && product.offerPrice < product.price && (
-                                    <span className="text-[10px] text-gray-400 line-through">
+                                    <span className="text-xs sm:text-sm text-gray-400 line-through">
                                         {currency}{product.price}
                                     </span>
                                 )}
@@ -209,28 +208,28 @@ const ProductCard = ({ product }) => {
                                     }`}
                                 aria-label="Add to cart"
                             >
-                                <IoMdAdd className="h-4 w-4" />
+                                <IoMdAdd className="h-5 w-5" />
                             </button>
                         </div>
                     ) : (
                         /* In Cart State */
-                        <div className="flex items-center justify-between gap-1">
-                            <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                                <span className="text-sm font-medium text-gray-900 truncate">
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex flex-row sm:items-baseline gap-0.5 sm:gap-2 min-w-0 flex-1">
+                                <span className="text-sm sm:text-base text-gray-900 truncate">
                                     {currency}{product.offerPrice || product.price}
                                 </span>
                                 {product.offerPrice && product.offerPrice < product.price && (
-                                    <span className="text-[10px] text-gray-400 line-through">
+                                    <span className="text-xs sm:text-sm text-gray-400 line-through">
                                         {currency}{product.price}
                                     </span>
                                 )}
                             </div>
                             <button
                                 onClick={handleViewItem}
-                                className="p-2 rounded-full flex items-center justify-center bg-green-400/80 text-white flex-shrink-0"
+                                className="p-2 rounded-full flex items-center justify-center bg-green-400/80 text-white text-xs md:text-sm"
                                 aria-label="View item in cart"
                             >
-                                <GoCheck className="h-4 w-4" />
+                                <GoCheck className="h-5 w-5" />
                             </button>
                         </div>
                     )}
