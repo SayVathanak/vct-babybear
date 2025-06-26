@@ -82,9 +82,9 @@ const ProductCard = ({ product }) => {
 
     return (
         <div className="flex flex-col bg-white overflow-hidden transition-all duration-300 w-full h-full min-h-[150]">
-            {/* Image Container - Consistent sizing with background */}
+            {/* Image Container - Square aspect ratio without auto-crop */}
             <div
-                className={`cursor-pointer relative bg-gray-50 w-full aspect-square flex items-center justify-center overflow-hidden ${!isAvailable || isOutOfStock ? 'opacity-70' : ''}`}
+                className={`cursor-pointer relative bg-white w-full aspect-square flex items-center justify-center overflow-hidden ${!isAvailable || isOutOfStock ? 'opacity-70' : ''}`}
                 onClick={handleCardClick}
             >
                 {/* Discount Badge */}
@@ -120,8 +120,8 @@ const ProductCard = ({ product }) => {
                     <IoHeartOutline className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600 hover:text-red-500 transition-colors" />
                 </button>
                 
-                {/* Image Container with consistent sizing and subtle background */}
-                <div className="relative w-full h-full p-3 sm:p-4">
+                {/* Image Container with consistent sizing */}
+                <div className="relative w-full h-full p-4">
                     <Image
                         src={product.image?.[0] || "/fallback-image.jpg"}
                         alt={product.name || "Product Image"}
