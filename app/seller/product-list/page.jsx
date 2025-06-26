@@ -369,7 +369,7 @@ const ProductList = () => {
   const SellerGridItem = ({ product }) => (
     <div className={`relative rounded-lg overflow-hidden border flex flex-col h-full transition-all ${!product.isAvailable ? 'bg-gray-50 opacity-70' : 'bg-white'}`}>
       {/* Image section */}
-      <div className="relative w-full pb-[100%] bg-gray-100">
+      <div className="relative w-full pb-[100%] bg-white">
         <Image
           src={product.image[0]}
           alt={product.name}
@@ -524,7 +524,7 @@ const ProductList = () => {
                     </div>
                   </div>
                 )}
-                {viewMode === "cards" && (<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">{sortedProducts.map((product) => (<ProductCard key={product._id} product={product} />))}</div>)}
+                {viewMode === "cards" && (<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">{sortedProducts.map((product) => (<ProductCard key={product._id} product={product} />))}</div>)}
                 {viewMode === "grid" && (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     {sortedProducts.map((product) => (
