@@ -82,7 +82,7 @@ const ProductCard = ({ product }) => {
 
     return (
         <div className="flex flex-col bg-white overflow-hidden transition-all duration-300 w-full h-full min-h-[150]">
-            {/* Image Container - Square aspect ratio with auto-crop */}
+            {/* Image Container - Square aspect ratio without auto-crop */}
             <div
                 className={`cursor-pointer relative bg-white w-full aspect-square flex items-center justify-center overflow-hidden ${!isAvailable || isOutOfStock ? 'opacity-70' : ''}`}
                 onClick={handleCardClick}
@@ -120,13 +120,13 @@ const ProductCard = ({ product }) => {
                     <IoHeartOutline className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600 hover:text-red-500 transition-colors" />
                 </button>
                 
-                {/* Square Image Container with auto-crop */}
+                {/* Square Image Container without auto-crop */}
                 <div className="relative w-full h-full">
                     <Image
                         src={product.image?.[0] || "/fallback-image.jpg"}
                         alt={product.name || "Product Image"}
                         fill
-                        className="object-contain transition-transform duration-200"
+                        className="object-contain transition-transform duration-200 hover:scale-105"
                         sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                         quality={85}
                         priority={false}
