@@ -126,7 +126,7 @@ const ProductCard = ({ product }) => {
                         src={product.image?.[0] || "/fallback-image.jpg"}
                         alt={product.name || "Product Image"}
                         fill
-                        className="object-contain transition-transform duration-200 hover:scale-105"
+                        className="p-1 object-contain transition-transform duration-200"
                         sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                         quality={85}
                         priority={false}
