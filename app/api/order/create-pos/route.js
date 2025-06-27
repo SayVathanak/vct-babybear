@@ -101,10 +101,17 @@ export async function POST(request) {
         // 7. Commit the transaction
         await session.commitTransaction();
 
+        // 8. Prepare the order data for the frontend response
+        const orderForFrontend = {
+            ...savedOrder.toObject(), // Convert Mongoose doc to plain JS object
+            orderId: savedOrder._id.toString(), // Add the 'orderId' field
+            items: productDetails // Send populated product details for the receipt
+        };
+
         return NextResponse.json({
             success: true,
             message: "Sale completed successfully!",
-            order: savedOrder,
+            order: orderForFrontend, // Send the transformed object
         }, { status: 201 });
 
     } catch (error) {
