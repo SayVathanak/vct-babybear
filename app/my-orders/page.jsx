@@ -520,7 +520,7 @@ const MyOrders = () => {
                                                                 </div>
                                                                 <div className="flex items-center">
                                                                     <Phone className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                                                                    <p className="text-sm">0{order.address?.phoneNumber || 'N/A'}</p>
+                                                                    <p className="text-sm">{order.address?.phoneNumber || 'N/A'}</p>
                                                                 </div>
                                                             </div>
                                                         </div>

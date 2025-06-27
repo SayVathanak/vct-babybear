@@ -688,7 +688,7 @@ const Orders = () => {
                                                                     <p className="font-medium text-gray-800">{order.address.fullName || 'N/A'}</p>
                                                                     <div className="mt-1 space-y-0.5 text-gray-600">
                                                                         <div className="flex items-start"><CiMap  className="h-4 w-4 text-gray-400 mr-1.5 mt-0.5 flex-shrink-0" /><p>{order.address.area || 'N/A'}{order.address.city ? `, ${order.address.city}` : ''}{order.address.state ? `, ${order.address.state}` : ''}</p></div>
-                                                                        <div className="flex items-center"><CiPhone className="h-4 w-4 text-gray-400 mr-1.5 flex-shrink-0" /><p>0{order.address.phoneNumber || 'N/A'}</p></div>
+                                                                        <div className="flex items-center"><CiPhone className="h-4 w-4 text-gray-400 mr-1.5 flex-shrink-0" /><p>{order.address.phoneNumber || 'N/A'}</p></div>
                                                                         {order.address.mapsLink && (
                                                                             <div className="flex items-center">
                                                                                 <CiLink className="h-4 w-4 text-gray-400 mr-1.5 flex-shrink-0" />
