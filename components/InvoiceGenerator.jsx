@@ -1,7 +1,6 @@
-// components/InvoiceGenerator.jsx
 'use client';
 import React, { useRef } from 'react';
-import { FileText, Eye, Printer } from 'lucide-react'; // Removed unused icons
+import { FileText, Eye, Printer } from 'lucide-react';
 
 const InvoiceGenerator = ({ order, currency, user, companyLogo }) => {
     const invoiceRef = useRef(null);
@@ -28,15 +27,16 @@ const InvoiceGenerator = ({ order, currency, user, companyLogo }) => {
     };
 
     // Invoice content component to avoid duplication
+    // IMPORTANT: Inline styles are harder to make responsive. Consider moving more styles to CSS classes.
     const InvoiceContent = ({ ref: contentRef }) => (
         <div
             ref={contentRef}
-            className="invoice-print-area bg-white max-w-[210mm] mx-auto"
+            // Removed fixed width here. max-w-[210mm] and mx-auto are handled by Tailwind/global styles
+            // The `minHeight` is primarily for print layout, doesn't need to be responsive
+            className="invoice-print-area bg-white mx-auto p-4 md:p-10 lg:p-[40px]" // Use Tailwind for responsive padding
             style={{
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                width: '794px',
-                minHeight: '1123px',
-                padding: '40px',
+                minHeight: '1123px', // Keep for print layout consistency
                 background: 'white',
                 color: '#000',
                 boxSizing: 'border-box',
@@ -44,21 +44,22 @@ const InvoiceGenerator = ({ order, currency, user, companyLogo }) => {
             }}
         >
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '20px', marginBottom: '30px', borderBottom: '1px solid #eee' }}>
-                <div style={{ textAlign: 'left', width: '30%', flex: '0 0 30%' }}>
+            <div className="invoice-header-flex" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '20px', marginBottom: '30px', borderBottom: '1px solid #eee' }}>
+                <div className="header-left-text" style={{ textAlign: 'left', width: '30%', flex: '0 0 30%' }}>
                     <div style={{ fontSize: '24px', fontWeight: 'bold' }}>BABY Bear</div>
                     <div style={{ fontSize: '14px', color: '#555' }}>Serve Baby's Need</div>
                 </div>
-                <div style={{ textAlign: 'center', width: '40%', flex: '0 0 40%', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+                <div className="header-logo-container" style={{ textAlign: 'center', width: '40%', flex: '0 0 40%', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
                     {companyLogo && (
-                        <img 
-                            src={companyLogo.src} 
-                            alt="Company Logo" 
-                            style={{ width: '180px', height: '180px', objectFit: 'contain', printColorAdjust: 'exact', WebkitPrintColorAdjust: 'exact' }} 
+                        <img
+                            src={companyLogo.src}
+                            alt="Company Logo"
+                            style={{ width: '180px', height: '180px', objectFit: 'contain', printColorAdjust: 'exact', WebkitPrintColorAdjust: 'exact' }}
+                            className="company-logo" // Add a class for responsive image styling
                         />
                     )}
                 </div>
-                <div style={{ textAlign: 'right', width: '30%', flex: '0 0 30%' }}>
+                <div className="header-right-address" style={{ textAlign: 'right', width: '30%', flex: '0 0 30%' }}>
                     <h1 style={{ fontSize: '48px', fontWeight: '700', margin: '0 0 20px 0', color: '#000' }}>INVOICE</h1>
                     <div style={{ fontSize: '14px', lineHeight: '1.4' }}>
                         078 333 929<br />
@@ -69,8 +70,8 @@ const InvoiceGenerator = ({ order, currency, user, companyLogo }) => {
             </div>
 
             {/* Bill To & Invoice Details */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
-                <div>
+            <div className="invoice-details-flex" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
+                <div className="bill-to-section">
                     <h3 style={{ fontSize: '12px', fontWeight: 'bold', margin: '0 0 8px 0', textTransform: 'uppercase', color: '#888' }}>BILLED TO:</h3>
                     <div style={{ fontSize: '15px', lineHeight: '1.5' }}>
                         <div style={{ fontWeight: '600' }}>{order.address?.fullName || 'N/A'}</div>
@@ -78,7 +79,7 @@ const InvoiceGenerator = ({ order, currency, user, companyLogo }) => {
                         <div>{order.address?.phoneNumber || 'N/A'}</div>
                     </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
+                <div className="invoice-meta-section" style={{ textAlign: 'right' }}>
                     <div style={{ marginBottom: '8px' }}>
                         <span style={{ fontWeight: 'bold' }}>Invoice No.</span> {getInvoiceNumber(order._id, order.date)}
                     </div>
@@ -89,7 +90,7 @@ const InvoiceGenerator = ({ order, currency, user, companyLogo }) => {
             </div>
 
             {/* Items Table */}
-            <div style={{ marginBottom: '32px' }}>
+            <div className="table-responsive-container" style={{ marginBottom: '32px' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                     <thead>
                         <tr>
@@ -113,8 +114,8 @@ const InvoiceGenerator = ({ order, currency, user, companyLogo }) => {
             </div>
 
             {/* Totals */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px' }}>
-                <div style={{ width: '280px' }}>
+            <div className="totals-container-flex" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px' }}>
+                <div className="totals-table-wrapper" style={{ width: '280px' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '15px' }}>
                         <tbody>
                             <tr>
@@ -146,7 +147,7 @@ const InvoiceGenerator = ({ order, currency, user, companyLogo }) => {
             </div>
         </div>
     );
-    
+
     // Improved print function
     const handlePrint = () => {
         try {
@@ -163,6 +164,7 @@ const InvoiceGenerator = ({ order, currency, user, companyLogo }) => {
                                 body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: white; color: black; }
                                 img { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
                                 * { box-sizing: border-box; }
+                                /* Add responsive styles for print as well if needed, but typically print is fixed A4 */
                             </style>
                         </head>
                         <body>
@@ -190,18 +192,187 @@ const InvoiceGenerator = ({ order, currency, user, companyLogo }) => {
 
     return (
         <>
+            {/* GLOBAL STYLES FOR RESPONSIVENESS AND PRINTING */}
             <style jsx global>{`
+                /* Base styles for the invoice preview area */
+                .invoice-print-area {
+                    width: 100%; /* Make it fluid by default */
+                    max-width: 210mm; /* Limit max width for desktop view */
+                    box-shadow: 0 0 10px rgba(0,0,0,0.1); /* Add a subtle shadow for preview */
+                }
+
+                /* Mobile-specific styles (e.g., for screens smaller than 768px) */
+                @media (max-width: 767px) {
+                    .invoice-print-area {
+                        padding: 15px; /* Reduce padding on small screens */
+                    }
+
+                    /* Header Layout */
+                    .invoice-header-flex {
+                        flex-direction: column; /* Stack logo and address vertically */
+                        align-items: center !important; /* Center items for a stacked look */
+                        text-align: center !important;
+                    }
+
+                    .header-left-text,
+                    .header-logo-container,
+                    .header-right-address {
+                        width: 100% !important; /* Make each section take full width */
+                        flex: 0 0 100% !important; /* Override flex basis */
+                        text-align: center !important; /* Center text */
+                        margin-bottom: 20px; /* Add space between stacked sections */
+                    }
+
+                    .company-logo {
+                        width: 120px !important; /* Smaller logo on mobile */
+                        height: 120px !important;
+                    }
+
+                    .header-right-address h1 {
+                        font-size: 36px !important; /* Smaller INVOICE text */
+                        margin-bottom: 10px !important;
+                    }
+                    .header-right-address div {
+                        font-size: 13px !important; /* Smaller address text */
+                    }
+
+                    /* Bill To & Invoice Details Layout */
+                    .invoice-details-flex {
+                        flex-direction: column; /* Stack Bill To and Invoice Meta */
+                        align-items: flex-start; /* Align text to the left */
+                        margin-bottom: 20px;
+                    }
+                    .invoice-details-flex > div { /* Target bill-to-section and invoice-meta-section */
+                        width: 100% !important; /* Full width for each section */
+                        text-align: left !important; /* Ensure left alignment */
+                        margin-bottom: 15px; /* Add space between sections */
+                    }
+                    .invoice-meta-section {
+                        margin-top: 15px; /* Space from bill-to when stacked */
+                    }
+
+                    /* Table Responsiveness */
+                    .table-responsive-container {
+                        overflow-x: auto; /* Enable horizontal scrolling for the table */
+                        -webkit-overflow-scrolling: touch; /* Smoother scrolling on iOS */
+                        margin-bottom: 20px;
+                    }
+                    table {
+                        min-width: 600px; /* Ensure table has a minimum width to enable scroll if content is wide */
+                        /* You could also implement the "card" layout for tables here
+                           as demonstrated in the previous detailed response, if horizontal scroll isn't enough */
+                    }
+                    .product-table th, .product-table td {
+                        padding: 8px 10px !important; /* Slightly less padding */
+                        font-size: 13px !important; /* Smaller font for table content */
+                    }
+
+                    /* Totals Section */
+                    .totals-container-flex {
+                        justify-content: center !important; /* Center totals on mobile */
+                        margin-top: 20px !important;
+                    }
+                    .totals-table-wrapper {
+                        width: 90% !important; /* Make totals table take more width */
+                        max-width: 300px; /* But don't make it too wide */
+                    }
+                    .totals-table-wrapper td {
+                        font-size: 14px !important; /* Smaller font for totals */
+                    }
+
+                    /* Footer */
+                    .invoice-print-area > div:last-child { /* Targets the footer div */
+                        position: static !important; /* Remove absolute positioning */
+                        padding-top: 15px !important;
+                        left: auto !important;
+                        right: auto !important;
+                        bottom: auto !important;
+                    }
+                }
+
+                /* Print styles - Keep these separate as they are for physical paper */
                 @media print {
                     @page { size: A4; margin: 0.5in; }
                     body * { visibility: hidden; }
                     .invoice-print-area, .invoice-print-area * { visibility: visible; }
-                    .invoice-print-area { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; background: white !important; color: black !important; transform: none !important; }
+                    /* Make sure .invoice-print-area is not restricted by max-width for print */
+                    .invoice-print-area {
+                        position: absolute !important;
+                        left: 0 !important;
+                        top: 0 !important;
+                        width: 100% !important;
+                        background: white !important;
+                        color: black !important;
+                        transform: none !important;
+                        box-shadow: none !important; /* Remove shadow for print */
+                        padding: 0.5in !important; /* Set print margins here */
+                        max-width: none !important; /* Crucial for print to expand */
+                    }
                     .no-print { display: none !important; }
                     img { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
                     table { border-collapse: collapse !important; }
                     th, td { border-color: black !important; }
+
+                    /* Reset any mobile-specific flex-direction changes for print */
+                    .invoice-header-flex, .invoice-details-flex {
+                        flex-direction: row !important; /* Back to row for print */
+                        align-items: flex-start !important;
+                        text-align: left !important;
+                    }
+                    .header-left-text, .header-logo-container, .header-right-address {
+                        width: 30% !important; /* Restore desktop widths for print */
+                        flex: 0 0 30% !important;
+                        text-align: left !important;
+                        margin-bottom: 0 !important;
+                    }
+                    .header-right-address {
+                        text-align: right !important;
+                    }
+                     .header-logo-container {
+                        text-align: center !important;
+                    }
+                    .company-logo {
+                        width: 180px !important; /* Restore desktop logo size for print */
+                        height: 180px !important;
+                    }
+                    .header-right-address h1 {
+                        font-size: 48px !important;
+                    }
+                    .header-right-address div {
+                        font-size: 14px !important;
+                    }
+                    .bill-to-section, .invoice-meta-section {
+                        width: auto !important; /* Let content dictate width for print */
+                        text-align: left !important;
+                        margin-bottom: 0 !important;
+                    }
+                     .invoice-meta-section {
+                        margin-top: 0 !important;
+                    }
+                    .table-responsive-container {
+                        overflow-x: visible !important; /* No horizontal scroll on print */
+                        margin-bottom: 32px !important;
+                    }
+                    .totals-container-flex {
+                        justify-content: flex-end !important; /* Back to right for print */
+                        margin-top: 40px !important;
+                    }
+                    .totals-table-wrapper {
+                        width: 280px !important; /* Restore desktop width for print */
+                    }
+                    .totals-table-wrapper td {
+                        font-size: 15px !important;
+                    }
                 }
             `}</style>
+
+            {/* Viewport meta tag is typically in your main layout/html file.
+                If not, you'd add it here, but Next.js usually handles this. */}
+            {/* If you were adding it here, it would look like this:
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            But it's better placed in `pages/_document.js` or your main `layout.js` if using App Router.
+            For 'use client' component, it's assumed the parent document handles it.
+            */}
 
             <div className="mt-4">
                 <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -217,7 +388,7 @@ const InvoiceGenerator = ({ order, currency, user, companyLogo }) => {
                                 Created: {currentTime}
                             </p>
                         </div>
-                        
+
                         <div className="flex">
                             <button
                                 onClick={() => setShowPreview(true)}
@@ -254,6 +425,7 @@ const InvoiceGenerator = ({ order, currency, user, companyLogo }) => {
                             </div>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6">
+                            {/* The InvoiceContent is here, its responsiveness is now handled by the global styles */}
                             <InvoiceContent ref={invoiceRef} />
                         </div>
                     </div>
