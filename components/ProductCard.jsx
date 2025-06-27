@@ -121,7 +121,7 @@ const ProductCard = ({ product }) => {
                 </button>
                 
                 {/* Image Container with consistent sizing */}
-                <div className="relative w-full aspect-square p-4">
+                <div className="relative w-full aspect-square p-2">
                     <Image
                         src={product.image?.[0] || "/fallback-image.jpg"}
                         alt={product.name || "Product Image"}
