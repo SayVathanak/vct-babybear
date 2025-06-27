@@ -205,7 +205,7 @@ const InvoiceGenerator = ({ order, currency, user, companyLogo }) => {
 
             <div className="mt-4">
                 <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                    <div className="p-4 sm:p-5 flex flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="p-4 sm:p-5 flex flex-row items-center justify-between gap-4">
                         <div className="space-y-1">
                             <p className="font-medium text-gray-900 text-sm">
                                 {getInvoiceNumber(order._id, order.date)}
