@@ -79,7 +79,6 @@ export async function POST(request) {
     }
     // --- END ENHANCED INVENTORY VALIDATION ---
 
-    // Payment method specific validations
     if (paymentMethod === "ABA" && !paymentTransactionImage) {
       return NextResponse.json({ 
         success: false, 
@@ -94,7 +93,6 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
-    // Calculate subtotal using validated items
     const calculatedSubtotal = Number(
       validatedItems.reduce((acc, item) => {
         return acc + item.price * item.quantity;
@@ -133,13 +131,17 @@ export async function POST(request) {
       orderPaymentStatus = 'pending';
     }
 
-    // Start transaction to ensure atomicity
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
-      // Create order in database first (for immediate order ID generation)
+      // --- FIX: Generate a new ObjectId and create a user-friendly orderId ---
+      const newMongoId = new mongoose.Types.ObjectId();
+      const userFriendlyOrderId = `ORD-${newMongoId.toString().slice(-8).toUpperCase()}`;
+
       const order = new Order({
+        _id: newMongoId, // Use the pre-generated ID
+        orderId: userFriendlyOrderId, // Save the user-friendly ID
         userId,
         address,
         items: validatedItems.map(item => ({
@@ -164,7 +166,6 @@ export async function POST(request) {
 
       await order.save({ session });
 
-      // Update stock for each product
       for (const item of validatedItems) {
         await Product.findByIdAndUpdate(
           item.product,
@@ -173,43 +174,19 @@ export async function POST(request) {
         );
       }
 
-      // Clear user's cart after successful order creation
       const userDoc = await User.findById(userId);
       if (userDoc) {
         userDoc.cartItems = {};
         await userDoc.save({ session });
       }
 
-      // Commit the transaction
       await session.commitTransaction();
       session.endSession();
 
-      // Prepare data for Inngest event
       const finalOrderDataForEvent = {
-        orderId: order._id,
-        userId,
-        address,
-        items: validatedItems.map(item => ({
-          product: item.product,
-          quantity: item.quantity,
-          productName: item.productName,
-          price: item.price
-        })),
-        subtotal,
-        deliveryFee,
-        discount,
-        promoCode: promoCodeDetails,
-        amount: finalAmount,
-        date: order.date,
-        status: order.status,
-        paymentMethod,
-        paymentTransactionImage: order.paymentTransactionImage,
-        paymentStatus: orderPaymentStatus,
-        paymentConfirmationStatus: orderPaymentConfirmationStatus,
-        ...(paymentMethod === 'Bakong' && { bakongPaymentDetails })
+        ...order.toObject(), // Use the full order object
       };
       
-      // Send to Inngest for additional processing (notifications, etc.)
       await inngest.send({
         name: "order/created",
         data: finalOrderDataForEvent 
@@ -218,12 +195,11 @@ export async function POST(request) {
       return NextResponse.json({
         success: true,
         message: "Order placed successfully",
-        orderId: order._id,
+        orderId: order.orderId, // Return the user-friendly ID
         orderData: finalOrderDataForEvent
       });
 
     } catch (transactionError) {
-      // Rollback transaction on error
       await session.abortTransaction();
       session.endSession();
       throw transactionError;

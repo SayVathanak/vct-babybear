@@ -15,6 +15,7 @@ import {
 } from "react-icons/ci";
 import { AiOutlineLoading } from "react-icons/ai";
 import { FiChevronRight } from "react-icons/fi";
+import Loading from "./Loading";
 
 // Enhanced debounce utility
 const debounce = (func, delay) => {
@@ -252,7 +253,8 @@ const ProductScrollSection = ({
                       rotate: { duration: 2, repeat: Infinity, ease: "linear" }
                     }}
                   >
-                    <AiOutlineLoading className="text-4xl md:text-6xl text-gray-300 mb-3 md:mb-4" />
+                    {/* <AiOutlineLoading className="text-4xl md:text-6xl text-gray-300 mb-3 md:mb-4" /> */}
+                    <Loading/>
                   </motion.div>
                   <motion.p 
                     className="text-gray-500 text-base md:text-lg"
@@ -493,7 +495,8 @@ const HomeProducts = () => {
                   rotate: { duration: 2, repeat: Infinity, ease: "linear" }
                 }}
               >
-                <AiOutlineLoading className="text-4xl md:text-6xl text-gray-300 mb-3 md:mb-4" />
+                {/* <AiOutlineLoading className="text-4xl md:text-6xl text-gray-300 mb-3 md:mb-4" /> */}
+                <Loading/>
               </motion.div>
               <motion.p 
                 className="text-gray-500 text-base md:text-lg text-center"

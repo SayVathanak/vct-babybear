@@ -13,7 +13,6 @@ export async function POST(request) {
     session.startTransaction();
 
     try {
-        // 1. Authenticate the seller
         const { userId } = getAuth(request);
         if (!userId || !(await authSeller(userId))) {
             await session.abortTransaction();
@@ -22,7 +21,6 @@ export async function POST(request) {
 
         const { items } = await request.json();
 
-        // 2. Validate input
         if (!items || !Array.isArray(items) || items.length === 0) {
             await session.abortTransaction();
             return NextResponse.json({ success: false, message: "Invalid data: Items array is required." }, { status: 400 });
@@ -31,7 +29,6 @@ export async function POST(request) {
         let serverCalculatedSubtotal = 0;
         const productDetails = [];
 
-        // 3. Validate stock and calculate totals on the server
         for (const item of items) {
             if (!item.product || !item.quantity || item.quantity <= 0) {
                 await session.abortTransaction();
@@ -49,27 +46,30 @@ export async function POST(request) {
                 return NextResponse.json({ success: false, message: `Not enough stock for ${productDoc.name}. Only ${productDoc.stock} left.` }, { status: 400 });
             }
 
-            // Use offerPrice if available, otherwise use regular price
             const price = productDoc.offerPrice > 0 ? productDoc.offerPrice : productDoc.price;
             serverCalculatedSubtotal += price * item.quantity;
             productDetails.push({ product: productDoc, quantity: item.quantity });
         }
 
-        // 4. Find or create a default "Walk-in" address for the seller
         let posAddress = await Address.findOne({ userId, fullName: "Walk-in Customer" }).session(session);
         if (!posAddress) {
             posAddress = new Address({
                 userId,
                 fullName: "Walk-in Customer",
-                phoneNumber: "0000000000",
-                area: "In-Store",
-                state: "In-Store Sale",
+                phoneNumber: "N/A",
+                area: "In-Store Sale",
+                state: "Baby Bear",
             });
             await posAddress.save({ session });
         }
 
-        // 5. Create the new order document using server-calculated values
+        // --- FIX: Generate a new ObjectId and create a user-friendly orderId ---
+        const newMongoId = new mongoose.Types.ObjectId();
+        const userFriendlyOrderId = `POS-${newMongoId.toString().slice(-8).toUpperCase()}`;
+
         const newOrder = new Order({
+            _id: newMongoId, // Use the pre-generated ID
+            orderId: userFriendlyOrderId, // Save the user-friendly ID
             userId,
             address: posAddress._id,
             items: items.map(item => ({
@@ -79,17 +79,16 @@ export async function POST(request) {
             subtotal: serverCalculatedSubtotal,
             deliveryFee: 0,
             discount: 0,
-            amount: serverCalculatedSubtotal, // Total amount is the subtotal for POS
+            amount: serverCalculatedSubtotal,
             date: Date.now(),
             status: 'Completed',
-            paymentMethod: 'COD', // 'COD' represents an in-person payment
+            paymentMethod: 'COD',
             paymentStatus: 'paid',
             paymentConfirmationStatus: 'confirmed',
         });
 
         const savedOrder = await newOrder.save({ session });
 
-        // 6. Decrement stock levels for each product
         for (const detail of productDetails) {
             await Product.updateOne(
                 { _id: detail.product._id },
@@ -98,29 +97,31 @@ export async function POST(request) {
             );
         }
 
-        // 7. Commit the transaction
         await session.commitTransaction();
 
-        // 8. Prepare the order data for the frontend response
+        const populatedItems = await Promise.all(
+            savedOrder.items.map(async (item) => {
+                const product = await Product.findById(item.product).lean();
+                return { ...item.toObject(), product };
+            })
+        );
+
         const orderForFrontend = {
-            ...savedOrder.toObject(), // Convert Mongoose doc to plain JS object
-            orderId: savedOrder._id.toString(), // Add the 'orderId' field
-            items: productDetails // Send populated product details for the receipt
+            ...savedOrder.toObject(),
+            items: populatedItems,
         };
 
         return NextResponse.json({
             success: true,
             message: "Sale completed successfully!",
-            order: orderForFrontend, // Send the transformed object
+            order: orderForFrontend,
         }, { status: 201 });
 
     } catch (error) {
-        // If any error occurs, abort the transaction
         await session.abortTransaction();
         console.error("Error in POS order creation:", error);
         return NextResponse.json({ success: false, message: error.message || "Server error while creating order." }, { status: 500 });
     } finally {
-        // End the session
         session.endSession();
     }
 }

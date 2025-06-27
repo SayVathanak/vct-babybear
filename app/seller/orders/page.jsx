@@ -8,13 +8,19 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import {
     CiCircleChevDown, CiCircleChevUp, CiBookmark, CiShoppingBasket, CiFolderOn, CiLocationArrow1, CiSearch, CiFilter, CiCalendar, CiPhone, CiMap ,
-    CiCreditCard1, CiCircleCheck, CiMinimize1, CiCircleRemove, CiWarning,CiMaximize1, CiRead, CiImageOn, // CiImageOn for Eye
+    CiCreditCard1, CiCircleCheck, CiMinimize1, CiCircleRemove, CiWarning,CiMaximize1, CiRead, CiImageOn, 
     CiRepeat, CiEdit, CiFloppyDisk, CiUser, CiReceipt , CiChat1, CiFileOn, CiDeliveryTruck, CiClock1,
-    CiCircleAlert // For AlertCircle used in renderProofModal
+    CiCircleAlert, 
+    CiLink,
+    CiBarcode // <-- ADDED ICON
 } from "react-icons/ci";
 
+import InvoiceGenerator from "@/components/InvoiceGenerator"; 
+import Receipt from "@/components/Receipt"; 
+import BarcodeScanner from "@/components/BarcodeScanner"; // <-- IMPORTED BARCODE SCANNER
+
 // This constant is a fallback if paymentTransactionImage is NOT a full URL.
-const IMAGE_BASE_URL = null; // Example: 'https://your-image-server.com/proofs/'; Set to null if images are full URLs
+const IMAGE_BASE_URL = null; 
 
 // Memoized SellerOrderItem component
 const SellerOrderItem = memo(({ item, currency }) => (
@@ -22,13 +28,13 @@ const SellerOrderItem = memo(({ item, currency }) => (
         <div className="flex items-center flex-1 min-w-0">
             <div className="w-12 h-12 sm:w-16 sm:h-16 min-w-[3rem] sm:min-w-[4rem] bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden">
                 <Image
-                    src={item.product?.image?.[0] || item.product?.image || "/assets/box_icon.svg"} // Fallback image
+                    src={item.product?.image?.[0] || item.product?.image || "/assets/box_icon.svg"} 
                     alt={item.product?.name || "Product Image"}
                     className="object-contain w-4/5 h-4/5 transition-transform duration-300 hover:scale-105"
                     width={64}
                     height={64}
-                    loading="lazy" // Lazy load images for performance
-                    onError={(e) => { e.target.src = "/assets/box_icon.svg"; }} // Fallback on error
+                    loading="lazy" 
+                    onError={(e) => { e.target.src = "/assets/box_icon.svg"; }} 
                 />
             </div>
             <div className="ml-3 sm:ml-4 flex-1 min-w-0">
@@ -43,7 +49,7 @@ const SellerOrderItem = memo(({ item, currency }) => (
 ));
 SellerOrderItem.displayName = 'SellerOrderItem';
 
-// Error Boundary component to catch rendering errors in its children
+// Error Boundary component
 class OrderErrorBoundary extends React.Component {
     constructor(props) {
         super(props);
@@ -51,25 +57,22 @@ class OrderErrorBoundary extends React.Component {
     }
 
     static getDerivedStateFromError(error) {
-        // Update state so the next render will show the fallback UI.
         return { hasError: true, error };
     }
 
     componentDidCatch(error, errorInfo) {
-        // You can also log the error to an error reporting service
         console.error('Seller Orders page error caught by ErrorBoundary:', error, errorInfo);
     }
 
     render() {
         if (this.state.hasError) {
-            // You can render any custom fallback UI
             return (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center my-10">
                     <CiWarning className="h-12 w-12 text-red-500 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-red-800 mb-2">Something went wrong</h3>
                     <p className="text-red-600 mb-4">We encountered an error while displaying this section. Please try refreshing the page.</p>
                     <button
-                        onClick={() => this.setState({ hasError: false, error: null })} // Allow user to try to re-render
+                        onClick={() => this.setState({ hasError: false, error: null })}
                         className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors mr-2"
                     >
                         Try Again
@@ -91,103 +94,112 @@ class OrderErrorBoundary extends React.Component {
 const Orders = () => {
     const { currency, getToken, user } = useAppContext();
 
-    // State variables for orders, loading, filters, and UI interactions
+    // State variables
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [filterStatus, setFilterStatus] = useState("all");
-    const [expandedOrder, setExpandedOrder] = useState(null); // Tracks which order's details are expanded
+    const [expandedOrder, setExpandedOrder] = useState(null); 
     const [sortBy, setSortBy] = useState("newest");
     const [retryCount, setRetryCount] = useState(0);
 
-    const [editingOverallStatusOrderId, setEditingOverallStatusOrderId] = useState(null); // Order ID being edited
-    const [newOverallStatus, setNewOverallStatus] = useState(""); // New status for the order
-    const [isOverallStatusUpdating, setIsOverallStatusUpdating] = useState(false); // Loading state for status update
+    const [editingOverallStatusOrderId, setEditingOverallStatusOrderId] = useState(null); 
+    const [newOverallStatus, setNewOverallStatus] = useState(""); 
+    const [isOverallStatusUpdating, setIsOverallStatusUpdating] = useState(false); 
 
-    const [paymentActionState, setPaymentActionState] = useState({ orderId: null, action: null, isLoading: false }); // For payment confirmation/rejection
+    const [paymentActionState, setPaymentActionState] = useState({ orderId: null, action: null, isLoading: false }); 
 
-    const [showProofModal, setShowProofModal] = useState(false); // Controls visibility of the proof image modal
-    const [currentProofImageUrl, setCurrentProofImageUrl] = useState(""); // URL of the proof image to display
+    const [showProofModal, setShowProofModal] = useState(false); 
+    const [currentProofImageUrl, setCurrentProofImageUrl] = useState(""); 
 
-    const [filtersVisible, setFiltersVisible] = useState(false); // State for collapsible filter section
+    const [filtersVisible, setFiltersVisible] = useState(false); 
+
+    // States for Modals
+    const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState(null);
+    const [selectedOrderForReceipt, setSelectedOrderForReceipt] = useState(null);
+    const [isScannerOpen, setIsScannerOpen] = useState(false); // <-- NEW: State for barcode scanner
+    const companyLogo = { src: "/icons/logo.svg" }; 
 
     // Fetches seller orders from the API
     const fetchSellerOrders = useCallback(async (retryAttempt = 0) => {
-        let currentError = null; // To store error within the scope for finally block
+        let currentError = null;
         try {
-            if (retryAttempt === 0) setLoading(true); // Show main loading only on first attempt
+            if (retryAttempt === 0) setLoading(true); 
             
             const token = await getToken();
             if (!token) {
                 toast.error('Authentication token not available. Please log in.');
-                setLoading(false); // Stop loading if no token
+                setLoading(false);
                 return;
             }
 
-            const controller = new AbortController(); // For request timeout
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second timeout
+            const controller = new AbortController(); 
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
 
             const { data } = await axios.get('/api/order/seller-orders', {
                 headers: { Authorization: `Bearer ${token}` },
                 signal: controller.signal
             });
             
-            clearTimeout(timeoutId); // Clear timeout if request succeeds
+            clearTimeout(timeoutId);
 
             if (data.success) {
-                // Sort orders by date by default (newest first)
                 const sortedOrders = (data.orders || []).sort((a, b) => new Date(b.date) - new Date(a.date));
                 setOrders(sortedOrders);
-                setRetryCount(0); // Reset retry count on success
+                setRetryCount(0);
             } else {
                 throw new Error(data.message || "Failed to fetch seller orders.");
             }
         } catch (error) {
-            currentError = error; // Store error for use in finally block
+            currentError = error;
             console.error("Error in fetchSellerOrders:", error);
             
             if (error.name === 'AbortError') {
                 toast.error('Request timed out. Please check your connection and try again.');
             } else if (error.response?.status === 401) {
                 toast.error('Authentication failed. Please log in again.');
-            } else if (retryAttempt < 2) { // Retry up to 2 times (total 3 attempts)
+            } else if (retryAttempt < 2) { 
                 toast.error(`Error fetching orders. Retrying (${retryAttempt + 1})...`);
                 setTimeout(() => {
-                    setRetryCount(prev => prev + 1); // Update state for retry count
+                    setRetryCount(prev => prev + 1);
                     fetchSellerOrders(retryAttempt + 1);
-                }, Math.pow(2, retryAttempt) * 1500); // Exponential backoff
-                return; // Important: return to prevent setLoading(false) in finally block too early
+                }, Math.pow(2, retryAttempt) * 1500); 
+                return; 
             } else {
                 toast.error(error.response?.data?.message || error.message || "An error occurred while fetching orders. Please try again later.");
-                setOrders([]); // Clear orders on final failure
+                setOrders([]);
             }
         } finally {
-            // Ensure loading is set to false only after all retries or on non-retryable errors
              if (retryAttempt >= 2 || (currentError && currentError.name === 'AbortError') || (currentError && currentError.response?.status === 401) || (!currentError && retryAttempt === 0) || (currentError && retryAttempt === 0 && !(currentError.name === 'AbortError' || currentError.response?.status === 401))) {
                 setLoading(false);
             }
         }
-    }, [getToken]); // getToken is a dependency
+    }, [getToken]);
 
-    // Effect to fetch orders when the component mounts or user changes
     useEffect(() => {
-        if (user) { // Only fetch if user is available
+        if (user) {
             fetchSellerOrders();
         } else {
-            setLoading(false); // If no user, stop loading
-            // Optionally, redirect to login or show a message
-            // toast.info("Please log in to view your orders.");
+            setLoading(false);
         }
-    }, [user, fetchSellerOrders]); // fetchSellerOrders is now stable due to useCallback
+    }, [user, fetchSellerOrders]);
 
-    // Toggles the expanded view of an order
     const toggleOrderExpansion = useCallback((orderId) => {
         setExpandedOrder(prev => (prev === orderId ? null : orderId));
-        setEditingOverallStatusOrderId(null); // Reset editing state when collapsing/expanding
+        setEditingOverallStatusOrderId(null);
         setNewOverallStatus("");
     }, []);
+    
+    // --- NEW: Handler for when a barcode is detected ---
+    const handleBarcodeScanned = useCallback((scannedCode) => {
+        if (scannedCode) {
+            toast.success(`Scanned: ${scannedCode}. Searching...`);
+            setSearchTerm(scannedCode); // Set search term to trigger filtering
+            setIsScannerOpen(false);   // Close scanner
+            setFiltersVisible(true);   // Ensure search bar is visible
+        }
+    }, []);
 
-    // Handles payment confirmation (confirm or reject)
     const handlePaymentConfirmation = async (orderId, actionToConfirm) => {
         setPaymentActionState({ orderId, action: actionToConfirm, isLoading: true });
         try {
@@ -204,7 +216,6 @@ const Orders = () => {
 
             if (data.success && data.order) {
                 toast.success(`Payment ${actionToConfirm === 'confirm' ? 'confirmed' : 'rejected'} successfully.`);
-                // Update the specific order in the local state
                 setOrders(prevOrders => prevOrders.map(o => (o._id === orderId ? { ...o, ...data.order } : o)));
             } else {
                 toast.error(data.message || `Failed to ${actionToConfirm} payment.`);
@@ -217,7 +228,6 @@ const Orders = () => {
         }
     };
 
-    // Handles updating the overall status of an order
     const handleUpdateOverallOrderStatus = async (orderIdToUpdate) => {
         if (!newOverallStatus) {
             toast.error("Please select a new status for the order.");
@@ -237,20 +247,19 @@ const Orders = () => {
                 setIsOverallStatusUpdating(false);
                 return;
             }
-            // Assuming status update applies to all items if it's an "overall" status.
-            // If item-specific status updates are needed, the API and payload would differ.
+            
             const allItemIds = orderToUpdate.items.map(item => item._id); 
 
             const { data } = await axios.put(
                 '/api/order/update-status',
-                { orderId: orderIdToUpdate, itemIds: allItemIds, status: newOverallStatus }, // API might expect itemIds or handle overall status differently
+                { orderId: orderIdToUpdate, itemIds: allItemIds, status: newOverallStatus }, 
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
             if (data.success && data.order) {
                 toast.success("Overall order status updated successfully!");
                 setOrders(prevOrders => prevOrders.map(o => (o._id === orderIdToUpdate ? { ...o, ...data.order } : o)));
-                setEditingOverallStatusOrderId(null); // Close editing UI
+                setEditingOverallStatusOrderId(null);
                 setNewOverallStatus("");
             } else {
                 toast.error(data.message || "Failed to update order status.");
@@ -263,41 +272,38 @@ const Orders = () => {
         }
     };
     
-    // Memoized calculation for filtered and sorted orders
+    // --- UPDATED: Search logic now includes `orderId` for barcode scanning ---
     const filteredOrders = useMemo(() => {
-        if (!Array.isArray(orders)) return []; // Ensure orders is an array
-        let filtered = [...orders]; // Create a new array to avoid mutating state
+        if (!Array.isArray(orders)) return [];
+        let filtered = [...orders];
 
-        // Apply search term filter
         if (searchTerm.trim()) {
             const lowerSearchTerm = searchTerm.toLowerCase();
             filtered = filtered.filter(order =>
+                order.orderId?.toLowerCase().includes(lowerSearchTerm) || // Search by full Order ID (from receipt barcode)
                 order.address?.fullName?.toLowerCase().includes(lowerSearchTerm) ||
-                order._id?.toLowerCase().includes(lowerSearchTerm) || // Search by full Order ID
-                order._id?.slice(-6).toLowerCase().includes(lowerSearchTerm) || // Search by last 6 digits of Order ID
-                order.userId?.toLowerCase().includes(lowerSearchTerm) || // Search by User ID
+                order._id?.toLowerCase().includes(lowerSearchTerm) ||
+                order._id?.slice(-6).toLowerCase().includes(lowerSearchTerm) ||
+                order.userId?.toLowerCase().includes(lowerSearchTerm) ||
                 order.items?.some(item => item.product?.name?.toLowerCase().includes(lowerSearchTerm))
             );
         }
 
-        // Apply status filter
         if (filterStatus !== "all") {
             filtered = filtered.filter(order => order.status?.toLowerCase() === filterStatus.toLowerCase());
         }
 
-        // Apply sorting
         filtered.sort((a, b) => {
             if (sortBy === "newest") return new Date(b.date) - new Date(a.date);
             if (sortBy === "oldest") return new Date(a.date) - new Date(b.date);
             if (sortBy === "highest") return (b.amount || 0) - (a.amount || 0);
             if (sortBy === "lowest") return (a.amount || 0) - (b.amount || 0);
-            return 0; // Default no sort change
+            return 0;
         });
         return filtered;
     }, [orders, searchTerm, filterStatus, sortBy]);
 
 
-    // Utility to get Tailwind CSS classes for status badges
     const getStatusColor = useCallback((status) => {
         const s = status?.toLowerCase();
         if (s === "delivered") return "bg-green-100 text-green-800";
@@ -305,25 +311,23 @@ const Orders = () => {
         if (s === "processing") return "bg-yellow-100 text-yellow-800";
         if (s === "pending" || s === "order placed") return "bg-orange-100 text-orange-800";
         if (s === "cancelled") return "bg-red-100 text-red-800";
-        if (s === "payment rejected") return "bg-pink-100 text-pink-800"; // Specific to seller view
-        return "bg-gray-100 text-gray-800"; // Default
+        if (s === "payment rejected") return "bg-pink-100 text-pink-800"; 
+        return "bg-gray-100 text-gray-800";
     }, []);
     
-    // Utility to get an icon component based on order status
     const getStatusIcon = useCallback((status) => {
-        const iconClass = "h-4 w-4"; // Consistent icon size
+        const iconClass = "h-4 w-4";
         switch (status?.toLowerCase()) {
             case "delivered": return <CiCircleCheck className={iconClass} />;
             case "out for delivery": return <CiDeliveryTruck className={iconClass} />;
             case "processing": return <CiClock1 className={iconClass} />;
-            case "pending": case "order placed": return <CiClock1 className={iconClass} />; // Using CiClock1 for pending states
+            case "pending": case "order placed": return <CiClock1 className={iconClass} />;
             case "cancelled": return <CiCircleRemove className={iconClass} />;
             case "payment rejected": return <CiWarning className={iconClass} />;
-            default: return <CiBookmark  className={iconClass} />; // Default package icon
+            default: return <CiBookmark  className={iconClass} />; 
         }
     }, []);
     
-    // Utility to get text color for payment status
     const getPaymentStatusColorText = useCallback((status) => {
         const s = status?.toLowerCase();
         if (s === "paid" || s === "confirmed") return "text-green-700";
@@ -331,53 +335,49 @@ const Orders = () => {
         if (s === "pending") return "text-orange-700";
         if (s === "rejected" || s === "failed") return "text-red-700 font-semibold";
         if (s === "na") return "text-gray-700";
-        return "text-gray-700"; // Default
+        return "text-gray-700"; 
     }, []);
 
-    // Formats a date string into a readable format
     const formatDate = useCallback((dateString) => {
         if (!dateString) return 'N/A';
         const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
         try {
-            return new Date(dateString).toLocaleString(undefined, options); // Use browser's default locale
+            return new Date(dateString).toLocaleString(undefined, options);
         } catch (e) {
             console.error("Error formatting date:", e);
             return 'Invalid Date';
         }
     }, []);
 
-    // Opens the modal to display the payment proof image
     const openProofModal = (imageIdentifier) => {
         if (!imageIdentifier) {
-            setCurrentProofImageUrl("/assets/no-image.png"); // Default placeholder if no image
+            setCurrentProofImageUrl("/assets/no-image.png");
             setShowProofModal(true);
             return;
         }
-        // Check if it's a full URL (http, https, or data URI)
         if (imageIdentifier.startsWith('http://') || imageIdentifier.startsWith('https://') || imageIdentifier.startsWith('data:')) {
             setCurrentProofImageUrl(imageIdentifier);
-        } else if (IMAGE_BASE_URL) { // If it's a relative path and base URL is defined
+        } else if (IMAGE_BASE_URL) { 
             setCurrentProofImageUrl(`${IMAGE_BASE_URL}${imageIdentifier}`);
-        } else { // Fallback if it's a relative path but no base URL
+        } else {
             console.warn("SellerOrders: IMAGE_BASE_URL not defined or imageIdentifier not a full URL. Displaying placeholder for:", imageIdentifier);
             setCurrentProofImageUrl("/assets/no-image.png");
         }
         setShowProofModal(true);
     };
 
-    // Renders the modal for displaying payment proof
     const renderProofModal = () => (
         showProofModal && (
             <div 
                 className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-75 p-4 transition-opacity duration-300" 
-                onClick={() => setShowProofModal(false)} // Close modal on backdrop click
+                onClick={() => setShowProofModal(false)}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="proof-modal-title"
             >
                 <div 
                     className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full mx-auto overflow-hidden" 
-                    onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal content
+                    onClick={(e) => e.stopPropagation()}
                 >
                     <div className="flex justify-between items-center p-4 border-b border-gray-200">
                         <h3 id="proof-modal-title" className="text-lg font-semibold text-gray-900">Payment Transaction</h3>
@@ -394,13 +394,13 @@ const Orders = () => {
                             <Image
                                 src={currentProofImageUrl}
                                 alt="Transaction Proof"
-                                width={800} // Max width, will scale down
-                                height={600} // Max height, will scale down
-                                className="rounded-md object-contain w-full max-h-[75vh]" // Ensure image fits within viewport height
+                                width={800} 
+                                height={600} 
+                                className="rounded-md object-contain w-full max-h-[75vh]"
                                 onError={() => {
                                     console.warn("Failed to load proof image from URL:", currentProofImageUrl);
                                     toast.error("Could not load proof image.");
-                                    setCurrentProofImageUrl("/assets/no-image.png"); // Fallback on error
+                                    setCurrentProofImageUrl("/assets/no-image.png");
                                 }}
                             />
                         ) : (
@@ -415,8 +415,7 @@ const Orders = () => {
         )
     );
     
-    // Loading state: displayed when fetching orders for the first time
-    if (loading && orders.length === 0 && retryCount === 0) { // Show full page loading only on initial load
+    if (loading && orders.length === 0 && retryCount === 0) {
         return (
             <div className="flex-1 flex flex-col min-h-screen bg-gray-50">
                 <div className="flex-grow flex justify-center items-center py-16">
@@ -427,7 +426,6 @@ const Orders = () => {
         );
     }
     
-    // "No orders yet" state: displayed if there are no orders after initial load
     if (!loading && orders.length === 0 && !searchTerm && filterStatus === "all" && retryCount === 0) {
         return (
             <OrderErrorBoundary>
@@ -463,13 +461,38 @@ const Orders = () => {
         );
     }
 
-    // Main content: order list and filters
     return (
         <OrderErrorBoundary>
             <div className="flex-1 flex flex-col min-h-screen bg-gray-50">
-                {renderProofModal()} {/* Modal for viewing proof images */}
+                {renderProofModal()}
+
+                {/* --- Render Modals --- */}
+                {selectedOrderForInvoice && (
+                    <InvoiceGenerator
+                        order={selectedOrderForInvoice}
+                        currency={currency}
+                        user={user}
+                        companyLogo={companyLogo}
+                        onClose={() => setSelectedOrderForInvoice(null)}
+                    />
+                )}
+                {selectedOrderForReceipt && (
+                    <Receipt
+                        order={selectedOrderForReceipt}
+                        currency={currency}
+                        user={user}
+                        onClose={() => setSelectedOrderForReceipt(null)}
+                    />
+                )}
+                {/* --- NEW: Render Barcode Scanner Modal --- */}
+                {isScannerOpen && (
+                    <BarcodeScanner 
+                        onBarcodeDetected={handleBarcodeScanned}
+                        onClose={() => setIsScannerOpen(false)}
+                    />
+                )}
+
                 <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 md:px-8 py-6">
-                    {/* Header: Title, Filter Toggle, Refresh Button */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-3 md:gap-6">
                         <div>
                             <h1 className="text-2xl lg:text-3xl font-semibold text-gray-900">Order Dashboard</h1>
@@ -479,6 +502,15 @@ const Orders = () => {
                         </div>
                         
                         <div className="flex items-center gap-2 sm:gap-3">
+                            {/* --- NEW: Scan Receipt Button --- */}
+                            <button
+                                onClick={() => setIsScannerOpen(true)}
+                                className="text-sm font-medium py-2 px-3 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-opacity-50 flex items-center transition-colors"
+                                title="Scan a receipt barcode to find an order"
+                            >
+                                <CiBarcode size={20} className="mr-1.5 text-gray-600" />
+                                Scan
+                            </button>
                             <button
                                 onClick={() => setFiltersVisible(!filtersVisible)}
                                 className="text-sm font-medium py-2 px-3 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-opacity-50 flex items-center transition-colors"
@@ -492,7 +524,7 @@ const Orders = () => {
                             <button 
                                 onClick={() => fetchSellerOrders(0)} 
                                 className="bg-sky-500 hover:bg-sky-600 text-white font-medium px-3 sm:px-4 py-2 rounded-lg transition duration-300 flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-opacity-50" 
-                                disabled={loading && !paymentActionState.isLoading && !isOverallStatusUpdating} // Disable only if global loading is active
+                                disabled={loading && !paymentActionState.isLoading && !isOverallStatusUpdating}
                                 title="Refresh order list"
                             >
                                 <CiRepeat size={18} className={`mr-1.5 ${loading && !paymentActionState.isLoading && !isOverallStatusUpdating ? 'animate-spin' : ''}`} />
@@ -501,24 +533,21 @@ const Orders = () => {
                         </div>
                     </div>
 
-                    {/* Collapsible Filter Controls Section */}
                     {filtersVisible && (
                         <div id="filter-controls-section" className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6 p-4 bg-white rounded-lg shadow border border-gray-200">
-                            {/* Search Input */}
                             <div className="relative md:col-span-1">
                                 <label htmlFor="order-search" className="sr-only">Search orders</label>
                                 <CiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 pointer-events-none" />
                                 <input
                                     id="order-search"
                                     type="text"
-                                    placeholder="Search ID, Customer, Product..."
+                                    placeholder="Search or Scan Receipt Barcode..."
                                     className="pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 w-full text-sm transition-colors"
                                     value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
                                     aria-label="Search orders by ID, customer name, or product name"
                                 />
                             </div>
                             
-                            {/* Filter and Sort Selects */}
                             <div className="relative md:col-span-1">
                                  <label htmlFor="filter-status-select" className="sr-only">Filter by status</label>
                                 <select
@@ -557,12 +586,11 @@ const Orders = () => {
                         </div>
                     )}
 
-                    {/* Orders List or "No Orders Found" Message */}
-                    {loading && filteredOrders.length === 0 && retryCount > 0 ? ( // Show loading spinner if retrying and list is empty
+                    {loading && filteredOrders.length === 0 && retryCount > 0 ? (
                          <div className="flex-grow flex justify-center items-center py-16">
                             <Loading text={`Retrying to fetch orders (${retryCount})...`} />
                          </div>
-                    ) : !loading && filteredOrders.length === 0 ? ( // No orders found after loading/filtering
+                    ) : !loading && filteredOrders.length === 0 ? (
                         <div className="bg-white rounded-lg shadow-sm p-10 sm:p-12 text-center min-h-[40vh] flex flex-col justify-center items-center">
                             <div className="mx-auto w-20 h-20 sm:w-24 sm:h-24 mb-6 flex items-center justify-center bg-gray-100 rounded-full">
                                 <CiSearch className="text-gray-400 w-10 h-10 sm:w-12 sm:h-12" />
@@ -575,11 +603,10 @@ const Orders = () => {
                                 </button>.
                             </p>
                         </div>
-                    ) : ( // Display list of orders
+                    ) : (
                         <div className="space-y-4">
                             {filteredOrders.map((order) => (
                                 <div key={order._id} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden transition-all duration-300 ease-in-out hover:shadow-lg">
-                                    {/* Clickable header to expand/collapse order details */}
                                     <div
                                         className="p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between cursor-pointer hover:bg-gray-50/70 transition-colors duration-150"
                                         onClick={() => toggleOrderExpansion(order._id)}
@@ -588,7 +615,6 @@ const Orders = () => {
                                         aria-controls={`order-details-${order._id}`}
                                         aria-label={`Order ID ending in ${order._id?.slice(-6) || 'N/A'}, dated ${formatDate(order.date)}. Click to ${expandedOrder === order._id ? 'collapse' : 'expand'} details.`}
                                     >
-                                        {/* Order ID, Date, Customer Name */}
                                         <div className="flex items-center mb-3 md:mb-0 flex-1 min-w-0">
                                             <div className="bg-sky-100 p-2.5 sm:p-3 rounded-full mr-3 sm:mr-4">
                                                 <CiBookmark  className="h-5 w-5 sm:h-6 sm:w-6 text-sky-600" />
@@ -602,7 +628,6 @@ const Orders = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                        {/* Order Amount, Status, Expansion Chevron */}
                                         <div className="flex items-center justify-between md:justify-end w-full md:w-auto mt-2 md:mt-0">
                                             <div className="flex items-center space-x-2 sm:space-x-3">
                                                 <p className="text-sm sm:text-base font-semibold text-gray-800">{currency}{(order.amount || 0).toFixed(2)}</p>
@@ -618,11 +643,9 @@ const Orders = () => {
                                         </div>
                                     </div>
 
-                                    {/* Expanded order details section */}
                                     {expandedOrder === order._id && (
                                         <div className="border-t border-gray-200 bg-gray-50/50" id={`order-details-${order._id}`}>
                                             <div className="p-4 md:p-6 grid grid-cols-1 lg:grid-cols-2 gap-x-6 md:gap-x-8 gap-y-5">
-                                                {/* Column 1: Order Items & Payment Summary */}
                                                 <div className="space-y-5">
                                                     <div>
                                                         <h4 className="font-semibold text-gray-800 mb-2.5 flex items-center text-sm"><CiFolderOn   size={18} className="mr-2 text-sky-600" />Order Items ({order.items?.length || 0})</h4>
@@ -678,7 +701,6 @@ const Orders = () => {
                                                     </div>
                                                 </div>
 
-                                                {/* Column 2: Delivery Info & Status Update */}
                                                 <div className="space-y-5">
                                                     <div>
                                                         <h4 className="font-semibold text-gray-800 mb-2.5 flex items-center text-sm"><CiLocationArrow1   size={18} className="mr-2 text-sky-600" />Delivery Information</h4>
@@ -705,6 +727,29 @@ const Orders = () => {
                                                         </div>
                                                     </div>
 
+                                                    <div>
+                                                        <h4 className="font-semibold text-gray-800 mb-2.5 flex items-center text-sm">
+                                                            <CiFileOn size={18} className="mr-2 text-sky-600" />
+                                                            Documents & Actions
+                                                        </h4>
+                                                        <div className="bg-white rounded-md p-3 shadow-sm border border-gray-200 flex flex-col sm:flex-row gap-2">
+                                                            <button
+                                                                onClick={() => setSelectedOrderForInvoice(order)}
+                                                                className="flex-1 bg-blue-500 text-white rounded-lg py-2 px-3 text-sm font-medium hover:bg-blue-600 transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                                                            >
+                                                                <CiImageOn size={18} className="mr-2" />
+                                                                Preview Invoice
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setSelectedOrderForReceipt(order)}
+                                                                className="flex-1 bg-green-500 text-white rounded-lg py-2 px-3 text-sm font-medium hover:bg-green-600 transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+                                                            >
+                                                                <CiReceipt size={18} className="mr-2" />
+                                                                Preview Receipt
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    
                                                     <div>
                                                         <h4 className="font-semibold text-gray-800 mb-2.5 flex items-center text-sm"><CiChat1 size={18} className="mr-2 text-sky-600" />Update Overall Status</h4>
                                                         <div className="bg-white rounded-md p-3 shadow-sm border border-gray-200">
@@ -762,7 +807,7 @@ const Orders = () => {
                         </div>
                     )}
                 </div>
-                <Footer /> {/* Seller-specific footer */}
+                <Footer />
             </div>
         </OrderErrorBoundary>
     );
