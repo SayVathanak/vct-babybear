@@ -203,30 +203,28 @@ const InvoiceGenerator = ({ order, currency, user, companyLogo }) => {
                 }
             `}</style>
 
-            <div className="mt-4">
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                    <div className="p-4 sm:p-5 flex flex-row items-center justify-between gap-4">
-                        <div className="space-y-1">
-                            <p className="font-medium text-gray-900 text-sm">
-                                {getInvoiceNumber(order._id, order.date)}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                                {formatDate(order.date)}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                                Created: {currentTime}
-                            </p>
-                        </div>
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="p-4 sm:p-5 flex flex-row items-center justify-between gap-4">
+                    <div className="space-y-1">
+                        <p className="font-medium text-gray-900 text-sm">
+                            {getInvoiceNumber(order._id, order.date)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                            {formatDate(order.date)}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                            Created: {currentTime}
+                        </p>
+                    </div>
 
-                        <div className="flex">
-                            <button
-                                onClick={() => setShowPreview(true)}
-                                className="flex items-center justify-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition-colors duration-200 font-medium"
-                            >
-                                <Eye className="h-4 w-4 mr-2" />
-                                Preview
-                            </button>
-                        </div>
+                    <div className="flex">
+                        <button
+                            onClick={() => setShowPreview(true)}
+                            className="flex items-center justify-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition-colors duration-200 font-medium"
+                        >
+                            <Eye className="h-4 w-4 mr-2" />
+                            Preview
+                        </button>
                     </div>
                 </div>
             </div>
