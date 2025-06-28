@@ -1,6 +1,5 @@
 'use client'
-import React, { useEffect, useState } from "react";
-import { assets, productsDummyData } from "@/assets/assets";
+import React, { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { useAppContext } from "@/context/AppContext";
 import Footer from "@/components/seller/Footer";
@@ -8,17 +7,61 @@ import Loading from "@/components/Loading";
 import axios from "axios";
 import toast from "react-hot-toast";
 import QuickEditModal from "@/components/seller/QuickEditModal";
-import { ChevronDown, ChevronUp } from 'lucide-react';
 import { CiSliderHorizontal } from "react-icons/ci";
+import { IoTrashOutline , IoPencil, IoExpand } from "react-icons/io5";
 import {
-  FiExternalLink,
-  FiEdit2,
-  FiTrash2,
+  FiMoreVertical,
   FiLoader,
-  FiCheck,
-  FiX
-} from 'react-icons/fi';
-import ProductGrid from "@/components/ProductGrid";
+  FiChevronDown,
+  FiChevronUp,
+  FiFilter,
+  FiSearch,
+  FiGrid,
+  FiList,
+  FiColumns,
+  FiPackage,
+  FiAlertTriangle
+} from "react-icons/fi";
+
+// A new component for the "three dots" action menu
+const ActionMenu = ({ children }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const menuRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
+    return (
+        <div className="relative" ref={menuRef}>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="p-1.5 rounded-full hover:bg-gray-200 transition-colors"
+                aria-label="More actions"
+                aria-haspopup="true"
+                aria-expanded={isOpen}
+            >
+                <FiMoreVertical className="h-4 w-4 text-gray-600" />
+            </button>
+            {isOpen && (
+                <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border z-10">
+                    <ul className="py-1" onClick={() => setIsOpen(false)}>
+                        {children}
+                    </ul>
+                </div>
+            )}
+        </div>
+    );
+};
+
 
 const ProductList = () => {
   const { router, getToken, user } = useAppContext()
@@ -71,19 +114,12 @@ const ProductList = () => {
       const token = await getToken()
       const { data } = await axios.put(
         '/api/product/update-availability',
-        {
-          productId,
-          isAvailable: !currentStatus
-        },
+        { productId, isAvailable: !currentStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       )
 
       if (data.success) {
-        setProducts(products.map(product =>
-          product._id === productId ?
-            { ...product, isAvailable: !product.isAvailable } :
-            product
-        ))
+        setProducts(products.map(p => p._id === productId ? { ...p, isAvailable: !p.isAvailable } : p))
         toast.success(`Product ${!currentStatus ? 'available' : 'unavailable'} now`)
       } else {
         toast.error(data.message)
@@ -106,27 +142,21 @@ const ProductList = () => {
       })
 
       if (data.success) {
-        setProducts(products.filter(product => product._id !== productId))
+        setProducts(products.filter(p => p._id !== productId))
         toast.success('Product deleted successfully')
         setDeleteConfirmation(null)
       } else {
         toast.error(data.message)
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message || 'Failed to delete product')
+      toast.error(error.response?.data?.message || 'Failed to delete product')
     } finally {
       setDeletingProductId(null)
     }
   }
 
-  const confirmDelete = (product) => {
-    setDeleteConfirmation(product)
-  }
-
-  const cancelDelete = () => {
-    setDeleteConfirmation(null)
-  }
-
+  const confirmDelete = (product) => setDeleteConfirmation(product);
+  const cancelDelete = () => setDeleteConfirmation(null);
   const handleQuickEdit = (product) => {
     setQuickEditProduct({
       ...product,
@@ -135,45 +165,30 @@ const ProductList = () => {
       stock: product.stock.toString(),
     })
   }
-
-  const closeQuickEdit = () => {
-    setQuickEditProduct(null)
-  }
+  const closeQuickEdit = () => setQuickEditProduct(null);
 
   const handleQuickEditSubmit = async (updatedProductData) => {
     try {
-      setUpdatingProductId(
-        updatedProductData instanceof FormData
-          ? updatedProductData.get('_id')
-          : updatedProductData._id
-      );
-
-      const token = await getToken();
-
-      const { data } = await axios.put(
-        '/api/product/update-availability',
-        updatedProductData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            ...(updatedProductData instanceof FormData
-              ? {}
-              : { 'Content-Type': 'application/json' })
-          }
+        const id = updatedProductData instanceof FormData ? updatedProductData.get('_id') : updatedProductData._id;
+        setUpdatingProductId(id);
+        const token = await getToken();
+        const { data } = await axios.put('/api/product/update-availability', updatedProductData, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                ...(updatedProductData instanceof FormData ? {} : { 'Content-Type': 'application/json' })
+            }
+        });
+        if (data.success) {
+            await fetchSellerProduct();
+            toast.success('Product updated successfully');
+            closeQuickEdit();
+        } else {
+            toast.error(data.message);
         }
-      );
-
-      if (data.success) {
-        await fetchSellerProduct();
-        toast.success('Product updated successfully');
-        setQuickEditProduct(null);
-      } else {
-        toast.error(data.message);
-      }
     } catch (error) {
-      toast.error(error.message || 'Failed to update product');
+        toast.error(error.message || 'Failed to update product');
     } finally {
-      setUpdatingProductId(null);
+        setUpdatingProductId(null);
     }
   }
 
@@ -183,306 +198,114 @@ const ProductList = () => {
     setSortBy("newest");
   }
 
-  const filteredProducts = products.filter(product => {
-    const lowercasedSearchTerm = searchTerm.toLowerCase();
-    const matchesSearch = product.name.toLowerCase().includes(lowercasedSearchTerm) ||
-      (product.barcode && product.barcode.toLowerCase().includes(lowercasedSearchTerm));
-    const matchesCategory = filterCategory === "" || product.category === filterCategory;
-    return matchesSearch && matchesCategory;
-  })
+  const filteredProducts = products.filter(product =>
+    (product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     (product.barcode && product.barcode.toLowerCase().includes(searchTerm.toLowerCase()))) &&
+    (filterCategory === "" || product.category === filterCategory)
+  );
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     switch (sortBy) {
-      case "newest":
-        return new Date(b.date) - new Date(a.date);
-      case "oldest":
-        return new Date(a.date) - new Date(b.date);
-      case "name-asc":
-        return a.name.localeCompare(b.name);
-      case "name-desc":
-        return b.name.localeCompare(a.name);
-      case "price-asc":
-        return a.offerPrice - b.offerPrice;
-      case "price-desc":
-        return b.offerPrice - a.offerPrice;
-      case "stock-asc":
-        return a.stock - b.stock;
-      case "stock-desc":
-        return b.stock - a.stock;
-      default:
-        return 0;
+      case "newest": return new Date(b.date) - new Date(a.date);
+      case "oldest": return new Date(a.date) - new Date(b.date);
+      case "name-asc": return a.name.localeCompare(b.name);
+      case "name-desc": return b.name.localeCompare(a.name);
+      case "price-asc": return a.offerPrice - b.offerPrice;
+      case "price-desc": return b.offerPrice - a.offerPrice;
+      case "stock-asc": return a.stock - b.stock;
+      case "stock-desc": return b.stock - a.stock;
+      default: return 0;
     }
-  })
+  });
 
   useEffect(() => {
-    if (user) {
-      fetchSellerProduct();
-    }
-  }, [user])
+    if (user) fetchSellerProduct();
+  }, [user]);
 
   const ViewModeSelector = () => (
-    <div className="flex items-center bg-gray-100 rounded-lg p-1 gap-1">
-      <button
-        onClick={() => setViewMode("table")}
-        className={`px-3 py-2 rounded-md text-sm font-medium transition-all ${viewMode === "table"
-            ? "bg-white text-blue-600 shadow-sm"
-            : "text-gray-600"
-          }`}
-        title="Table View"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-        </svg>
-      </button>
-      <button
-        onClick={() => setViewMode("cards")}
-        className={`px-3 py-2 rounded-md text-sm font-medium transition-all ${viewMode === "cards"
-            ? "bg-white text-blue-600 shadow-sm"
-            : "text-gray-600"
-          }`}
-        title="Card View"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14-7H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2z" />
-        </svg>
-      </button>
-      <button
-        onClick={() => setViewMode("grid")}
-        className={`px-3 py-2 rounded-md text-sm font-medium transition-all ${viewMode === "grid"
-            ? "bg-white text-blue-600 shadow-sm"
-            : "text-gray-600"
-          }`}
-        title="Grid View"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-        </svg>
-      </button>
+    <div className="flex items-center bg-gray-100 rounded-lg p-1">
+      {[{mode: 'table', icon: FiList, title: 'Table View'}, {mode: 'cards', icon: FiColumns, title: 'Card View'}, {mode: 'grid', icon: FiGrid, title: 'Grid View'}].map(item => (
+        <button key={item.mode} onClick={() => setViewMode(item.mode)}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === item.mode ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:text-gray-900"}`}
+          title={item.title} aria-label={item.title}>
+          <item.icon className="w-4 h-4" />
+        </button>
+      ))}
     </div>
   );
 
   const ProductCard = ({ product }) => (
-    <div className={`bg-white rounded-xl overflow-hidden shadow-sm ${!product.isAvailable ? 'opacity-70' : ''
-      }`}>
-      {/* Image Section */}
-      <div className="relative">
-        <div className="aspect-square bg-white p-4">
-          <Image
-            src={product.image[0]}
-            alt={product.name}
-            className="w-full h-full object-cover rounded-lg"
-            width={240}
-            height={240}
-            quality={90}
-          />
+    <div className={`overflow-hidden mb-4 transition-all flex flex-col h-full bg-white`}>
+        <div className="flex flex-col sm:flex-row p-3 sm:p-4 flex-1">
+            <div className="bg-white rounded-lg p-2 flex-shrink-0 mr-0 sm:mr-4 mb-3 sm:mb-0 text-center">
+                <Image src={product.image[0]} alt={product.name} className={`w-24 h-24 sm:w-20 sm:h-20 object-cover rounded mx-auto ${!product.isAvailable ? 'opacity-60' : ''}`} width={120} height={120} quality={90} />
+            </div>
+            <div className="flex flex-col flex-1 min-h-0">
+                <div className="min-h-[2.5rem] mb-2"><h3 className="text-md font-medium text-gray-800 line-clamp-2">{product.name}</h3></div>
+                <div className="mb-2"><span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">{categories.find(c=>c.value === product.category)?.label || product.category}</span></div>
+                <div className="mb-2"><span className="text-xl font-bold text-green-600">${product.offerPrice}</span>{product.price !== product.offerPrice && (<span className="ml-2 text-sm text-gray-500 line-through">${product.price}</span>)}</div>
+                <div className="mt-auto"><p className={`text-sm ${product.stock > 10 ? 'text-gray-600' : product.stock > 0 ? 'text-amber-700' : 'text-red-700'}`}><span className={`inline-block w-2 h-2 rounded-full mr-2 ${product.stock > 10 ? 'bg-green-600' : product.stock > 0 ? 'bg-amber-600' : 'bg-red-600'}`}></span>{product.stock} in stock</p></div>
+            </div>
         </div>
-
-        {/* Status Badge */}
-        <div className="absolute top-2 right-2">
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${product.isAvailable
-              ? 'bg-green-100 text-green-800'
-              : 'bg-red-100 text-red-800'
-            }`}>
-            {product.isAvailable ? 'Available' : 'Unavailable'}
-          </span>
-        </div>
-      </div>
-
-      {/* Content Section */}
-      <div className="p-4 space-y-3">
-        {/* Product Name */}
-        <h3 className="font-medium text-gray-900 text-sm leading-5 line-clamp-2 min-h-[2.5rem]">
-          {product.name}
-        </h3>
-
-        {/* Category */}
-        <span className="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-md font-medium">
-          {categories.find(cat => cat.value === product.category)?.label || product.category}
-        </span>
-
-        {/* Price Section */}
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-bold text-gray-900">
-            ${product.offerPrice}
-          </span>
-          {product.price !== product.offerPrice && (
-            <span className="text-sm text-gray-500 line-through">
-              ${product.price}
-            </span>
-          )}
-        </div>
-
-        {/* Stock Info */}
-        <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${product.stock > 10 ? 'bg-green-500' :
-              product.stock > 0 ? 'bg-yellow-500' : 'bg-red-500'
-            }`}></div>
-          <span className={`text-sm font-medium ${product.stock > 10 ? 'text-green-700' :
-              product.stock > 0 ? 'text-yellow-700' : 'text-red-700'
-            }`}>
-            {product.stock} units
-          </span>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col gap-2 pt-2">
-          <button
-            onClick={() => toggleAvailability(product._id, product.isAvailable)}
-            disabled={updatingProductId === product._id}
-            className={`w-full py-2 px-3 rounded-lg text-sm font-medium transition-colors ${product.isAvailable
-                ? 'bg-green-50 text-green-700 border border-green-200'
-                : 'bg-red-50 text-red-700 border border-red-200'
-              } disabled:opacity-50`}
-          >
-            {updatingProductId === product._id ? 'Updating...' :
-              `Mark as ${product.isAvailable ? 'Unavailable' : 'Available'}`}
-          </button>
-
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              onClick={() => router.push(`/product/${product._id}`)}
-              className="flex items-center justify-center gap-1 py-2 px-2 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium border border-blue-200 transition-colors"
-            >
-              <FiExternalLink className="w-3 h-3" />
-              <span className="hidden sm:inline">View</span>
+        <div className="flex items-center justify-between bg-gray-50 px-3 py-2 mt-auto">
+            <button onClick={() => toggleAvailability(product._id, product.isAvailable)} disabled={updatingProductId === product._id}
+                className={`w-28 px-2 py-1 rounded-full text-xs transition-colors ${product.isAvailable ? 'bg-green-100 text-green-700 h:bg-green-200' : 'bg-red-100 text-red-700 h:bg-red-200'}`}>
+                {updatingProductId === product._id ? 'Updating...' : <span className="whitespace-nowrap">{product.isAvailable ? 'Available' : 'Unavailable'}</span>}
             </button>
-
-            <button
-              onClick={() => handleQuickEdit(product)}
-              className="flex items-center justify-center gap-1 py-2 px-2 bg-yellow-50 text-yellow-700 rounded-lg text-xs font-medium border border-yellow-200 transition-colors"
-            >
-              <FiEdit2 className="w-3 h-3" />
-              <span className="hidden sm:inline">Edit</span>
-            </button>
-
-            <button
-              onClick={() => confirmDelete(product)}
-              disabled={deletingProductId === product._id}
-              className="flex items-center justify-center gap-1 py-2 px-2 bg-red-50 text-red-700 rounded-lg text-xs font-medium border border-red-200 transition-colors disabled:opacity-50"
-            >
-              {deletingProductId === product._id ? (
-                <FiLoader className="animate-spin w-3 h-3" />
-              ) : (
-                <>
-                  <FiTrash2 className="w-3 h-3" />
-                  <span className="hidden sm:inline">Delete</span>
-                </>
-              )}
-            </button>
-          </div>
+            <div className="flex items-center gap-1">
+                <div className="hidden md:flex items-center">
+                    <button onClick={() => router.push(`/product/${product._id}`)} className="flex items-center gap-2 px-3 py-1.5 bg-white text-green-500 text-xs" aria-label="View product"><span>View</span></button>
+                    <button onClick={() => handleQuickEdit(product)} className="flex items-center gap-2 px-3 py-1.5 bg-white text-blue-500 text-xs" aria-label="Quick edit"><IoPencil size={16} /><span>Edit</span></button>
+                    <button onClick={() => confirmDelete(product)} disabled={deletingProductId === product._id} className="flex items-center gap-2 px-3 py-1.5 bg-white text-red-500 text-xs" aria-label="Delete product">{deletingProductId === product._id ? <FiLoader className="animate-spin h-3 w-3" /> : <><IoTrashOutline   size={16} /><span>Delete</span></>} </button>
+                </div>
+                <div className="flex md:hidden items-center gap-1">
+                    <button onClick={() => handleQuickEdit(product)} className="p-2 bg-blue-100 text-blue-600 rounded-md" aria-label="Quick edit"><IoPencil size={16} /></button>
+                    <button onClick={() => confirmDelete(product)} disabled={deletingProductId === product._id} className="p-2 bg-red-100 text-red-600 rounded-md" aria-label="Delete product">{deletingProductId === product._id ? <FiLoader className="animate-spin h-4 w-4" /> : <IoTrashOutline   size={16} />}</button>
+                    <ActionMenu>
+                        <li><button onClick={() => router.push(`/product/${product._id}`)} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"><IoExpand size={16} /> View Product</button></li>
+                    </ActionMenu>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
   );
 
   const SellerGridItem = ({ product }) => (
-    <div className={`bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm ${!product.isAvailable ? 'opacity-70' : ''
-      }`}>
-      {/* Image */}
-      <div className="relative aspect-square bg-gray-50">
-        <Image
-          src={product.image[0]}
-          alt={product.name}
-          className="absolute inset-0 w-full h-full object-cover"
-          fill
-          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
-        />
-
-        {/* Status Badge */}
-        <div className="absolute top-1 right-1">
-          <div className={`w-3 h-3 rounded-full ${product.isAvailable ? 'bg-green-500' : 'bg-red-500'
-            }`}></div>
+    <div className={`relative overflow-hidden flex flex-col h-full transition-all bg-white`}>
+        <div className="relative w-full pb-[100%] bg-white"><Image src={product.image[0]} alt={product.name} className="absolute top-0 left-0 w-full h-full object-contain p-4" layout="fill" /></div>
+        <div className="p-3 flex flex-col flex-1">
+            <h3 className="text-sm font-medium text-gray-800 line-clamp-2 mb-2 flex-1">{product.name}</h3>
+            <div className="mb-2"><span className="text-lg font-bold text-gray-900">${product.offerPrice}</span>{product.price !== product.offerPrice && (<span className="ml-2 text-xs text-gray-500 line-through">${product.price}</span>)}</div>
+            <p className={`text-xs font-medium ${product.stock > 10 ? 'text-gray-600' : product.stock > 0 ? 'text-amber-700' : 'text-red-700'}`}>{product.stock} units in stock</p>
         </div>
-      </div>
-
-      {/* Content */}
-      <div className="p-3 space-y-2">
-        <h3 className="text-xs font-medium text-gray-900 line-clamp-2 min-h-[2rem]">
-          {product.name}
-        </h3>
-
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-bold text-gray-900">${product.offerPrice}</span>
-          <span className={`text-xs font-medium ${product.stock > 10 ? 'text-green-600' :
-              product.stock > 0 ? 'text-yellow-600' : 'text-red-600'
-            }`}>
-            {product.stock}
-          </span>
+        <div className="p-2 bg-gray-50 border-t space-y-2">
+            <div className="flex items-center justify-between">
+                <span className="text-xs">Status:</span>
+                <button onClick={() => toggleAvailability(product._id, product.isAvailable)} disabled={updatingProductId === product._id} className={`px-2 py-0.5 rounded-full text-xs ${product.isAvailable ? 'bg-green-100 text-green-600 h:bg-green-200' : 'bg-red-100 text-red-600 h:bg-red-200'}`}>
+                    {updatingProductId === product._id ? '...' : (product.isAvailable ? 'Available' : 'Unavailable')}
+                </button>
+            </div>
+            <div className="flex items-center justify-end gap-2">
+                <button onClick={() => handleQuickEdit(product)} className="flex-1 px-2 py-1.5 bg-white text-blue-500 text-xs font-medium rounded-md h:bg-blue-600 flex items-center justify-center gap-2 hover:bg-gray-50" aria-label="Quick edit"><IoPencil size={16} /><span>EDIT</span></button>
+                <button onClick={() => confirmDelete(product)} disabled={deletingProductId === product._id} className="flex-1 px-2 py-1.5 bg-white text-red-500 text-xs font-medium rounded-md h:bg-red-600 flex items-center justify-center gap-2 hover:bg-gray-50" aria-label="Delete product">{deletingProductId === product._id ? <FiLoader className="animate-spin h-3 w-3" /> : <IoTrashOutline   size={16} />}<span>DELETE</span></button>
+            </div>
         </div>
-
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-1 pt-1">
-          <button
-            onClick={() => handleQuickEdit(product)}
-            className="py-1.5 px-2 bg-blue-50 text-blue-700 rounded text-xs font-medium border border-blue-200"
-          >
-            <FiEdit2 className="w-3 h-3 mx-auto" />
-          </button>
-
-          <button
-            onClick={() => confirmDelete(product)}
-            disabled={deletingProductId === product._id}
-            className="py-1.5 px-2 bg-red-50 text-red-700 rounded text-xs font-medium border border-red-200 disabled:opacity-50"
-          >
-            {deletingProductId === product._id ? (
-              <FiLoader className="animate-spin w-3 h-3 mx-auto" />
-            ) : (
-              <FiTrash2 className="w-3 h-3 mx-auto" />
-            )}
-          </button>
-        </div>
-      </div>
     </div>
   );
 
   const DeleteConfirmationModal = ({ product, onConfirm, onCancel, isDeleting }) => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-sm w-full mx-4">
-        <div className="p-6">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-              <FiTrash2 className="w-6 h-6 text-red-600" />
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-center mb-4"><div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100"><FiAlertTriangle className="h-6 w-6 text-red-600" /></div></div>
+            <div className="text-center">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Delete Product</h3>
+                <p className="text-sm text-gray-500 mb-4">Are you sure you want to delete "<span className="font-medium">{product.name}</span>"? This action cannot be undone.</p>
             </div>
-          </div>
-
-          <div className="text-center mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Product</h3>
-            <p className="text-sm text-gray-600 mb-2">
-              Are you sure you want to delete
-            </p>
-            <p className="text-sm font-medium text-gray-900 mb-2">
-              "{product.name}"?
-            </p>
-            <p className="text-xs text-gray-500">
-              This action cannot be undone.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={onCancel}
-              disabled={isDeleting}
-              className="py-2 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => onConfirm(product._id)}
-              disabled={isDeleting}
-              className="py-2 px-4 bg-red-600 text-white rounded-lg font-medium disabled:opacity-50 flex items-center justify-center"
-            >
-              {isDeleting ? (
-                <>
-                  <FiLoader className="animate-spin w-4 h-4 mr-2" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete'
-              )}
-            </button>
-          </div>
+            <div className="flex flex-col sm:flex-row gap-3 mt-5">
+                <button onClick={onCancel} disabled={isDeleting} className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md h:bg-gray-200 disabled:opacity-50">Cancel</button>
+                <button onClick={() => onConfirm(product._id)} disabled={isDeleting} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md h:bg-red-700 disabled:opacity-50 flex items-center justify-center">{isDeleting ? <><FiLoader className="animate-spin mr-2"/> Deleting...</> : 'Delete Product'}</button>
+            </div>
         </div>
-      </div>
     </div>
   );
 
@@ -490,287 +313,77 @@ const ProductList = () => {
     <div className="flex-1 min-h-screen flex flex-col bg-gray-50">
       {loading ? <Loading /> : (
         <div className="flex-1">
-          <div className="w-full px-4 py-6 sm:px-6 lg:px-8 max-w-full">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-              <h1 className="text-2xl sm:text-3xl font-medium">
-                Product List
-              </h1>
-
-              <button
-                onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-gray-700 rounded-lg border border-gray-300 font-medium"
-              >
-                <CiSliderHorizontal size={18} />
-                Filters
-                {isFiltersOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          <main className="w-full px-4 py-6 sm:px-6 lg:px-8 max-w-full">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+              <h1 className="text-2xl md:text-3xl font-medium">Product List</h1>
+              <button onClick={() => setIsFiltersOpen(!isFiltersOpen)} className="flex items-center justify-center gap-2 px-4 py-2 text-sm text-gray-900 rounded-md border bg-white shadow-sm transition-colors w-full md:w-auto">
+                <CiSliderHorizontal size={16} />Filter and Sort{isFiltersOpen ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
               </button>
             </div>
 
-            {/* Filters Panel */}
-            <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isFiltersOpen ? 'max-h-96 opacity-100 mb-6' : 'max-h-0 opacity-0'
-              }`}>
-              <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
-                <div className="space-y-4">
-                  {/* Search */}
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search products or barcode..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
-                    />
-                    <svg className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
+            <div className={`transition-all duration-300 ease-in-out ${isFiltersOpen ? 'max-h-[500px] opacity-100 mb-6' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+              <div className="bg-white rounded-lg shadow-sm border p-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-3 gap-3">
+                    <div className="relative col-span-1 sm:col-span-2 md:col-span-1 lg:col-span-3">
+                        <input type="text" placeholder="Search products or barcode..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500" />
+                        <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    </div>
+                    <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="w-full px-3 py-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white">{categories.map(c => (<option key={c.value} value={c.value}>{c.label}</option>))}</select>
+                    <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="w-full px-3 py-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                      <option value="newest">Newest First</option><option value="oldest">Oldest First</option><option value="name-asc">Name A-Z</option><option value="name-desc">Name Z-A</option><option value="price-asc">Price Low-High</option><option value="price-desc">Price High-Low</option><option value="stock-desc">Stock: High to Low</option><option value="stock-asc">Stock: Low to High</option>
+                    </select>
                   </div>
-
-                  {/* Filters Row */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <select
-                      value={filterCategory}
-                      onChange={(e) => setFilterCategory(e.target.value)}
-                      className="px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
-                    >
-                      {categories.map(category => (
-                        <option key={category.value} value={category.value}>
-                          {category.label}
-                        </option>
-                      ))}
-                    </select>
-
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                      className="px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
-                    >
-                      <option value="newest">Newest First</option>
-                      <option value="oldest">Oldest First</option>
-                      <option value="name-asc">Name A-Z</option>
-                      <option value="name-desc">Name Z-A</option>
-                      <option value="price-asc">Price Low-High</option>
-                      <option value="price-desc">Price High-Low</option>
-                      <option value="stock-desc">Stock: High to Low</option>
-                      <option value="stock-asc">Stock: Low to High</option>
-                    </select>
-
+                  <div className="flex items-start justify-between lg:justify-end gap-3">
+                    <button onClick={resetFilters} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md">Reset</button>
                     <ViewModeSelector />
                   </div>
-
-                  {/* Results & Reset */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-gray-100">
-                    <p className="text-sm text-gray-600">
-                      Showing {sortedProducts.length} of {products.length} products
-                      {searchTerm && ` for "${searchTerm}"`}
-                      {filterCategory && ` in ${categories.find(cat => cat.value === filterCategory)?.label}`}
-                    </p>
-
-                    <button
-                      onClick={resetFilters}
-                      className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg font-medium"
-                    >
-                      Reset Filters
-                    </button>
-                  </div>
                 </div>
+                <div className="mt-4 pt-3 border-t"><p className="text-sm text-gray-600">Showing {sortedProducts.length} of {products.length} products.</p></div>
               </div>
             </div>
 
-            {/* Content */}
             {sortedProducts.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-sm border p-8 text-center">
-                <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No products found</h3>
-                <p className="text-gray-600 mb-4">
-                  {products.length === 0
-                    ? "You haven't added any products yet."
-                    : "Try adjusting your search or filter criteria."
-                  }
-                </p>
+              <div className="bg-white rounded-lg shadow-sm border p-8 text-center mt-6">
+                <div className="mx-auto w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4"><FiPackage className="w-10 h-10 text-gray-400" /></div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+                <p className="text-gray-500 mb-4 text-sm">{products.length === 0 ? "You haven't added any products yet." : "Try adjusting your search or filter criteria."}</p>
               </div>
             ) : (
               <>
-                {/* Table View */}
                 {viewMode === "table" && (
-                  <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full">
-                        <thead className="bg-gray-50 border-b border-gray-200">
-                          <tr>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Product</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Category</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Price</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Stock</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-100">
+                  <div className="bg-white rounded-lg shadow-sm border overflow-hidden"><div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50"><tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 tracking-wider">Product</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 tracking-wider">Category</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 tracking-wider">Price</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 tracking-wider">Stock</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 tracking-wider">Status</th><th className="px-6 py-3 text-right text-xs font-medium text-gray-500 tracking-wider">Actions</th>
+                        </tr></thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
                           {sortedProducts.map((product) => (
-                            <tr key={product._id} className={`${!product.isAvailable ? 'bg-gray-50 opacity-70' : ''}`}>
-                              <td className="px-4 py-4">
-                                <div className="flex items-center">
-                                  <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                                    <Image
-                                      src={product.image[0]}
-                                      alt={product.name}
-                                      className="w-full h-full object-cover"
-                                      width={48}
-                                      height={48}
-                                    />
-                                  </div>
-                                  <div className="ml-3">
-                                    <div className="text-sm font-medium text-gray-900 line-clamp-2 max-w-xs">
-                                      {product.name}
-                                    </div>
-                                    {product.barcode && (
-                                      <div className="text-xs text-gray-500">
-                                        Barcode: {product.barcode}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-4 py-4 text-sm text-gray-600">
-                                <span className="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-md font-medium">
-                                  {categories.find(cat => cat.value === product.category)?.label || product.category}
-                                </span>
-                              </td>
-                              <td className="px-4 py-4 text-sm">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-semibold text-gray-900">${product.offerPrice}</span>
-                                  {product.price !== product.offerPrice && (
-                                    <span className="text-gray-400 line-through text-xs">${product.price}</span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-4 py-4 text-sm">
-                                <div className="flex items-center gap-2">
-                                  <div className={`w-2 h-2 rounded-full ${product.stock > 10 ? 'bg-green-500' :
-                                      product.stock > 0 ? 'bg-yellow-500' : 'bg-red-500'
-                                    }`}></div>
-                                  <span className={`font-medium ${product.stock > 10 ? 'text-green-700' :
-                                      product.stock > 0 ? 'text-yellow-700' : 'text-red-700'
-                                    }`}>
-                                    {product.stock} units
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="px-4 py-4">
-                                <button
-                                  onClick={() => toggleAvailability(product._id, product.isAvailable)}
-                                  disabled={updatingProductId === product._id}
-                                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${product.isAvailable
-                                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                      : 'bg-red-100 text-red-800 hover:bg-red-200'
-                                    } disabled:opacity-50`}
-                                >
-                                  {updatingProductId === product._id ? (
-                                    <>
-                                      <FiLoader className="animate-spin w-3 h-3 mr-1" />
-                                      Updating...
-                                    </>
-                                  ) : (
-                                    <>
-                                      {product.isAvailable ? (
-                                        <FiCheck className="w-3 h-3 mr-1" />
-                                      ) : (
-                                        <FiX className="w-3 h-3 mr-1" />
-                                      )}
-                                      {product.isAvailable ? 'Available' : 'Unavailable'}
-                                    </>
-                                  )}
-                                </button>
-                              </td>
-                              <td className="px-4 py-4 text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                  <button
-                                    onClick={() => router.push(`/product/${product._id}`)}
-                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                    title="View Product"
-                                  >
-                                    <FiExternalLink className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleQuickEdit(product)}
-                                    className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
-                                    title="Quick Edit"
-                                  >
-                                    <FiEdit2 className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={() => confirmDelete(product)}
-                                    disabled={deletingProductId === product._id}
-                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                                    title="Delete Product"
-                                  >
-                                    {deletingProductId === product._id ? (
-                                      <FiLoader className="animate-spin w-4 h-4" />
-                                    ) : (
-                                      <FiTrash2 className="w-4 h-4" />
-                                    )}
-                                  </button>
-                                </div>
-                              </td>
+                            <tr key={product._id} className={`hover:bg-gray-50 ${!product.isAvailable ? 'bg-gray-50' : ''}`}>
+                              <td className="px-6 py-4 whitespace-nowrap"><div className="flex items-center"><div className="flex-shrink-0 h-12 w-12"><Image src={product.image[0]} alt={product.name} className={`h-12 w-12 rounded-md object-cover ${!product.isAvailable ? 'opacity-60' : ''}`} width={48} height={48} /></div><div className="ml-4"><div className={`text-sm font-medium ${!product.isAvailable ? 'text-gray-400' : 'text-gray-900'}`}>{product.name}</div>{product.barcode && <div className="text-xs text-gray-500">Barcode: {product.barcode}</div>}</div></div></td>
+                              <td className="px-6 py-4 whitespace-nowrap"><span className="px-2 py-1 inline-flex text-xs font-medium rounded-full bg-blue-100 text-blue-800">{categories.find(c => c.value === product.category)?.label || product.category}</span></td>
+                              <td className="px-6 py-4 whitespace-nowrap"><div className="flex items-center"><span className="text-sm font-medium text-gray-900">${product.offerPrice}</span>{product.price !== product.offerPrice && <span className="ml-2 text-sm line-through text-gray-400">${product.price}</span>}</div></td>
+                              <td className="px-6 py-4 whitespace-nowrap"><span className={`text-sm font-bold ${product.stock > 10 ? 'text-green-600' : product.stock > 0 ? 'text-amber-600' : 'text-red-600'}`}>{product.stock}</span></td>
+                              <td className="px-6 py-4 whitespace-nowrap"><button onClick={() => toggleAvailability(product._id, product.isAvailable)} disabled={updatingProductId === product._id} className={`px-3 py-1 rounded-full text-xs ${product.isAvailable ? 'bg-green-100 text-green-700 h:bg-green-200' : 'bg-red-100 text-red-700 h:bg-red-200'}`}>{updatingProductId === product._id ? 'Updating...' : (product.isAvailable ? 'Available' : 'Not Available')}</button></td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><div className="flex items-center justify-end space-x-2"><button onClick={() => router.push(`/product/${product._id}`)} className="text-green-600 h:text-green-900 p-1 rounded-md h:bg-green-50" title="View Product"><IoExpand size={16} /></button><button onClick={() => handleQuickEdit(product)} className="text-blue-600 h:text-blue-900 p-1 rounded-md h:bg-blue-50" title="Quick Edit"><IoPencil size={16} /></button><button onClick={() => confirmDelete(product)} disabled={deletingProductId === product._id} className="text-red-600 h:text-red-900 p-1 rounded-md h:bg-red-50 disabled:opacity-50" title="Delete Product">{deletingProductId === product._id ? <FiLoader className="animate-spin h-4 w-4" /> : <IoTrashOutline   size={16} />}</button></div></td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
-                    </div>
-                  </div>
+                  </div></div>
                 )}
-
-                {/* Card View */}
-                {viewMode === "cards" && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2">
-                    {sortedProducts.map((product) => (
-                      <ProductCard key={product._id} product={product} />
-                    ))}
-                  </div>
-                )}
-
-                {/* Grid View */}
-                {viewMode === "grid" && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3">
-                    {sortedProducts.map((product) => (
-                      <SellerGridItem key={product._id} product={product} />
-                    ))}
-                  </div>
-                )}
+                {viewMode === "cards" && (<div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-1">{sortedProducts.map((p) => (<ProductCard key={p._id} product={p} />))}</div>)}
+                {viewMode === "grid" && (<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1">{sortedProducts.map((p) => (<SellerGridItem key={p._id} product={p} />))}</div>)}
               </>
             )}
-          </div>
+          </main>
         </div>
       )}
-
-      {/* Quick Edit Modal */}
-      {quickEditProduct && (
-        <QuickEditModal
-          product={quickEditProduct}
-          onClose={closeQuickEdit}
-          onSubmit={handleQuickEditSubmit}
-          categories={categories}
-        />
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {deleteConfirmation && (
-        <DeleteConfirmationModal
-          product={deleteConfirmation}
-          onConfirm={handleDeleteProduct}
-          onCancel={cancelDelete}
-          isDeleting={deletingProductId === deleteConfirmation._id}
-        />
-      )}
-
+      {deleteConfirmation && (<DeleteConfirmationModal product={deleteConfirmation} onConfirm={handleDeleteProduct} onCancel={cancelDelete} isDeleting={deletingProductId === deleteConfirmation?._id} />)}
+      {quickEditProduct && (<QuickEditModal product={quickEditProduct} onClose={closeQuickEdit} onSubmit={handleQuickEditSubmit} categories={categories} isUpdating={updatingProductId === quickEditProduct?._id} />)}
       <Footer />
     </div>
-  )
-}
+  );
+};
 
-export default ProductList
+export default ProductList;
