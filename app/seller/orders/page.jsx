@@ -508,8 +508,7 @@ const Orders = () => {
                                 className="text-sm font-medium py-2 px-3 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-opacity-50 flex items-center transition-colors"
                                 title="Scan a receipt barcode to find an order"
                             >
-                                <CiBarcode size={20} className="mr-1.5 text-gray-600" />
-                                Scan
+                                <CiBarcode size={20} className="text-gray-600" />
                             </button>
                             <button
                                 onClick={() => setFiltersVisible(!filtersVisible)}
