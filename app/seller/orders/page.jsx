@@ -15,7 +15,8 @@ import {
     CiBarcode // <-- ADDED ICON
 } from "react-icons/ci";
 
-import InvoiceGenerator from "@/components/InvoiceGenerator"; 
+// import InvoiceGenerator from "@/components/InvoiceGenerator"; // REMOVED
+import InvoiceModal from "@/components/InvoiceModal"; // NEW: Import the new InvoiceModal
 import Receipt from "@/components/Receipt"; 
 import BarcodeScanner from "@/components/BarcodeScanner"; // <-- IMPORTED BARCODE SCANNER
 
@@ -468,7 +469,7 @@ const Orders = () => {
 
                 {/* --- Render Modals --- */}
                 {selectedOrderForInvoice && (
-                    <InvoiceGenerator
+                    <InvoiceModal // NEW: Use InvoiceModal directly for the modal display
                         order={selectedOrderForInvoice}
                         currency={currency}
                         user={user}
@@ -733,7 +734,7 @@ const Orders = () => {
                                                         </h4>
                                                         <div className="bg-white rounded-md p-3 shadow-sm border border-gray-200 flex flex-col sm:flex-row gap-2">
                                                             <button
-                                                                onClick={() => setSelectedOrderForInvoice(order)}
+                                                                onClick={() => setSelectedOrderForInvoice(order)} // This will now open the new InvoiceModal
                                                                 className="flex-1 bg-blue-500 text-white rounded-lg py-2 px-3 text-sm font-medium hover:bg-blue-600 transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
                                                             >
                                                                 <CiImageOn size={18} className="mr-2" />

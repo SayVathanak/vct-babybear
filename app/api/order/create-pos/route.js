@@ -56,8 +56,8 @@ export async function POST(request) {
             posAddress = new Address({
                 userId,
                 fullName: "Walk-in Customer",
-                phoneNumber: "N/A",
-                area: "In-Store Sale",
+                phoneNumber: "None",
+                area: "In Store",
                 state: "Baby Bear",
             });
             await posAddress.save({ session });
