@@ -253,8 +253,8 @@ const ProductScrollSection = ({
                       rotate: { duration: 2, repeat: Infinity, ease: "linear" }
                     }}
                   >
-                    {/* <AiOutlineLoading className="text-4xl md:text-6xl text-gray-300 mb-3 md:mb-4" /> */}
-                    <Loading/>
+                    <AiOutlineLoading className="text-4xl md:text-6xl text-gray-300 mb-3 md:mb-4" />
+                    {/* <Loading/> */}
                   </motion.div>
                   <motion.p 
                     className="text-gray-500 text-base md:text-lg"
