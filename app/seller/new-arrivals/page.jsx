@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppContext } from '@/context/AppContext';
 import axios from 'axios';
@@ -9,7 +9,8 @@ import { FiSearch, FiPlusCircle, FiCheckCircle, FiXCircle, FiLoader, FiPackage, 
 import { CiBarcode } from "react-icons/ci";
 import BarcodeScanner from '@/components/BarcodeScanner';
 
-const NewArrivalsPage = () => {
+// Separate component that uses useSearchParams
+const NewArrivalsContent = () => {
     const { getToken, router } = useAppContext();
     const searchParams = useSearchParams();
 
@@ -551,6 +552,25 @@ const NewArrivalsPage = () => {
                 </div>
             )}
         </div>
+    );
+};
+
+// Loading component for Suspense fallback
+const LoadingPage = () => (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+            <FiLoader className="animate-spin h-8 w-8 text-blue-500 mx-auto mb-4" />
+            <p className="text-gray-600">Loading...</p>
+        </div>
+    </div>
+);
+
+// Main component with Suspense wrapper
+const NewArrivalsPage = () => {
+    return (
+        <Suspense fallback={<LoadingPage />}>
+            <NewArrivalsContent />
+        </Suspense>
     );
 };
 
