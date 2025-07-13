@@ -25,6 +25,7 @@ const NewArrivalsContent = () => {
     const [isUpdating, setIsUpdating] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
     const [showScanner, setShowScanner] = useState(false);
+    const [scannerKey, setScannerKey] = useState(0); // Key to force remount scanner
 
     // Responsive state
     const [isMobile, setIsMobile] = useState(false);
@@ -162,35 +163,84 @@ const NewArrivalsContent = () => {
         }
     };
 
-    // Handler for barcode scan success
-    const handleScanSuccess = async (decodedText) => {
-        setShowScanner(false);
+    // Handler for barcode scan success - FIXED VERSION
+    const handleBarcodeDetected = async (decodedText) => {
+        console.log('Barcode detected in New Arrivals:', decodedText);
+        
+        // Don't close scanner immediately, let the search complete first
         setIsScanning(true);
         setSearchQuery(decodedText);
+
         try {
+            const normalizedBarcode = decodedText.trim();
+            
+            // First, check if the product exists in the local products array
+            const localProduct = allProducts.find(p => p.barcode === normalizedBarcode);
+            
+            if (localProduct) {
+                // Product found locally
+                handleSelectProduct(localProduct);
+                toast.success(`Product Found: ${localProduct.name}`);
+                handleBarcodeScannerClose(); // Close scanner after successful scan
+                return;
+            }
+
+            // If not found locally, search via API
             const token = await getToken();
-            const { data } = await axios.get(`/api/product/search?query=${decodedText}`, {
+            const { data } = await axios.get(`/api/product/search?query=${normalizedBarcode}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (data.success) {
+
+            if (data.success && data.product) {
+                // Product found via API
                 handleSelectProduct(data.product);
                 toast.success(`Product Found: ${data.product.name}`);
+                handleBarcodeScannerClose(); // Close scanner after successful scan
             } else {
+                // Product not found
                 setSelectedProduct(null);
-                setNotFoundQuery(decodedText);
+                setNotFoundQuery(normalizedBarcode);
                 if (isMobile || isTablet) {
                     setShowProductList(false);
                 }
+                toast.error(data?.message || 'Product not found in your inventory.');
+                handleBarcodeScannerClose(); // Close scanner even if not found
             }
         } catch (error) {
+            console.error('Barcode lookup error:', error);
             setSelectedProduct(null);
-            setNotFoundQuery(decodedText);
+            setNotFoundQuery(decodedText.trim());
             if (isMobile || isTablet) {
                 setShowProductList(false);
             }
+            const errorMessage = error.response?.data?.message || `Product not found for barcode: ${decodedText.trim()}`;
+            toast.error(errorMessage);
+            handleBarcodeScannerClose(); // Close scanner on error
         } finally {
             setIsScanning(false);
         }
+    };
+
+    // Function to close the scanner modal
+    const handleBarcodeScannerClose = () => {
+        setShowScanner(false);
+        setIsScanning(false);
+        // Increment the key to force remount the scanner component for a fresh state
+        setScannerKey(prev => prev + 1);
+    };
+
+    // Function to open the scanner modal
+    const handleOpenScanner = () => {
+        // Check for secure connection and camera support
+        if (!window.location.protocol.startsWith('https') && !window.location.hostname.includes('localhost')) {
+            toast.error('Camera access requires a secure connection (HTTPS).');
+            return;
+        }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            toast.error('Camera access is not supported on this device.');
+            return;
+        }
+        setShowScanner(true);
     };
 
     const handleAddNewProduct = () => {
@@ -261,6 +311,21 @@ const NewArrivalsContent = () => {
         </button>
     );
 
+    // Bottom Barcode Scanner Overlay Component
+    const BottomBarcodeButton = () => (
+        <div className="fixed bottom-0 left-0 right-0 bg-transparent p-4 safe-area-pb z-40">
+            <div className="max-w-md mx-auto">
+                <button
+                    onClick={handleOpenScanner}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg active:scale-95"
+                >
+                    <CiBarcode size={24} />
+                    <span>Scan Barcode</span>
+                </button>
+            </div>
+        </div>
+    );
+
     // Product List Panel Component
     const ProductListPanel = () => (
         <div className="flex flex-col h-full bg-white">
@@ -307,8 +372,8 @@ const NewArrivalsContent = () => {
                 </div>
             </div>
             
-            {/* Products container */}
-            <div className="flex-1 overflow-y-auto p-3 sm:p-4">
+            {/* Products container with bottom padding for barcode button */}
+            <div className={`flex-1 overflow-y-auto p-3 sm:p-4 ${isMobile || isTablet ? 'pb-20' : ''}`}>
                 {isLoadingList ? (
                     <div className="flex items-center justify-center py-12">
                         <FiLoader className="animate-spin h-8 w-8 text-blue-500" />
@@ -370,8 +435,8 @@ const NewArrivalsContent = () => {
                 </div>
             </div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-3 sm:p-4">
+            {/* Content with bottom padding for barcode button */}
+            <div className={`flex-1 overflow-y-auto p-3 sm:p-4 ${isMobile || isTablet ? 'pb-20' : ''}`}>
                 {selectedProduct ? (
                     <div className="space-y-4 sm:space-y-6">
                         {/* Product Info */}
@@ -436,16 +501,18 @@ const NewArrivalsContent = () => {
                             </button>
                         </form>
 
-                        {/* Barcode Scanner */}
-                        <div className="pt-4 border-t border-gray-200">
-                            <button
-                                onClick={() => setShowScanner(true)}
-                                className="w-full bg-gray-100 text-gray-700 py-2.5 sm:py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 text-base"
-                            >
-                                <CiBarcode size={20} />
-                                Scan Barcode
-                            </button>
-                        </div>
+                        {/* Desktop Barcode Scanner Button */}
+                        {!isMobile && !isTablet && (
+                            <div className="pt-4 border-t border-gray-200">
+                                <button
+                                    onClick={handleOpenScanner}
+                                    className="w-full bg-gray-100 text-gray-700 py-2.5 sm:py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 text-base"
+                                >
+                                    <CiBarcode size={20} />
+                                    Scan Barcode
+                                </button>
+                            </div>
+                        )}
                     </div>
                 ) : notFoundQuery ? (
                     <div className="text-center py-12">
@@ -469,13 +536,16 @@ const NewArrivalsContent = () => {
                         <p className="text-gray-500 mb-6 text-sm px-4">
                             Choose a product from the list to update its stock.
                         </p>
-                        <button
-                            onClick={() => setShowScanner(true)}
-                            className="bg-blue-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto"
-                        >
-                            <CiBarcode size={16} />
-                            Scan Barcode
-                        </button>
+                        {/* Desktop scan button in empty state */}
+                        {!isMobile && !isTablet && (
+                            <button
+                                onClick={handleOpenScanner}
+                                className="bg-blue-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto"
+                            >
+                                <CiBarcode size={16} />
+                                Scan Barcode
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
@@ -492,6 +562,7 @@ const NewArrivalsContent = () => {
                     ) : (
                         <ProductDetailsPanel />
                     )}
+                    <BottomBarcodeButton />
                 </div>
             )}
 
@@ -503,6 +574,7 @@ const NewArrivalsContent = () => {
                     ) : (
                         <ProductDetailsPanel />
                     )}
+                    <BottomBarcodeButton />
                 </div>
             )}
 
@@ -521,22 +593,15 @@ const NewArrivalsContent = () => {
                 </div>
             )}
 
-            {/* Barcode Scanner Modal */}
+            {/* Enhanced Barcode Scanner Modal */}
             {showScanner && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-gray-900">Scan Barcode</h3>
-                            <button
-                                onClick={() => setShowScanner(false)}
-                                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                            >
-                                <FiX size={20} />
-                            </button>
-                        </div>
+                <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
+                    <div className="relative w-full h-full">
                         <BarcodeScanner
-                            onScanSuccess={handleScanSuccess}
-                            onScanError={(error) => console.error('Scan error:', error)}
+                            key={scannerKey}
+                            onBarcodeDetected={handleBarcodeDetected}
+                            onClose={handleBarcodeScannerClose}
+                            autoCloseOnScan={false}
                         />
                     </div>
                 </div>
@@ -545,9 +610,12 @@ const NewArrivalsContent = () => {
             {/* Loading overlay for scanning */}
             {isScanning && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 flex items-center gap-3 mx-4 max-w-sm w-full">
-                        <FiLoader className="animate-spin h-6 w-6 text-blue-500" />
-                        <span className="text-gray-700">Searching for product...</span>
+                    <div className="bg-white rounded-2xl shadow-2xl p-6 flex items-center gap-4 mx-4 max-w-sm w-full">
+                        <div className="relative">
+                            <FiLoader className="animate-spin h-6 w-6 text-blue-500" />
+                            <div className="absolute inset-0 rounded-full border-2 border-blue-100"></div>
+                        </div>
+                        <span className="text-gray-700 font-medium">Searching for product...</span>
                     </div>
                 </div>
             )}
