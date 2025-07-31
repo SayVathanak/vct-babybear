@@ -8,9 +8,9 @@ import axios from "axios";
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "babybear-next" });
 
-const FASTAPI_SERVICE_URL = process.env.FASTAPI_URL
-  ? `https://${process.env.FASTAPI_URL}`
-  : "http://127.0.0.1:8000";
+// const FASTAPI_SERVICE_URL = process.env.FASTAPI_URL
+//   ? `https://${process.env.FASTAPI_URL}`
+//   : "http://127.0.0.1:8000";
 
 // Inngest function to save user data to a db
 export const syncUserCreation = inngest.createFunction(
@@ -354,12 +354,13 @@ export const verifyBakongPayments = inngest.createFunction(
                             const controller = new AbortController();
                             const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-                            const response = await axios.post(`${FASTAPI_SERVICE_URL}/api/v1/check-payment-status`, {
+                            const response = await axios.post(`/api/bakong/check-payment-status`, {
                                 md5_hash: md5Hash,
                             }, {
                                 timeout: 10000, // 10 second timeout
                                 signal: controller.signal
                             });
+
 
                             clearTimeout(timeoutId);
 
@@ -429,7 +430,7 @@ export const checkFastApiHealth = inngest.createFunction(
     async ({ step }) => {
         const healthCheck = await step.run("ping-fastapi-service", async () => {
             try {
-                const response = await axios.get(`${FASTAPI_SERVICE_URL}/`, {
+                const response = await axios.get(`/api/health`, {
                     timeout: 5000
                 });
 

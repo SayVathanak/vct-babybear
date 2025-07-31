@@ -298,12 +298,12 @@ const OrderSummary = () => {
       const md5 = bakongDetailsRef.current?.md5;
       if (!md5) return;
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_FASTAPI_URL
-          ? `https://${process.env.NEXT_PUBLIC_FASTAPI_URL}`
-          : "http://127.0.0.1:8000";
-        const fastApiUrl = `${baseUrl}/api/v1/check-payment-status`;
-        const { data } = await axios.post(fastApiUrl, { md5_hash: md5 });
-        if (data.is_paid) {
+        // UPDATED: Use local API endpoint instead of external FastAPI
+        const { data } = await axios.post('/api/bakong/check-payment-status', { 
+          md5_hash: md5 
+        });
+        
+        if (data.success && data.is_paid) {
           clearInterval(pollIntervalRef.current);
           setIsAwaitingPayment(false);
           setIsPlacingOrder(true);
@@ -325,18 +325,15 @@ const OrderSummary = () => {
     try {
       const { total } = calculateOrderAmounts();
       const billNumber = `ORD-${Date.now()}`;
-      const baseUrl = process.env.NEXT_PUBLIC_FASTAPI_URL
-        ? `https://${process.env.NEXT_PUBLIC_FASTAPI_URL}`
-        : "http://127.0.0.1:8000";
-      const fastApiUrl = `${baseUrl}/api/v1/generate-qr`;
-
-      const { data } = await axios.post(fastApiUrl, {
+      
+      // UPDATED: Use local API endpoint instead of external FastAPI
+      const { data } = await axios.post('/api/bakong/generate-qr', {
         amount: total,
         bill_number: billNumber,
         generate_deeplink: true, // Request deeplink generation
       });
 
-      if (data.qr_string && data.md5_hash) {
+      if (data.success && data.qr_string && data.md5_hash) {
         setBakongQrString(data.qr_string);
         setBakongDeeplink(data.deeplink); // Store the received deeplink
         bakongDetailsRef.current = {
@@ -351,7 +348,7 @@ const OrderSummary = () => {
         throw new Error("Invalid response from QR service.");
       }
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Could not generate Bakong QR.");
+      toast.error(error.response?.data?.message || "Could not generate Bakong QR.");
       resetBakongState();
     } finally {
       setIsGeneratingQR(false);
