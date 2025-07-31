@@ -8,24 +8,26 @@ import axios from "axios";
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "babybear-next" });
 
-// const FASTAPI_SERVICE_URL = process.env.FASTAPI_URL
-//   ? `https://${process.env.FASTAPI_URL}`
-//   : "http://127.0.0.1:8000";
-
 // Inngest function to save user data to a db
 export const syncUserCreation = inngest.createFunction(
     { id: 'sync-user-from-clerk' },
     { event: 'clerk/user.created' },
     async ({ event }) => {
-        const { id, first_name, last_name, email_addresses, image_url } = event.data
-        const userData = {
-            _id: id,
-            email: email_addresses[0].email_address,
-            name: `${first_name || ''} ${last_name || ''}`.trim(),
-            imageUrl: image_url
+        try {
+            const { id, first_name, last_name, email_addresses, image_url } = event.data;
+            const userData = {
+                _id: id,
+                email: email_addresses[0].email_address,
+                name: `${first_name || ''} ${last_name || ''}`.trim(),
+                imageUrl: image_url
+            };
+            await connectDB();
+            await User.create(userData);
+            console.log(`[Inngest] Successfully created user with ID: ${id}`);
+        } catch (error) {
+            console.error(`[Inngest] Error syncing user creation for ID: ${event.data.id}`, error);
+            throw error; // Re-throw to allow Inngest to retry
         }
-        await connectDB();
-        await User.create(userData);
     }
 );
 
@@ -34,15 +36,21 @@ export const syncUserUpdation = inngest.createFunction(
     { id: 'update-user-from-clerk' },
     { event: 'clerk/user.updated' },
     async ({ event }) => {
-        const { id, first_name, last_name, email_addresses, image_url } = event.data
-        const userData = {
-            _id: id,
-            email: email_addresses[0].email_address,
-            name: `${first_name || ''} ${last_name || ''}`.trim(),
-            imageUrl: image_url
+        try {
+            const { id, first_name, last_name, email_addresses, image_url } = event.data;
+            const userData = {
+                _id: id,
+                email: email_addresses[0].email_address,
+                name: `${first_name || ''} ${last_name || ''}`.trim(),
+                imageUrl: image_url
+            };
+            await connectDB();
+            await User.findByIdAndUpdate(id, userData);
+            console.log(`[Inngest] Successfully updated user with ID: ${id}`);
+        } catch (error) {
+            console.error(`[Inngest] Error syncing user update for ID: ${event.data.id}`, error);
+            throw error;
         }
-        await connectDB();
-        await User.findByIdAndUpdate(id, userData);
     }
 );
 
@@ -51,14 +59,19 @@ export const syncUserDeletion = inngest.createFunction(
     { id: 'delete-user-with-clerk' },
     { event: 'clerk/user.deleted' },
     async ({ event }) => {
-        const { id } = event.data;
-        if (!id) {
-            // Clerk sometimes sends events with a null ID during deletion.
-            console.warn("[Inngest] Received user.deleted event with null ID. Skipping.");
-            return;
+        try {
+            const { id } = event.data;
+            if (!id) {
+                console.warn("[Inngest] Received user.deleted event with null ID. Skipping.");
+                return;
+            }
+            await connectDB();
+            await User.findByIdAndDelete(id);
+            console.log(`[Inngest] Successfully deleted user with ID: ${id}`);
+        } catch (error) {
+            console.error(`[Inngest] Error syncing user deletion for ID: ${event.data.id}`, error);
+            throw error;
         }
-        await connectDB();
-        await User.findByIdAndDelete(id);
     }
 );
 
@@ -66,7 +79,7 @@ export const syncUserDeletion = inngest.createFunction(
 
 // CORRECTED ORDER CREATION FUNCTION
 export const createUserOrder = inngest.createFunction(
-    { id: 'create-user-order' }, // No batching configuration
+    { id: 'create-user-order' },
     { event: 'order/created' },
     async ({ event, step }) => {
         await connectDB();
@@ -92,7 +105,7 @@ export const createUserOrder = inngest.createFunction(
     }
 );
 
-// REVISED INVENTORY DEDUCTION FUNCTION WITH BETTER LOGGING
+// REVISED INVENTORY DEDUCTION FUNCTION WITH CONCURRENT UPDATES
 export const deductInventory = inngest.createFunction(
     { id: 'deduct-inventory-on-order' },
     { event: 'inventory/deduct' },
@@ -106,14 +119,11 @@ export const deductInventory = inngest.createFunction(
             return { success: false, message: "No items to deduct." };
         }
 
-        for (const item of items) {
-            await step.run(`deduct-stock-for-product-${item.product}`, async () => {
+        // Use Promise.all to process all items concurrently for better performance
+        const deductionResults = await Promise.all(items.map(async (item) => {
+            return await step.run(`deduct-stock-for-product-${item.product}`, async () => {
                 console.log(`[Inngest] Attempting to deduct ${item.quantity} of Product ID: ${item.product}`);
-                const product = await Product.findById(item.product);
-                if (!product) {
-                    throw new Error(`Product with ID ${item.product} not found during deduction for Order ${orderId}.`);
-                }
-
+                
                 const updatedProduct = await Product.findByIdAndUpdate(
                     item.product,
                     { $inc: { stock: -item.quantity } },
@@ -121,7 +131,7 @@ export const deductInventory = inngest.createFunction(
                 );
 
                 if (!updatedProduct) {
-                    throw new Error(`Failed to update stock for Product ID: ${item.product}.`);
+                    throw new Error(`Product with ID ${item.product} not found or failed to update during deduction for Order ${orderId}.`);
                 }
 
                 console.log(`[Inngest] Successfully updated stock for Product ID ${updatedProduct._id}. New stock: ${updatedProduct.stock}`);
@@ -132,13 +142,13 @@ export const deductInventory = inngest.createFunction(
                     console.log(`[Inngest] OUT OF STOCK: ${updatedProduct.name} is now out of stock. Setting isAvailable to false.`);
                     await Product.findByIdAndUpdate(updatedProduct._id, { isAvailable: false });
                 }
-
+                
                 return { productId: item.product, newStock: updatedProduct.stock };
             });
-        }
+        }));
 
         console.log(`[Inngest] Inventory deduction completed for Order ID: ${orderId}`);
-        return { success: true, orderId };
+        return { success: true, orderId, results: deductionResults };
     }
 );
 
@@ -165,27 +175,28 @@ export const restoreInventory = inngest.createFunction(
             return { success: false, message: "Order not in 'Cancelled' state." };
         }
 
-        for (const item of order.items) {
-            await step.run(`restore-stock-for-product-${item.product}`, async () => {
+        // Use Promise.all for concurrent restoration
+        const restorationResults = await Promise.all(order.items.map(async (item) => {
+            return await step.run(`restore-stock-for-product-${item.product}`, async () => {
                 console.log(`[Inngest] Restoring ${item.quantity} of Product ID: ${item.product}`);
                 const updatedProduct = await Product.findByIdAndUpdate(
                     item.product,
                     { $inc: { stock: item.quantity }, $set: { isAvailable: true } },
                     { new: true }
                 );
-
+                
                 if (!updatedProduct) {
                     console.error(`[Inngest] Failed to find Product ID: ${item.product} to restore stock.`);
                     return { productId: item.product, status: 'failed_product_not_found' };
                 }
-
+                
                 console.log(`[Inngest] Successfully restored stock for Product ID ${item.product}. New stock: ${updatedProduct.stock}`);
                 return { productId: item.product, newStock: updatedProduct.stock };
             });
-        }
+        }));
 
         console.log(`[Inngest] Inventory restoration completed for Order ID: ${orderId}`);
-        return { success: true, orderId };
+        return { success: true, orderId, results: restorationResults };
     }
 );
 
@@ -232,17 +243,19 @@ export const handleOrderStatusUpdated = inngest.createFunction(
     { event: 'order/status-updated' },
     async ({ event, step }) => {
         const { orderId, status } = event.data;
-
-        if (status === 'Cancelled') {
+        
+        await connectDB();
+        const updatedOrder = await step.run("update-order-status-in-db", async () => {
+            return await Order.findByIdAndUpdate(orderId, { status: status }, { new: true });
+        });
+        
+        if (updatedOrder && updatedOrder.status === 'Cancelled') {
             await step.sendEvent('send-inventory-restoration-on-cancellation', {
                 name: "order/cancelled",
                 data: { orderId }
             });
         }
-
-        await connectDB();
-        await Order.findByIdAndUpdate(orderId, { status: status });
-
+        
         return { success: true, message: `Order status updated to ${status}` };
     }
 );
@@ -261,7 +274,7 @@ export const verifyBakongPayments = inngest.createFunction(
             const orders = await Order.find({
                 paymentMethod: "Bakong",
                 paymentStatus: "pending",
-                bakongPaymentDetails: { $exists: true, $ne: null } // This prevents the infinite loop
+                bakongPaymentDetails: { $exists: true, $ne: null }
             }).lean();
             return orders;
         });
@@ -287,9 +300,8 @@ export const verifyBakongPayments = inngest.createFunction(
             details: []
         };
 
-        // Process orders in batches to avoid overwhelming the system
-        for (let i = 0; i < pendingOrders.length; i++) {
-            const order = pendingOrders[i];
+        // Use Promise.all to process all pending orders concurrently
+        const orderProcessingPromises = pendingOrders.map(async (order) => {
             const orderAge = Date.now() - new Date(order.date).getTime();
 
             try {
@@ -298,45 +310,33 @@ export const verifyBakongPayments = inngest.createFunction(
                     // Order has expired. Cancel it.
                     const cancelResult = await step.run(`cancel-expired-order-${order._id}`, async () => {
                         console.log(`[Inngest] Bakong order ${order._id} is older than 10 minutes (${Math.round(orderAge / 1000 / 60)}min). Cancelling.`);
+                        
+                        // Use a transaction for atomicity if your DB supports it, otherwise this is the best approach
+                        const updatedOrder = await Order.findByIdAndUpdate(order._id, {
+                            status: 'Cancelled',
+                            paymentStatus: 'failed',
+                            updatedAt: new Date()
+                        }, { new: true });
 
-                        try {
-                            // Update order status to Cancelled
-                            await Order.findByIdAndUpdate(order._id, {
-                                status: 'Cancelled',
-                                paymentStatus: 'failed',
-                                updatedAt: new Date()
-                            });
-
+                        if (updatedOrder) {
                             console.log(`[Inngest] Successfully cancelled expired order ${order._id}`);
-                            return { success: true, orderId: order._id, action: 'cancelled_expired' };
-                        } catch (error) {
-                            console.error(`[Inngest] Error cancelling order ${order._id}:`, error);
-                            return { success: false, orderId: order._id, error: error.message };
-                        }
-                    });
-
-                    if (cancelResult.success) {
-                        // Send event to restore inventory - but don't await it to prevent blocking
-                        try {
                             await step.sendEvent('send-inventory-restoration-for-expired-order', {
                                 name: "order/cancelled",
                                 data: { orderId: order._id }
                             });
-                            console.log(`[Inngest] Sent inventory restoration event for order ${order._id}`);
-                        } catch (eventError) {
-                            console.error(`[Inngest] Failed to send inventory restoration event for order ${order._id}:`, eventError);
+                            return { success: true, orderId: order._id, action: 'cancelled_expired' };
+                        } else {
+                            throw new Error(`Failed to cancel order ${order._id}`);
                         }
+                    });
 
+                    if (cancelResult.success) {
                         results.expiredOrders++;
                     } else {
                         results.errors++;
                     }
+                    results.details.push({ orderId: order._id, action: 'expired', success: cancelResult.success });
 
-                    results.details.push({
-                        orderId: order._id,
-                        action: 'expired',
-                        success: cancelResult.success
-                    });
                 } else {
                     // Order is still within the 10-minute window. Check for payment.
                     const paymentResult = await step.run(`verify-payment-for-order-${order._id}`, async () => {
@@ -350,18 +350,11 @@ export const verifyBakongPayments = inngest.createFunction(
                         try {
                             console.log(`[Inngest] Checking payment status for order ${order._id} (age: ${Math.round(orderAge / 1000)}s)`);
 
-                            // Add timeout to prevent hanging requests
+                            // Use an AbortController for a cleaner timeout implementation
                             const controller = new AbortController();
                             const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-                            const response = await axios.post(`/api/bakong/check-payment-status`, {
-                                md5_hash: md5Hash,
-                            }, {
-                                timeout: 10000, // 10 second timeout
-                                signal: controller.signal
-                            });
-
-
+                            const response = await axios.post(`/api/bakong/check-payment-status`, { md5_hash: md5Hash }, { signal: controller.signal });
                             clearTimeout(timeoutId);
 
                             if (response.data.is_paid) {
@@ -376,11 +369,10 @@ export const verifyBakongPayments = inngest.createFunction(
                                 return { success: true, orderId: order._id, status: "still_unpaid" };
                             }
                         } catch (error) {
-                            if (error.name === 'AbortError') {
+                            if (error.name === 'AbortError' || error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
                                 console.error(`[Inngest] Payment check timeout for order ${order._id}`);
                                 return { success: false, orderId: order._id, status: "timeout", error: "Request timeout" };
                             }
-
                             console.error(`[Inngest] Failed to verify payment for order ${order._id}:`, error.response?.data || error.message);
                             return { success: false, orderId: order._id, status: "error", error: error.message };
                         }
@@ -391,7 +383,6 @@ export const verifyBakongPayments = inngest.createFunction(
                     } else if (!paymentResult.success) {
                         results.errors++;
                     }
-
                     results.details.push({
                         orderId: order._id,
                         action: 'payment_check',
@@ -412,7 +403,10 @@ export const verifyBakongPayments = inngest.createFunction(
                     error: stepError.message
                 });
             }
-        }
+        });
+
+        // Await all promises to ensure all orders are processed before the function exits
+        await Promise.all(orderProcessingPromises);
 
         console.log(`[Inngest] Bakong verification completed. Processed: ${results.processedOrders}, Expired: ${results.expiredOrders}, Paid: ${results.paidOrders}, Errors: ${results.errors}`);
 
@@ -424,25 +418,29 @@ export const verifyBakongPayments = inngest.createFunction(
     }
 );
 
-export const checkFastApiHealth = inngest.createFunction(
-    { id: "check-fastapi-health" },
+export const checkBakongHealth = inngest.createFunction(
+    { id: "check-bakong-health" },
     { cron: "*/5 * * * *" }, // Check every 5 minutes
     async ({ step }) => {
-        const healthCheck = await step.run("ping-fastapi-service", async () => {
+        const healthCheck = await step.run("ping-bakong-payment-service", async () => {
             try {
-                const response = await axios.get(`/api/health`, {
+                // A simple GET request to the Bakong API route to check if it's reachable.
+                // Note: The /api/bakong/check-payment-status route expects a POST with a body,
+                // so a GET to the root of the API is a better health check.
+                // Assuming /api/bakong is the base path and is reachable.
+                const response = await axios.get(`/api/bakong/health`, {
                     timeout: 5000
                 });
 
                 if (response.status === 200) {
-                    console.log('[Inngest] FastAPI service is healthy');
+                    console.log('[Inngest] Bakong payment API is healthy');
                     return { status: 'healthy', response: response.data };
                 } else {
-                    console.warn(`[Inngest] FastAPI service returned unexpected status: ${response.status}`);
+                    console.warn(`[Inngest] Bakong payment API returned unexpected status: ${response.status}`);
                     return { status: 'unhealthy', statusCode: response.status };
                 }
             } catch (error) {
-                console.error('[Inngest] FastAPI service health check failed:', error.message);
+                console.error('[Inngest] Bakong payment API health check failed:', error.message);
                 return { status: 'error', error: error.message };
             }
         });
@@ -450,3 +448,4 @@ export const checkFastApiHealth = inngest.createFunction(
         return healthCheck;
     }
 );
+

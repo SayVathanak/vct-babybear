@@ -10,7 +10,7 @@ import {
     handleItemStatusUpdated, 
     handleOrderStatusUpdated, 
     verifyBakongPayments, 
-    checkFastApiHealth 
+    checkBakongHealth 
 } from "@/config/inngest";
 
 export const { GET, POST, PUT } = serve({
@@ -25,6 +25,6 @@ export const { GET, POST, PUT } = serve({
     handleItemStatusUpdated,
     handleOrderStatusUpdated,
     verifyBakongPayments,
-    checkFastApiHealth
+    checkBakongHealth
   ],
 });
