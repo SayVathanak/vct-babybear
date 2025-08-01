@@ -87,8 +87,8 @@ const ProductFilter = ({
     return (
         <div className="divide-y divide-gray-200">
             {/* Sort Options (for mobile) */}
-            {/* <div className="py-4 lg:hidden">
-                <label htmlFor="mobileSort" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="py-4 lg:hidden">
+                <label htmlFor="mobileSort" className="block text-md font-medium text-gray-700 mb-2">
                     Sort By
                 </label>
                 <select
@@ -101,7 +101,7 @@ const ProductFilter = ({
                         <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
                 </select>
-            </div> */}
+            </div>
 
             {/* Categories */}
             <FilterSection
