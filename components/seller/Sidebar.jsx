@@ -3,9 +3,10 @@ import Link from 'next/link';
 import { assets } from '../../assets/assets';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { CiShoppingTag, CiWavePulse1, CiMonitor, CiWarning, CiBoxes } from "react-icons/ci";
+import { CiShoppingTag, CiWavePulse1, CiMonitor, CiWarning, CiInboxIn } from "react-icons/ci";
 import { PiCubeLight } from "react-icons/pi";
 import { GoPackageDependencies } from "react-icons/go";
+import { IoSettingsOutline } from "react-icons/io5";
 
 const SideBar = () => {
     const pathname = usePathname();
@@ -13,12 +14,13 @@ const SideBar = () => {
     const menuItems = [
         { name: 'Add Product', path: '/seller', icon: assets.add_icon },
         { name: 'Product List', path: '/seller/product-list', icon: assets.product_list_icon },
-        { name: 'New Arrivals', path: '/seller/new-arrivals', icon: <GoPackageDependencies size={28} className="text-black" /> },
         { name: 'Orders', path: '/seller/orders', icon: assets.order_icon },
+        { name: 'Stocks', path: '/seller/stock', icon: <PiCubeLight size={28} className="text-black" /> },
+        { name: 'New Arrivals', path: '/seller/new-arrivals', icon: <CiInboxIn size={28} className="text-black" /> },
+        { name: 'Analytics', path: '/seller/analytics', icon: <CiWavePulse1 size={28} className="text-black stroke-[0.2]" /> },
         { name: 'Promo codes', path: '/seller/promo-codes', icon: <CiShoppingTag size={28} className="text-black stroke-[0.2]" /> },
         { name: 'Promotion Banner', path: '/seller/promotion-slider', icon: <CiMonitor size={28} className="text-black stroke-[0.2]" /> },
-        { name: 'Analytics', path: '/seller/analytics', icon: <CiWavePulse1 size={28} className="text-black stroke-[0.2]" /> },
-        { name: 'Stocks', path: '/seller/stock', icon: <PiCubeLight size={28} className="text-black" /> },
+        { name: 'Settings', path: '/seller/settings', icon: <IoSettingsOutline size={28} className="text-black stroke-[0.2]" /> },
     ];
 
     return (
