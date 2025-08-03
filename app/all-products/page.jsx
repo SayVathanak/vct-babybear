@@ -10,7 +10,7 @@ const LoadingFallback = () => (
 
 const AllProductsPage = () => {
   return (
-    <div className="relative z-10">
+    <div className="relative md:z-10">
       <Suspense fallback={<LoadingFallback />}>
         <AllProductsClient />
       </Suspense>
