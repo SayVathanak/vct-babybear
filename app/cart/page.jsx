@@ -9,7 +9,7 @@ import { FaChevronLeft, FaTimes } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 const Cart = () => {
-  const { products, router, cartItems, updateCartQuantity, getCartCount } = useAppContext();
+  const { products, router, cartItems, updateCartQuantity, getCartCount, currency } = useAppContext();
   // Initialize inputQuantities with empty object to start
   const [inputQuantities, setInputQuantities] = useState({});
   const [isInitialized, setIsInitialized] = useState(false);
@@ -65,7 +65,6 @@ const Cart = () => {
       [productId]: newQuantity.toString()
     });
   };
-
 
   const handleQuantityChange = (productId, value) => {
     // Always store input value as string
@@ -209,7 +208,7 @@ const Cart = () => {
                               {product.name}
                             </h2>
                             <p className={`mt-1 sm:mt-2 ${isOutOfStock ? 'text-gray-400' : 'text-gray-600'}`}>
-                              ${product.offerPrice}
+                              {currency}{product.offerPrice}
                             </p>
 
                             {/* Stock Status Indicators */}
@@ -290,7 +289,7 @@ const Cart = () => {
                               Subtotal
                             </span>
                             <span className={`text-sm md:text-lg ml-2 font-medium ${isOutOfStock ? 'text-gray-400' : isOverStock ? 'text-red-600' : ''}`}>
-                              ${(product.offerPrice * cartItems[itemId]).toFixed(2)}
+                              {currency}{(product.offerPrice * cartItems[itemId]).toFixed(2)}
                             </span>
                           </div>
                         </div>
