@@ -19,7 +19,7 @@ const SideBar = () => {
         { name: 'New Arrivals', path: '/seller/new-arrivals', icon: <CiInboxIn size={28} className="text-black" /> },
         { name: 'Analytics', path: '/seller/analytics', icon: <CiWavePulse1 size={28} className="text-black stroke-[0.2]" /> },
         { name: 'Promo codes', path: '/seller/promo-codes', icon: <CiShoppingTag size={28} className="text-black stroke-[0.2]" /> },
-        { name: 'Promotion Banner', path: '/seller/promotion-slider', icon: <CiMonitor size={28} className="text-black stroke-[0.2]" /> },
+        // { name: 'Promotion Banner', path: '/seller/promotion-slider', icon: <CiMonitor size={28} className="text-black stroke-[0.2]" /> },
         { name: 'Settings', path: '/seller/settings', icon: <IoSettingsOutline size={28} className="text-black stroke-[0.2]" /> },
     ];
 
