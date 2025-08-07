@@ -44,7 +44,7 @@ const Logo = () => {
     if (loading) {
         return (
             <div className="flex-1 flex justify-center">
-                <div className="w-28 md:w-32 h-10 bg-gray-200 animate-pulse rounded"></div>
+                <div className="w-28 md:w-32 h-10 bg-white animate-pulse rounded"></div>
             </div>
         );
     }
