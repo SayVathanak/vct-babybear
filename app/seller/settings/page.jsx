@@ -450,7 +450,7 @@ const SettingsPage = () => {
               >
                 {/* Backdrop with blur effect */}
                 <motion.div
-                  className="fixed inset-0 backdrop-blur-sm transition-backdrop-filter duration-700"
+                  className="fixed inset-0 backdrop-blur-md transition-backdrop-filter duration-500"
                   onClick={() => setSidebarOpen(false)}
                   initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
                   animate={{ opacity: 1, backdropFilter: 'blur(4px)' }}
