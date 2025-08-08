@@ -5,7 +5,7 @@ const SettingsSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true, // Ensures only one document per setting type
-    enum: ['logo', 'footer', 'general', 'notifications', 'store', 'security']
+    enum: ['logo', 'footer', 'general', 'notifications', 'store', 'security', 'aba-khqr'] // Added 'aba-khqr'
   },
   data: {
     type: mongoose.Schema.Types.Mixed, // Flexible structure for different setting types

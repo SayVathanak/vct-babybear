@@ -128,7 +128,7 @@ const FooterSettingsManager = () => {
 
     if (loading) {
         return (
-            <div className="bg-white rounded-lg border shadow-sm p-6">
+            <div className="bg-white rounded-lg border shadow-sm p-4 sm:p-6">
                 <div className="animate-pulse space-y-4">
                     <div className="h-6 bg-gray-200 rounded w-1/4"></div>
                     <div className="space-y-2">
@@ -141,10 +141,10 @@ const FooterSettingsManager = () => {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="bg-white rounded-lg border shadow-sm p-6">
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900">Footer Settings</h3>
+        <div className="space-y-4 sm:space-y-6">
+            <div className="bg-white rounded-lg border shadow-sm p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">Footer Settings</h3>
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setFooterData(prev => ({ ...prev, isVisible: !prev.isVisible }))}
@@ -160,7 +160,7 @@ const FooterSettingsManager = () => {
                         <button
                             onClick={handleSave}
                             disabled={saving}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 text-sm"
                         >
                             {saving ? (
                                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -172,13 +172,12 @@ const FooterSettingsManager = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Company Information */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
                     <div className="space-y-4">
-                        <h4 className="font-medium text-gray-900">Company Information</h4>
+                        <h4 className="font-medium text-sm sm:text-base text-gray-900">Company Information</h4>
                         
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                                 Company Description
                             </label>
                             <textarea
@@ -188,13 +187,13 @@ const FooterSettingsManager = () => {
                                     ...prev,
                                     companyInfo: { ...prev.companyInfo, description: e.target.value }
                                 }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Describe your company..."
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                                 Established Year
                             </label>
                             <input
@@ -204,12 +203,12 @@ const FooterSettingsManager = () => {
                                     ...prev,
                                     companyInfo: { ...prev.companyInfo, establishedYear: e.target.value }
                                 }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                                 Copyright Text
                             </label>
                             <input
@@ -219,17 +218,16 @@ const FooterSettingsManager = () => {
                                     ...prev,
                                     copyright: { ...prev.copyright, text: e.target.value }
                                 }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
                     </div>
 
-                    {/* Contact Information */}
                     <div className="space-y-4">
-                        <h4 className="font-medium text-gray-900">Contact Information</h4>
+                        <h4 className="font-medium text-sm sm:text-base text-gray-900">Contact Information</h4>
                         
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                                 Phone Number
                             </label>
                             <input
@@ -239,12 +237,12 @@ const FooterSettingsManager = () => {
                                     ...prev,
                                     contact: { ...prev.contact, phone: e.target.value }
                                 }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                                 Email Address
                             </label>
                             <input
@@ -254,12 +252,12 @@ const FooterSettingsManager = () => {
                                     ...prev,
                                     contact: { ...prev.contact, email: e.target.value }
                                 }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                                 Physical Address
                             </label>
                             <textarea
@@ -269,12 +267,12 @@ const FooterSettingsManager = () => {
                                     ...prev,
                                     contact: { ...prev.contact, address: e.target.value }
                                 }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                                 Google Maps URL
                             </label>
                             <input
@@ -284,12 +282,12 @@ const FooterSettingsManager = () => {
                                     ...prev,
                                     contact: { ...prev.contact, mapUrl: e.target.value }
                                 }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                                 Map Link Label
                             </label>
                             <input
@@ -299,20 +297,19 @@ const FooterSettingsManager = () => {
                                     ...prev,
                                     contact: { ...prev.contact, mapLabel: e.target.value }
                                 }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="e.g., VCT Baby Bear"
                             />
                         </div>
                     </div>
                 </div>
 
-                {/* Company Links */}
-                <div className="mt-8">
-                    <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-medium text-gray-900">Company Links</h4>
+                <div className="mt-6 sm:mt-8">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                        <h4 className="font-medium text-sm sm:text-base text-gray-900">Company Links</h4>
                         <button
                             onClick={addCompanyLink}
-                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 text-sm"
+                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 text-xs sm:text-sm"
                         >
                             <Plus className="w-4 h-4" />
                             Add Link
@@ -321,24 +318,24 @@ const FooterSettingsManager = () => {
                     
                     <div className="space-y-3">
                         {footerData.links.company.map((link, index) => (
-                            <div key={index} className="flex gap-3">
+                            <div key={index} className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                                 <input
                                     type="text"
                                     value={link.label}
                                     onChange={(e) => updateCompanyLink(index, 'label', e.target.value)}
                                     placeholder="Link Label"
-                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                                 <input
                                     type="text"
                                     value={link.url}
                                     onChange={(e) => updateCompanyLink(index, 'url', e.target.value)}
                                     placeholder="URL"
-                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                                 <button
                                     onClick={() => removeCompanyLink(index)}
-                                    className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md"
+                                    className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md self-end sm:self-auto"
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </button>
@@ -347,13 +344,12 @@ const FooterSettingsManager = () => {
                     </div>
                 </div>
 
-                {/* Social Media Links */}
-                <div className="mt-8">
-                    <h4 className="font-medium text-gray-900 mb-4">Social Media Links</h4>
+                <div className="mt-6 sm:mt-8">
+                    <h4 className="font-medium text-sm sm:text-base text-gray-900 mb-3 sm:mb-4">Social Media Links</h4>
                     <div className="space-y-3">
                         {footerData.links.social.map((social, index) => (
-                            <div key={index} className="flex gap-3 items-center">
-                                <div className="w-24 text-sm font-medium text-gray-700 capitalize">
+                            <div key={index} className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center">
+                                <div className="w-full sm:w-24 text-xs sm:text-sm font-medium text-gray-700 capitalize">
                                     {social.platform}
                                 </div>
                                 <input
@@ -361,7 +357,7 @@ const FooterSettingsManager = () => {
                                     value={social.url}
                                     onChange={(e) => updateSocialLink(index, e.target.value)}
                                     placeholder={`${social.platform} URL`}
-                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="flex-1 w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                             </div>
                         ))}

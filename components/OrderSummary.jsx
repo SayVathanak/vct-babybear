@@ -77,7 +77,6 @@ const BakongQRModal = ({ show, onClose, qrString, deeplink, isAwaitingPayment, i
           )}
         </div>
 
-
         <div className="space-y-3 mt-4">
           {deeplink && (
             <a
@@ -87,7 +86,6 @@ const BakongQRModal = ({ show, onClose, qrString, deeplink, isAwaitingPayment, i
               className="w-full bg-red-600 text-white py-3 rounded-md hover:bg-red-700 transition-colors text-sm font-bold flex items-center justify-center disabled:opacity-50"
               disabled={isPlacingOrder}
             >
-              {/* <img src="https://www.bakong.nbc.gov.kh/bakong-logo.svg" alt="Bakong Logo" className="h-5 w-5 mr-2" /> */}
               Pay with Bakong App
             </a>
           )}
@@ -111,7 +109,6 @@ const BakongQRModal = ({ show, onClose, qrString, deeplink, isAwaitingPayment, i
   );
 };
 
-
 const OrderSummary = () => {
   const { currency, router, getCartCount, getCartAmount, getToken, user, cartItems, setCartItems, products } = useAppContext();
 
@@ -134,6 +131,10 @@ const OrderSummary = () => {
   const [transactionProofPreview, setTransactionProofPreview] = useState(null);
   const [transactionProofUrl, setTransactionProofUrl] = useState(null);
   const [uploadingProof, setUploadingProof] = useState(false);
+
+  // ABA KHQR State
+  const [abaKhqrData, setAbaKhqrData] = useState(null);
+  const [loadingKhqr, setLoadingKhqr] = useState(false);
 
   // Bakong Payment State
   const [showBakongModal, setShowBakongModal] = useState(false);
@@ -160,6 +161,13 @@ const OrderSummary = () => {
     if (user) fetchUserAddresses();
   }, [user]);
 
+  // Fetch ABA KHQR data when ABA payment is selected
+  useEffect(() => {
+    if (selectedPaymentMethod === "ABA") {
+      fetchABAKhqrData();
+    }
+  }, [selectedPaymentMethod]);
+
   // Constants
   const isFreeDelivery = getCartCount() > 1;
   const deliveryFee = isFreeDelivery ? 0 : 1.5;
@@ -175,6 +183,24 @@ const OrderSummary = () => {
         if (data.addresses.length > 0) setSelectedAddress(data.addresses[0]);
       }
     } catch (error) { toast.error("Failed to fetch addresses"); }
+  };
+
+  const fetchABAKhqrData = async () => {
+    try {
+      setLoadingKhqr(true);
+      const { data } = await axios.get('/api/settings/aba-khqr');
+      if (data.success) {
+        setAbaKhqrData({
+          khqr: data.khqr,
+          bankDetails: data.bankDetails
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch ABA KHQR data:", error);
+      // Don't show error toast as this might be expected if no KHQR is uploaded
+    } finally {
+      setLoadingKhqr(false);
+    }
   };
 
   const calculateDiscount = (subtotal) => {
@@ -298,7 +324,6 @@ const OrderSummary = () => {
       const md5 = bakongDetailsRef.current?.md5;
       if (!md5) return;
       try {
-        // UPDATED: Use local API endpoint instead of external FastAPI
         const { data } = await axios.post('/api/bakong/check-payment-status', { 
           md5_hash: md5 
         });
@@ -326,20 +351,19 @@ const OrderSummary = () => {
       const { total } = calculateOrderAmounts();
       const billNumber = `ORD-${Date.now()}`;
       
-      // UPDATED: Use local API endpoint instead of external FastAPI
       const { data } = await axios.post('/api/bakong/generate-qr', {
         amount: total,
         bill_number: billNumber,
-        generate_deeplink: true, // Request deeplink generation
+        generate_deeplink: true,
       });
 
       if (data.success && data.qr_string && data.md5_hash) {
         setBakongQrString(data.qr_string);
-        setBakongDeeplink(data.deeplink); // Store the received deeplink
+        setBakongDeeplink(data.deeplink);
         bakongDetailsRef.current = {
           md5: data.md5_hash,
           qrString: data.qr_string,
-          deeplink: data.deeplink, // Also save deeplink to the ref
+          deeplink: data.deeplink,
         };
         setShowBakongModal(true);
         setIsAwaitingPayment(true);
@@ -359,7 +383,7 @@ const OrderSummary = () => {
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     setShowBakongModal(false);
     setBakongQrString("");
-    setBakongDeeplink(null); // Reset deeplink state
+    setBakongDeeplink(null);
     setIsAwaitingPayment(false);
     setIsPlacingOrder(false);
     bakongDetailsRef.current = null;
@@ -388,7 +412,6 @@ const OrderSummary = () => {
       return false;
     }
 
-    // Check stock availability for each item in cart
     const stockIssues = [];
     Object.keys(cartItems).forEach((productId) => {
       const product = products.find(p => p._id === productId);
@@ -450,6 +473,146 @@ const OrderSummary = () => {
       setLoading(false);
       setIsPlacingOrder(false);
     }
+  };
+
+  // --- RENDER ABA PAYMENT SECTION ---
+  const renderABAPaymentSection = () => {
+    if (loadingKhqr) {
+      return (
+        <div className="mt-4 p-4 border border-gray-200 rounded-md bg-white">
+          <div className="flex items-center justify-center py-8">
+            <FaSpinner className="animate-spin mr-2" />
+            <span className="text-gray-600">Loading payment details...</span>
+          </div>
+        </div>
+      );
+    }
+
+    // Check if we have KHQR data and it's active
+    const hasActiveKhqr = abaKhqrData?.khqr && abaKhqrData?.bankDetails?.isActive;
+
+    if (hasActiveKhqr) {
+      return (
+        <div className="mt-4 p-4 border border-gray-200 rounded-md bg-white">
+          <p className="text-xs text-gray-600 mb-3">Scan the QR code below with your ABA mobile app to complete payment, or transfer manually to the account details.</p>
+          
+          {/* KHQR Image Display */}
+          <div className="flex justify-center mb-4">
+            <div className="bg-white p-2 border rounded-lg shadow-sm">
+              <img 
+                src={abaKhqrData.khqr.url} 
+                alt="ABA Bank KHQR" 
+                className="w-48 h-48 object-contain"
+              />
+            </div>
+          </div>
+
+          {/* Bank Account Details as Fallback */}
+          <div className="bg-gray-50 p-3 rounded mb-3 space-y-1">
+            <div className="flex items-center justify-between">
+              <p className="text-sm">Account: <span className="font-semibold text-blue-600">{abaKhqrData.bankDetails.accountNumber}</span></p>
+              <button onClick={() => handleCopyText(abaKhqrData.bankDetails.accountNumber, "Account Copied!")} className="p-1 text-blue-500 hover:text-blue-700">
+                <FaCopy size={14} />
+              </button>
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-sm">Name: <span className="font-semibold text-blue-600">{abaKhqrData.bankDetails.accountName}</span></p>
+              <button onClick={() => handleCopyText(abaKhqrData.bankDetails.accountName, "Name Copied!")} className="p-1 text-blue-500 hover:text-blue-700">
+                <FaCopy size={14} />
+              </button>
+            </div>
+          </div>
+
+          {/* Transaction Proof Upload */}
+          <label htmlFor="transaction-proof-upload" className="block text-sm font-medium text-gray-700 mb-1">
+            Upload Transaction Screenshot <span className="text-red-500">*</span>
+          </label>
+          <input 
+            type="file" 
+            id="transaction-proof-upload" 
+            ref={fileInputRef} 
+            onChange={handleTransactionProofChange} 
+            accept="image/png, image/jpeg, image/gif" 
+            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50" 
+            disabled={uploadingProof} 
+          />
+          
+          {transactionProofPreview && (
+            <div className="mt-3">
+              <img src={transactionProofPreview} alt="Preview" className="max-h-32 rounded-md border" />
+            </div>
+          )}
+          
+          {uploadingProof && (
+            <div className="flex items-center text-sm text-blue-600 mt-2">
+              <FaSpinner className="animate-spin mr-2" />
+              <span>Uploading...</span>
+            </div>
+          )}
+          
+          {transactionProofUrl && !uploadingProof && (
+            <div className="flex items-center text-sm text-green-600 mt-2">
+              <FaCheck className="mr-2" />
+              <span>Screenshot uploaded successfully!</span>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Fallback to manual bank transfer if no KHQR or inactive
+    return (
+      <div className="mt-4 p-4 border border-gray-200 rounded-md bg-white">
+        <p className="text-xs text-gray-600 mb-1">Please transfer to the following ABA account and upload a screenshot of your transaction.</p>
+        <div className="bg-gray-50 p-3 rounded mb-3 space-y-1">
+          <div className="flex items-center justify-between">
+            <p className="text-sm">Account: <span className="font-semibold text-blue-600">001 223 344</span></p>
+            <button onClick={() => handleCopyText("001 223 344", "Account Copied!")} className="p-1 text-blue-500 hover:text-blue-700">
+              <FaCopy size={14} />
+            </button>
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="text-sm">Name: <span className="font-semibold text-blue-600">SAY SAKSOPHANNA</span></p>
+            <button onClick={() => handleCopyText("SAY SAKSOPHANNA", "Name Copied!")} className="p-1 text-blue-500 hover:text-blue-700">
+              <FaCopy size={14} />
+            </button>
+          </div>
+        </div>
+        
+        <label htmlFor="transaction-proof-upload" className="block text-sm font-medium text-gray-700 mb-1">
+          Upload Transaction <span className="text-red-500">*</span>
+        </label>
+        <input 
+          type="file" 
+          id="transaction-proof-upload" 
+          ref={fileInputRef} 
+          onChange={handleTransactionProofChange} 
+          accept="image/png, image/jpeg, image/gif" 
+          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50" 
+          disabled={uploadingProof} 
+        />
+        
+        {transactionProofPreview && (
+          <div className="mt-3">
+            <img src={transactionProofPreview} alt="Preview" className="max-h-32 rounded-md border" />
+          </div>
+        )}
+        
+        {uploadingProof && (
+          <div className="flex items-center text-sm text-blue-600 mt-2">
+            <FaSpinner className="animate-spin mr-2" />
+            <span>Uploading...</span>
+          </div>
+        )}
+        
+        {transactionProofUrl && !uploadingProof && (
+          <div className="flex items-center text-sm text-green-600 mt-2">
+            <FaCheck className="mr-2" />
+            <span>Uploaded!</span>
+          </div>
+        )}
+      </div>
+    );
   };
 
   // --- RENDER ---
@@ -529,20 +692,9 @@ const OrderSummary = () => {
               <BsQrCodeScan className={`mr-3 h-4 w-4 ${selectedPaymentMethod === "Bakong" ? "text-blue-600" : "text-gray-400"}`} /><span>Bakong KHQR</span>
             </label>
           </div>
-          {selectedPaymentMethod === 'ABA' && (
-            <div className="mt-4 p-4 border border-gray-200 rounded-md bg-white">
-              <p className="text-xs text-gray-600 mb-1">Please transfer to the following ABA account and upload a screenshot of your transaction.</p>
-              <div className="bg-gray-50 p-3 rounded mb-3 space-y-1">
-                <div className="flex items-center justify-between"><p className="text-sm">Account: <span className="font-semibold text-blue-600">001 223 344</span></p><button onClick={() => handleCopyText("001 223 344", "Account Copied!")} className="p-1 text-blue-500 hover:text-blue-700"><FaCopy size={14} /></button></div>
-                <div className="flex items-center justify-between"><p className="text-sm">Name: <span className="font-semibold text-blue-600">SAY SAKSOPHANNA</span></p><button onClick={() => handleCopyText("SAY SAKSOPHANNA", "Name Copied!")} className="p-1 text-blue-500 hover:text-blue-700"><FaCopy size={14} /></button></div>
-              </div>
-              <label htmlFor="transaction-proof-upload" className="block text-sm font-medium text-gray-700 mb-1">Upload Transaction <span className="text-red-500">*</span></label>
-              <input type="file" id="transaction-proof-upload" ref={fileInputRef} onChange={handleTransactionProofChange} accept="image/png, image/jpeg, image/gif" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50" disabled={uploadingProof} />
-              {transactionProofPreview && <div className="mt-3"><img src={transactionProofPreview} alt="Preview" className="max-h-32 rounded-md border" /></div>}
-              {uploadingProof && <div className="flex items-center text-sm text-blue-600 mt-2"><FaSpinner className="animate-spin mr-2" /><span>Uploading...</span></div>}
-              {transactionProofUrl && !uploadingProof && <div className="flex items-center text-sm text-green-600 mt-2"><FaCheck className="mr-2" /><span>Uploaded!</span></div>}
-            </div>
-          )}
+          
+          {/* Render ABA Payment Section */}
+          {selectedPaymentMethod === 'ABA' && renderABAPaymentSection()}
         </div>
 
         {/* Order Summary Details Section */}
