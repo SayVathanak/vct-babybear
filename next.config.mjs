@@ -1,22 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    experimental: {
-        // Increase the body size limit for file uploads
-        bodyParser: {
-            sizeLimit: '3mb', // Slightly higher than your 2MB limit
-        },
-    },
     images: {
         remotePatterns: [
             {
                 protocol: 'https',
                 hostname: 'res.cloudinary.com',
-                pathname: '/**', // Fixed: should be '/**' not '**'
+                pathname: '/**',
             },
             {
                 protocol: 'https',
                 hostname: 'raw.githubusercontent.com',
-                pathname: '/**', // Fixed: should be '/**' not '**'
+                pathname: '/**',
             },
         ],
         // Enable SVG support for trusted sources like Cloudinary

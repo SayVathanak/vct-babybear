@@ -23,8 +23,8 @@ const SettingsSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Create index for faster queries
-SettingsSchema.index({ type: 1 });
+// The following line has been removed to fix the duplicate index warning:
+// SettingsSchema.index({ type: 1 });
 
 // Add a method to get default footer data
 SettingsSchema.statics.getDefaultFooter = function() {
