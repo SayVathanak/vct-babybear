@@ -90,7 +90,7 @@ const useProducts = (getToken) => {
   return { allProducts, isLoadingList, updateProduct, refetchProducts: fetchAllProducts };
 };
 
-const useBarcodeScanner = (allProducts, getToken, onProductFound, onProductNotFound) => {
+const useBarcodeScanner = (allProducts, getToken, onProductFound, onProductNotFound, setSearchQuery) => {
   const [isScanning, setIsScanning] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [scannerKey, setScannerKey] = useState(0);
@@ -98,6 +98,9 @@ const useBarcodeScanner = (allProducts, getToken, onProductFound, onProductNotFo
   const handleBarcodeDetected = useCallback(async (decodedText) => {
     console.log('Barcode detected:', decodedText);
     setIsScanning(true);
+    
+    // Set the search query to match original behavior
+    setSearchQuery(decodedText);
 
     try {
       const normalizedBarcode = decodedText.trim();
@@ -135,7 +138,7 @@ const useBarcodeScanner = (allProducts, getToken, onProductFound, onProductNotFo
     } finally {
       setIsScanning(false);
     }
-  }, [allProducts, getToken, onProductFound, onProductNotFound]);
+  }, [allProducts, getToken, onProductFound, onProductNotFound, setSearchQuery]);
 
   const handleOpen = useCallback(() => {
     // Security and capability checks
@@ -379,7 +382,7 @@ const NewArrivalsContent = () => {
     }
   }, [screenInfo.isMobile, screenInfo.isTablet]);
 
-  const scanner = useBarcodeScanner(allProducts, getToken, handleProductFound, handleProductNotFound);
+  const scanner = useBarcodeScanner(allProducts, getToken, handleProductFound, handleProductNotFound, setSearchQuery);
 
   // Handle screen size changes
   useEffect(() => {
@@ -405,14 +408,11 @@ const NewArrivalsContent = () => {
   const handleSelectProduct = useCallback((product) => {
     setSelectedProduct(product);
     setNotFoundQuery(null);
-    setSearchQuery('');
-    if (scanner.isScanning) {
-      setSearchQuery(product.barcode || '');
-    }
+    // Don't clear search query when selecting from list manually
     if (screenInfo.isMobile || screenInfo.isTablet) {
       setShowProductList(false);
     }
-  }, [screenInfo.isMobile, screenInfo.isTablet, scanner.isScanning]);
+  }, [screenInfo.isMobile, screenInfo.isTablet]);
 
   const handleClearSelection = useCallback(() => {
     setSelectedProduct(null);
@@ -429,7 +429,7 @@ const NewArrivalsContent = () => {
       const token = await getToken();
       const { data } = await axios.put('/api/product/update-stock', {
         productId,
-        quantityToAdd
+        quantityToAdd: Number(quantityToAdd) // Ensure it's a number
       }, { headers: { Authorization: `Bearer ${token}` } });
 
       if (data.success) {
@@ -438,9 +438,10 @@ const NewArrivalsContent = () => {
         setSelectedProduct(updatedProduct);
         updateProduct(updatedProduct);
       } else {
-        toast.error(data.message);
+        toast.error(data.message || 'Failed to update stock');
       }
     } catch (error) {
+      console.error('Stock update error:', error);
       toast.error(error.response?.data?.message || 'Failed to update stock.');
     } finally {
       setIsUpdating(false);
