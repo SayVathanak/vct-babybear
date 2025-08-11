@@ -172,6 +172,24 @@ const OrderSummary = () => {
   const isFreeDelivery = getCartCount() > 1;
   const deliveryFee = isFreeDelivery ? 0 : 1.5;
 
+  // --- NOTIFICATION HANDLER ---
+  const sendOrderNotifications = async (orderDetails) => {
+    try {
+      const telegramResult = await sendTelegramNotification(orderDetails);
+      
+      if (!telegramResult.success) {
+        console.error("Failed to send Telegram notification:", telegramResult.error);
+      } else {
+        console.log("Telegram notification sent successfully");
+      }
+      
+      return { success: telegramResult.success };
+    } catch (error) {
+      console.error("Error sending notifications:", error);
+      return { success: false, error };
+    }
+  };
+
   // --- DATA FETCHING & CALCULATIONS ---
 
   const fetchUserAddresses = async () => {
@@ -458,8 +476,38 @@ const OrderSummary = () => {
           promoCode: { id: appliedPromo._id, code: appliedPromo.code, discountType: appliedPromo.discountType, discountValue: appliedPromo.discountValue, discountAmount: discount }
         }),
       };
+      
       const { data: orderCreateData } = await axios.post('/api/order/create', orderPayload, { headers: { Authorization: `Bearer ${authToken}` } });
+      
       if (orderCreateData.success) {
+        // Send Telegram notifications
+        try {
+          const productsDetails = cartItemsArray.map(item => {
+            const product = products.find(p => p._id === item.product);
+            return {
+              productName: product ? product.name : `Product ID: ${item.product}`,
+              quantity: item.quantity,
+              price: product ? (product.offerPrice || product.price) : 0
+            };
+          });
+
+          await sendOrderNotifications({
+            orderId: orderCreateData.orderId || `ORD-${Date.now()}`,
+            address: selectedAddress,
+            items: productsDetails,
+            currency,
+            subtotal,
+            discount,
+            deliveryFee,
+            total,
+            promoCode: appliedPromo ? appliedPromo.code : null,
+            paymentMethod: selectedPaymentMethod
+          });
+        } catch (notificationError) {
+          console.error("Failed to send notifications:", notificationError);
+          // Don't stop the order process if notifications fail
+        }
+
         toast.success("Order placed successfully!");
         setCartItems({});
         resetAllPaymentStates();
