@@ -2,18 +2,23 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useUser, UserButton } from "@clerk/nextjs";
+import { useAppContext } from "@/context/AppContext";
 import { 
   CiHome,
   CiGrid41,
   CiSearch,
   CiShoppingCart,
-  CiUser
+  CiUser,
+  CiBarcode
 } from "react-icons/ci";
 
 const NavigationBar = ({ pathname, onToggleSearch }) => {
     const router = useRouter();
     const { user } = useUser();
+    const { isSeller } = useAppContext();
 
+    // Check if user is seller/admin (using the same pattern as MobileMenu)
+    const isAdmin = isSeller;
     const isHomePage = pathname === '/';
     const iconSize = 24; // Consistent size for all icons
 
@@ -32,13 +37,15 @@ const NavigationBar = ({ pathname, onToggleSearch }) => {
             path: '/all-products',
             active: pathname === '/all-products'
         },
+        // Conditional search/barcode item based on user role
         {
-            id: 'search',
-            label: 'Search',
-            icon: CiSearch,
-            action: isHomePage ? onToggleSearch : null,
-            active: false,
-            disabled: !isHomePage
+            id: isAdmin ? 'pos' : 'search',
+            label: isAdmin ? 'POS' : 'Search',
+            icon: isAdmin ? CiBarcode : CiSearch,
+            path: isAdmin ? '/seller/pos' : null,
+            action: !isAdmin && isHomePage ? onToggleSearch : null,
+            active: isAdmin ? pathname === '/seller/pos' : false,
+            disabled: !isAdmin && !isHomePage
         },
         {
             id: 'cart',
